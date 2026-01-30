@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Preventiva 360 - Detalhes do Chamado</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0ea5e9", // Sky-500
+                        "primary-hover": "#38bdf8", // Sky-400
+                        "background-dark": "#020617", // Slate-950
+                        "surface-dark": "#0f172a", // Slate-900
+                        "surface-border": "#1e293b", // Slate-800
+                        "text-main": "#f8fafc", // Slate-50
+                        "text-muted": "#94a3b8", // Slate-400
+                        "success": "#10b981",
+                        "danger": "#ef4444",
+                        "warning": "#f59e0b",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                    },
+                    backgroundImage: {
+                        'cyber-grid': "radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.05) 0%, transparent 50%), linear-gradient(0deg, transparent 24%, rgba(30, 41, 59, .3) 25%, rgba(30, 41, 59, .3) 26%, transparent 27%, transparent 74%, rgba(30, 41, 59, .3) 75%, rgba(30, 41, 59, .3) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(30, 41, 59, .3) 25%, rgba(30, 41, 59, .3) 26%, transparent 27%, transparent 74%, rgba(30, 41, 59, .3) 75%, rgba(30, 41, 59, .3) 76%, transparent 77%, transparent)",
+                    },
+                    backgroundSize: {
+                        'cyber-grid': '100% 100%, 60px 60px, 60px 60px',
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(30, 41, 59, 0.7);
+        }
+
+        .cyber-glow {
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.1);
+        }
+
+        .cyber-glow:hover {
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+            border-color: rgba(14, 165, 233, 0.5);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-dark text-text-main font-body antialiased selection:bg-primary selection:text-white h-screen overflow-hidden flex">
+    <!-- Side Navigation -->
+    <aside
+        class="w-64 h-full border-r border-surface-border bg-surface-dark/95 backdrop-blur-xl flex flex-col shrink-0 z-20">
+        <!-- Logo Area -->
+        <div class="h-16 flex items-center px-6 border-b border-surface-border">
+            <div class="flex items-center gap-3">
+                <div
+                    class="relative size-8 rounded bg-gradient-to-br from-primary to-blue-700 flex items-center justify-center shadow-lg shadow-primary/20">
+                    <span class="material-symbols-outlined text-white text-[20px]">precision_manufacturing</span>
+                    <div class="absolute inset-0 rounded ring-1 ring-inset ring-white/20"></div>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-white font-display font-bold text-lg tracking-tight leading-none">Preventiva 360
+                    </h1>
+                    <span class="text-xs text-primary font-medium tracking-wider uppercase mt-0.5">Industrial OS</span>
+                </div>
+            </div>
+        </div>
+        <!-- Navigation Menu -->
+        <nav class="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                href="#">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">dashboard</span>
+                <span class="font-medium font-display text-sm">Dashboard</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                href="#">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">inventory_2</span>
+                <span class="font-medium font-display text-sm">Ativos</span>
+            </a>
+            <!-- Active Link -->
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 border border-primary/20 text-primary group transition-all duration-200"
+                href="#">
+                <span class="material-symbols-outlined filled">assignment</span>
+                <span class="font-medium font-display text-sm">Chamados</span>
+                <span
+                    class="ml-auto bg-danger/20 text-danger text-[10px] font-bold px-1.5 py-0.5 rounded border border-danger/20">12</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                href="#">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">bar_chart</span>
+                <span class="font-medium font-display text-sm">Relatórios</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                href="#">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">calendar_month</span>
+                <span class="font-medium font-display text-sm">Agendamento</span>
+            </a>
+            <div class="pt-4 mt-4 border-t border-surface-border">
+                <p class="px-3 text-xs font-bold text-text-muted/50 uppercase tracking-widest mb-2 font-display">Sistema
+                </p>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                    href="#">
+                    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">settings</span>
+                    <span class="font-medium font-display text-sm">Configurações</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                    href="#">
+                    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">group</span>
+                    <span class="font-medium font-display text-sm">Usuários</span>
+                </a>
+            </div>
+        </nav>
+        <!-- User Profile -->
+        <div class="p-4 border-t border-surface-border bg-surface-dark/50">
+            <div class="flex items-center gap-3">
+                <div class="size-9 rounded-full bg-surface-border overflow-hidden ring-2 ring-surface-border relative">
+                    <img alt="Profile picture" class="w-full h-full object-cover"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_zARChsokm25FYAK7UBSfN44arRwa_8N7EQhYWSrLGSi4hyD9Xwdd6wJjhRTDlPA-1WK8ylaAlRRoAOdBdyu9k02lEgNzRGnZkdipyzUqS_rSkZe02_9YOoqWCHmFGU1B37eSytFFJajKitn_mGlnmsMWEgZd-n-rF3F4dj90g5ofUnCe56E5QCB40NBaRqvRA9teJsELnx-yhDjdidO3qjC9V6QbMTUKJqQdX96dGrSkB6a0mV9VeOjYyNdViuZZ2d8p0WdUZYHK" />
+                    <div
+                        class="absolute bottom-0 right-0 size-2.5 bg-success rounded-full border-2 border-surface-dark">
+                    </div>
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <p class="text-sm font-bold text-white truncate font-display">Roberto Silva</p>
+                    <p class="text-xs text-text-muted truncate">Gerente de Manutenção</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-cyber-grid bg-fixed">
+        <!-- Top Bar -->
+        <header
+            class="h-16 border-b border-surface-border glass-panel sticky top-0 z-10 flex items-center justify-between px-8">
+            <div class="flex items-center gap-4">
+                <button
+                    class="p-2 text-text-muted hover:text-white hover:bg-surface-border/50 rounded-lg transition-colors">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-lg font-bold text-white font-display">#COR-1042</h1>
+                        <span
+                            class="bg-warning/10 text-warning border border-warning/20 px-2 py-0.5 rounded textxs font-bold uppercase tracking-wider">Em
+                            Andamento</span>
+                    </div>
+                    <p class="text-xs text-text-muted">Aberta há 2 horas • Prioridade Alta</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-border/50 border border-surface-border text-text-muted hover:text-white transition-colors text-sm font-medium">
+                    <span class="material-symbols-outlined text-[18px]">print</span>
+                    Imprimir
+                </button>
+                <button
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white transition-colors text-sm font-bold shadow-lg shadow-primary/20">
+                    <span class="material-symbols-outlined text-[18px]">save</span>
+                    Salvar Alterações
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="flex-1 overflow-y-auto p-8">
+            <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Left Column: Details -->
+                <div class="space-y-6 lg:col-span-1">
+                    <!-- Asset Card -->
+                    <div class="glass-panel rounded-lg p-5">
+                        <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4 font-display">Ativo
+                            Relacionado</h3>
+                        <div class="aspect-video rounded-lg bg-surface-border mb-4 overflow-hidden relative group">
+                            <!-- Placeholder for asset image -->
+                            <div
+                                class="absolute inset-0 flex items-center justify-center text-text-muted bg-surface-dark/50">
+                                <span class="material-symbols-outlined text-[40px]">factory</span>
+                            </div>
+                        </div>
+                        <h4 class="text-lg font-bold text-white font-display">Bomba Hidráulica 02</h4>
+                        <p class="text-sm text-text-muted mb-4">Setor de Compressão • Modelo X-200</p>
+
+                        <div class="space-y-3 pt-4 border-t border-surface-border">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-text-muted">Status do Ativo</span>
+                                <span class="text-warning font-medium">Em Manutenção</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-text-muted">Garantia</span>
+                                <span class="text-success font-medium">Vigente (2025)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reporter Info -->
+                    <div class="glass-panel rounded-lg p-5">
+                        <h3 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-4 font-display">
+                            Solicitante</h3>
+                        <div class="flex items-center gap-3 mb-3">
+                            <div
+                                class="size-10 rounded-full bg-surface-border flex items-center justify-center text-white font-bold">
+                                CM</div>
+                            <div>
+                                <p class="text-white font-medium">Carlos Mendes</p>
+                                <p class="text-xs text-text-muted">Operador Líder</p>
+                            </div>
+                        </div>
+                        <div class="bg-surface-border/30 p-3 rounded-lg border border-surface-border/50">
+                            <p class="text-sm text-text-muted italic">"A bomba começou a fazer um ruído metálico alto
+                                durante o ciclo de alta pressão e oscilou a vazão."</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Action & Checklist -->
+                <div class="space-y-6 lg:col-span-2">
+
+                    <!-- Execution Status -->
+                    <div class="glass-panel rounded-lg p-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <span class="material-symbols-outlined text-[100px] text-primary">engineering</span>
+                        </div>
+
+                        <h3 class="text-lg font-bold text-white font-display mb-4">Execução do Serviço</h3>
+
+                        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                            <button
+                                class="flex-1 py-3 px-4 rounded-lg bg-surface-border/30 border border-surface-border text-text-muted hover:border-primary/50 hover:text-white transition-all flex flex-col items-center gap-2 group">
+                                <span
+                                    class="material-symbols-outlined group-hover:text-primary transition-colors">play_circle</span>
+                                <span class="text-sm font-medium">Iniciar</span>
+                            </button>
+                            <button
+                                class="flex-1 py-3 px-4 rounded-lg bg-primary/10 border border-primary text-primary flex flex-col items-center gap-2 relative">
+                                <span class="absolute top-2 right-2 flex size-2">
+                                    <span
+                                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full size-2 bg-primary"></span>
+                                </span>
+                                <span class="material-symbols-outlined">pause_circle</span>
+                                <span class="text-sm font-medium">Pausar</span>
+                            </button>
+                            <button
+                                class="flex-1 py-3 px-4 rounded-lg bg-surface-border/30 border border-surface-border text-text-muted hover:border-success/50 hover:text-success transition-all flex flex-col items-center gap-2 group">
+                                <span
+                                    class="material-symbols-outlined group-hover:text-success transition-colors">check_circle</span>
+                                <span class="text-sm font-medium">Finalizar</span>
+                            </button>
+                        </div>
+
+                        <!-- Timer -->
+                        <div
+                            class="flex items-center justify-center p-4 bg-surface-dark/50 rounded-lg border border-surface-border mb-6">
+                            <span class="material-symbols-outlined text-primary mr-2">timer</span>
+                            <span class="text-2xl font-mono text-white font-bold tracking-widest">00:45:12</span>
+                        </div>
+
+                        <!-- Checklist -->
+                        <h4 class="text-sm font-bold text-text-muted uppercase tracking-wider mb-3 font-display">
+                            Checklist de Procedimentos</h4>
+                        <div class="space-y-2">
+                            <!-- Item 1 -->
+                            <label
+                                class="flex items-start gap-3 p-3 rounded-lg hover:bg-surface-border/30 transition-colors cursor-pointer group">
+                                <input type="checkbox" checked
+                                    class="mt-1 w-5 h-5 rounded border-surface-border bg-surface-dark text-primary focus:ring-primary focus:ring-offset-surface-dark transition-all">
+                                <div class="flex-1">
+                                    <span
+                                        class="text-text-muted group-hover:text-white transition-colors line-through decoration-primary/50">Isolamento
+                                        elétrico do equipamento</span>
+                                </div>
+                            </label>
+                            <!-- Item 2 -->
+                            <label
+                                class="flex items-start gap-3 p-3 rounded-lg hover:bg-surface-border/30 transition-colors cursor-pointer group">
+                                <input type="checkbox" checked
+                                    class="mt-1 w-5 h-5 rounded border-surface-border bg-surface-dark text-primary focus:ring-primary focus:ring-offset-surface-dark transition-all">
+                                <div class="flex-1">
+                                    <span
+                                        class="text-text-muted group-hover:text-white transition-colors line-through decoration-primary/50">Drenagem
+                                        do fluído hidráulico</span>
+                                </div>
+                            </label>
+                            <!-- Item 3 -->
+                            <label
+                                class="flex items-start gap-3 p-3 rounded-lg hover:bg-surface-border/30 transition-colors cursor-pointer group">
+                                <input type="checkbox"
+                                    class="mt-1 w-5 h-5 rounded border-surface-border bg-surface-dark text-primary focus:ring-primary focus:ring-offset-surface-dark transition-all">
+                                <div class="flex-1">
+                                    <span class="text-text-muted group-hover:text-white transition-colors">Inspeção dos
+                                        rolamentos</span>
+                                </div>
+                            </label>
+                            <!-- Item 4 -->
+                            <label
+                                class="flex items-start gap-3 p-3 rounded-lg hover:bg-surface-border/30 transition-colors cursor-pointer group">
+                                <input type="checkbox"
+                                    class="mt-1 w-5 h-5 rounded border-surface-border bg-surface-dark text-primary focus:ring-primary focus:ring-offset-surface-dark transition-all">
+                                <div class="flex-1">
+                                    <span class="text-text-muted group-hover:text-white transition-colors">Substituição
+                                        do selo mecânico</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Materials/Parts -->
+                    <div class="glass-panel rounded-lg p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-white font-display">Materiais Utilizados</h3>
+                            <button
+                                class="text-primary text-sm font-bold hover:text-primary-hover flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[18px]">add</span>
+                                Adicionar
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-text-muted uppercase bg-surface-border/30">
+                                    <tr>
+                                        <th class="px-4 py-2 rounded-l-lg">Item</th>
+                                        <th class="px-4 py-2">Qtd</th>
+                                        <th class="px-4 py-2 rounded-r-lg text-right">Custo</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-surface-border">
+                                    <tr>
+                                        <td class="px-4 py-3 text-white">Selo Mecânico Ø45mm</td>
+                                        <td class="px-4 py-3 text-text-muted">1 un</td>
+                                        <td class="px-4 py-3 text-right text-text-muted">R$ 120,00</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-3 text-white">Óleo Hidráulico ISO 68</td>
+                                        <td class="px-4 py-3 text-text-muted">10 L</td>
+                                        <td class="px-4 py-3 text-right text-text-muted">R$ 250,00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>

@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Preventiva 360 - Dashboard</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0ea5e9", // Sky-500
+                        "primary-hover": "#38bdf8", // Sky-400
+                        "background-dark": "#020617", // Slate-950
+                        "surface-dark": "#0f172a", // Slate-900
+                        "surface-border": "#1e293b", // Slate-800
+                        "text-main": "#f8fafc", // Slate-50
+                        "text-muted": "#94a3b8", // Slate-400
+                        "success": "#10b981",
+                        "danger": "#ef4444",
+                        "warning": "#f59e0b",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                    },
+                    backgroundImage: {
+                        'cyber-grid': "radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.05) 0%, transparent 50%), linear-gradient(0deg, transparent 24%, rgba(30, 41, 59, .3) 25%, rgba(30, 41, 59, .3) 26%, transparent 27%, transparent 74%, rgba(30, 41, 59, .3) 75%, rgba(30, 41, 59, .3) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(30, 41, 59, .3) 25%, rgba(30, 41, 59, .3) 26%, transparent 27%, transparent 74%, rgba(30, 41, 59, .3) 75%, rgba(30, 41, 59, .3) 76%, transparent 77%, transparent)",
+                    },
+                    backgroundSize: {
+                        'cyber-grid': '100% 100%, 60px 60px, 60px 60px',
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for cyberpunk feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(30, 41, 59, 0.7);
+        }
+
+        .cyber-glow {
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.1);
+        }
+
+        .cyber-glow:hover {
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+            border-color: rgba(14, 165, 233, 0.5);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-dark text-text-main font-body antialiased selection:bg-primary selection:text-white h-screen overflow-hidden flex">
+    <!-- Side Navigation -->
+    <aside
+        class="w-64 h-full border-r border-surface-border bg-surface-dark/95 backdrop-blur-xl flex flex-col shrink-0 z-20">
+        <!-- Logo Area -->
+        <div class="h-16 flex items-center px-6 border-b border-surface-border">
+            <div class="flex items-center gap-3">
+                <div
+                    class="relative size-8 rounded bg-gradient-to-br from-primary to-blue-700 flex items-center justify-center shadow-lg shadow-primary/20">
+                    <span class="material-symbols-outlined text-white text-[20px]">precision_manufacturing</span>
+                    <div class="absolute inset-0 rounded ring-1 ring-inset ring-white/20"></div>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-white font-display font-bold text-lg tracking-tight leading-none">Preventiva 360
+                    </h1>
+                    <span class="text-xs text-primary font-medium tracking-wider uppercase mt-0.5">Industrial OS</span>
+                </div>
+            </div>
+        </div>
+        <!-- Navigation Menu -->
+        <nav class="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
+            <!-- Dashboard (Active) -->
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 border border-primary/20 text-primary group transition-all duration-200"
+                href="#">
+                <span class="material-symbols-outlined filled">dashboard</span>
+                <span class="font-medium font-display text-sm">Dashboard</span>
+            </a>
+            <!-- Other Links -->
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                href="#">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">inventory_2</span>
+                <span class="font-medium font-display text-sm">Ativos</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                href="#">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">assignment</span>
+                <span class="font-medium font-display text-sm">Chamados</span>
+                <span
+                    class="ml-auto bg-danger/20 text-danger text-[10px] font-bold px-1.5 py-0.5 rounded border border-danger/20">12</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                href="#">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">bar_chart</span>
+                <span class="font-medium font-display text-sm">Relatórios</span>
+            </a>
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                href="#">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform">calendar_month</span>
+                <span class="font-medium font-display text-sm">Agendamento</span>
+            </a>
+            <div class="pt-4 mt-4 border-t border-surface-border">
+                <p class="px-3 text-xs font-bold text-text-muted/50 uppercase tracking-widest mb-2 font-display">Sistema
+                </p>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                    href="#">
+                    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">settings</span>
+                    <span class="font-medium font-display text-sm">Configurações</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-border/50 transition-colors group"
+                    href="#">
+                    <span class="material-symbols-outlined group-hover:scale-110 transition-transform">group</span>
+                    <span class="font-medium font-display text-sm">Usuários</span>
+                </a>
+            </div>
+        </nav>
+        <!-- User Profile -->
+        <div class="p-4 border-t border-surface-border bg-surface-dark/50">
+            <div class="flex items-center gap-3">
+                <div class="size-9 rounded-full bg-surface-border overflow-hidden ring-2 ring-surface-border relative">
+                    <img alt="Profile picture of maintenance manager" class="w-full h-full object-cover"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_zARChsokm25FYAK7UBSfN44arRwa_8N7EQhYWSrLGSi4hyD9Xwdd6wJjhRTDlPA-1WK8ylaAlRRoAOdBdyu9k02lEgNzRGnZkdipyzUqS_rSkZe02_9YOoqWCHmFGU1B37eSytFFJajKitn_mGlnmsMWEgZd-n-rF3F4dj90g5ofUnCe56E5QCB40NBaRqvRA9teJsELnx-yhDjdidO3qjC9V6QbMTUKJqQdX96dGrSkB6a0mV9VeOjYyNdViuZZ2d8p0WdUZYHK" />
+                    <div
+                        class="absolute bottom-0 right-0 size-2.5 bg-success rounded-full border-2 border-surface-dark">
+                    </div>
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <p class="text-sm font-bold text-white truncate font-display">Roberto Silva</p>
+                    <p class="text-xs text-text-muted truncate">Gerente de Manutenção</p>
+                </div>
+                <button class="ml-auto text-text-muted hover:text-white transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">logout</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-cyber-grid bg-fixed">
+        <!-- Top Bar -->
+        <header
+            class="h-16 border-b border-surface-border glass-panel sticky top-0 z-10 flex items-center justify-between px-8">
+            <!-- Search -->
+            <div class="flex items-center w-full max-w-md">
+                <div class="relative w-full group">
+                    <div
+                        class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted group-focus-within:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">search</span>
+                    </div>
+                    <input
+                        class="block w-full pl-10 pr-3 py-2 border border-surface-border rounded-lg leading-5 bg-surface-dark/50 text-text-main placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm font-display transition-all"
+                        placeholder="Buscar ativos, ordens ou códigos..." type="text" />
+                </div>
+            </div>
+            <!-- Right Actions -->
+            <div class="flex items-center gap-4">
+                <button
+                    class="relative p-2 text-text-muted hover:text-white hover:bg-surface-border/50 rounded-lg transition-colors group">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <span
+                        class="absolute top-2 right-2 size-2 bg-primary rounded-full ring-2 ring-surface-dark animate-pulse"></span>
+                </button>
+                <button
+                    class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white text-sm font-bold py-2 px-4 rounded-lg shadow-lg shadow-primary/20 transition-all font-display">
+                    <span class="material-symbols-outlined text-[20px]">add</span>
+                    Novo Chamado
+                </button>
+            </div>
+        </header>
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+                <!-- Page Title & Date -->
+                <div class="flex items-end justify-between mb-2">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white font-display tracking-tight">Visão Geral</h2>
+                        <p class="text-text-muted text-sm mt-1">Monitoramento em tempo real da planta industrial.</p>
+                    </div>
+                    <div
+                        class="flex items-center gap-2 text-text-muted text-sm bg-surface-dark/50 px-3 py-1.5 rounded-lg border border-surface-border">
+                        <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                        <span>24 Outubro, 2023</span>
+                    </div>
+                </div>
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Card 1 -->
+                    <div class="glass-panel p-5 rounded-lg cyber-glow transition-all duration-300 group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div
+                                class="p-2 bg-primary/10 rounded-lg text-primary border border-primary/20 group-hover:bg-primary group-hover:text-white transition-colors">
+                                <span class="material-symbols-outlined">dns</span>
+                            </div>
+                            <span
+                                class="text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded border border-success/20 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">trending_up</span> +1.2%
+                            </span>
+                        </div>
+                        <h3 class="text-text-muted text-sm font-medium font-display">Total de Ativos</h3>
+                        <p class="text-3xl font-bold text-white mt-1 font-display tracking-tight">1,240</p>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="glass-panel p-5 rounded-lg cyber-glow transition-all duration-300 group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div
+                                class="p-2 bg-danger/10 rounded-lg text-danger border border-danger/20 group-hover:bg-danger group-hover:text-white transition-colors">
+                                <span class="material-symbols-outlined">warning</span>
+                            </div>
+                            <span
+                                class="text-xs font-bold text-danger bg-danger/10 px-2 py-0.5 rounded border border-danger/20 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">trending_up</span> +3.5%
+                            </span>
+                        </div>
+                        <h3 class="text-text-muted text-sm font-medium font-display">Chamados Abertos</h3>
+                        <p class="text-3xl font-bold text-white mt-1 font-display tracking-tight">12</p>
+                        <p class="text-xs text-text-muted mt-1">4 Críticos</p>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="glass-panel p-5 rounded-lg cyber-glow transition-all duration-300 group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div
+                                class="p-2 bg-warning/10 rounded-lg text-warning border border-warning/20 group-hover:bg-warning group-hover:text-white transition-colors">
+                                <span class="material-symbols-outlined">attach_money</span>
+                            </div>
+                            <span
+                                class="text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded border border-success/20 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">trending_down</span> -2.1%
+                            </span>
+                        </div>
+                        <h3 class="text-text-muted text-sm font-medium font-display">Custo Mensal</h3>
+                        <p class="text-3xl font-bold text-white mt-1 font-display tracking-tight">R$ 45.2k</p>
+                    </div>
+                    <!-- Card 4 -->
+                    <div class="glass-panel p-5 rounded-lg cyber-glow transition-all duration-300 group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div
+                                class="p-2 bg-purple-500/10 rounded-lg text-purple-400 border border-purple-500/20 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                                <span class="material-symbols-outlined">timer_off</span>
+                            </div>
+                            <span
+                                class="text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded border border-success/20 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]">trending_down</span> -0.5%
+                            </span>
+                        </div>
+                        <h3 class="text-text-muted text-sm font-medium font-display">Downtime Total</h3>
+                        <p class="text-3xl font-bold text-white mt-1 font-display tracking-tight">4h 20m</p>
+                    </div>
+                </div>
+                <!-- Main Content Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Chart Section (2/3 width) -->
+                    <div class="lg:col-span-2 glass-panel rounded-lg p-6 flex flex-col h-[420px]">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-white font-display">Evolução de Manutenções</h3>
+                                <p class="text-sm text-text-muted">Preventiva vs Corretiva (Últimos 6 Meses)</p>
+                            </div>
+                            <button
+                                class="text-primary text-sm font-bold hover:text-primary-hover flex items-center gap-1">
+                                Ver Relatório Completo
+                                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                            </button>
+                        </div>
+                        <!-- CSS Chart Implementation -->
+                        <div class="flex-1 flex items-end gap-4 sm:gap-8 px-4 relative">
+                            <!-- Grid Lines Background -->
+                            <div
+                                class="absolute inset-0 flex flex-col justify-between pointer-events-none px-4 pb-8 text-xs text-text-muted opacity-20">
+                                <div class="w-full border-t border-dashed border-white"></div>
+                                <div class="w-full border-t border-dashed border-white"></div>
+                                <div class="w-full border-t border-dashed border-white"></div>
+                                <div class="w-full border-t border-dashed border-white"></div>
+                                <div class="w-full border-t border-white"></div>
+                            </div>
+                            <!-- Bar Group: May -->
+                            <div class="flex-1 flex flex-col justify-end items-center gap-2 group h-full pb-8 z-0">
+                                <div class="w-full max-w-[40px] flex items-end gap-1 h-[60%]">
+                                    <div
+                                        class="w-1/2 bg-primary/80 h-[80%] rounded-t-sm group-hover:bg-primary transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            42</div>
+                                    </div>
+                                    <div
+                                        class="w-1/2 bg-danger/80 h-[30%] rounded-t-sm group-hover:bg-danger transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            12</div>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-bold text-text-muted uppercase font-display">Mai</span>
+                            </div>
+                            <!-- Bar Group: Jun -->
+                            <div class="flex-1 flex flex-col justify-end items-center gap-2 group h-full pb-8 z-0">
+                                <div class="w-full max-w-[40px] flex items-end gap-1 h-[75%]">
+                                    <div
+                                        class="w-1/2 bg-primary/80 h-[85%] rounded-t-sm group-hover:bg-primary transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            55</div>
+                                    </div>
+                                    <div
+                                        class="w-1/2 bg-danger/80 h-[25%] rounded-t-sm group-hover:bg-danger transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            8</div>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-bold text-text-muted uppercase font-display">Jun</span>
+                            </div>
+                            <!-- Bar Group: Jul -->
+                            <div class="flex-1 flex flex-col justify-end items-center gap-2 group h-full pb-8 z-0">
+                                <div class="w-full max-w-[40px] flex items-end gap-1 h-[65%]">
+                                    <div
+                                        class="w-1/2 bg-primary/80 h-[70%] rounded-t-sm group-hover:bg-primary transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            38</div>
+                                    </div>
+                                    <div
+                                        class="w-1/2 bg-danger/80 h-[45%] rounded-t-sm group-hover:bg-danger transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            18</div>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-bold text-text-muted uppercase font-display">Jul</span>
+                            </div>
+                            <!-- Bar Group: Ago -->
+                            <div class="flex-1 flex flex-col justify-end items-center gap-2 group h-full pb-8 z-0">
+                                <div class="w-full max-w-[40px] flex items-end gap-1 h-[90%]">
+                                    <div
+                                        class="w-1/2 bg-primary/80 h-[92%] rounded-t-sm group-hover:bg-primary transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            68</div>
+                                    </div>
+                                    <div
+                                        class="w-1/2 bg-danger/80 h-[15%] rounded-t-sm group-hover:bg-danger transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            5</div>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-bold text-text-muted uppercase font-display">Ago</span>
+                            </div>
+                            <!-- Bar Group: Set -->
+                            <div class="flex-1 flex flex-col justify-end items-center gap-2 group h-full pb-8 z-0">
+                                <div class="w-full max-w-[40px] flex items-end gap-1 h-[55%]">
+                                    <div
+                                        class="w-1/2 bg-primary/80 h-[80%] rounded-t-sm group-hover:bg-primary transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            40</div>
+                                    </div>
+                                    <div
+                                        class="w-1/2 bg-danger/80 h-[20%] rounded-t-sm group-hover:bg-danger transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            7</div>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-bold text-text-muted uppercase font-display">Set</span>
+                            </div>
+                            <!-- Bar Group: Out -->
+                            <div class="flex-1 flex flex-col justify-end items-center gap-2 group h-full pb-8 z-0">
+                                <div class="w-full max-w-[40px] flex items-end gap-1 h-[80%]">
+                                    <div
+                                        class="w-1/2 bg-primary/80 h-[88%] rounded-t-sm group-hover:bg-primary transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            62</div>
+                                    </div>
+                                    <div
+                                        class="w-1/2 bg-danger/80 h-[30%] rounded-t-sm group-hover:bg-danger transition-all relative">
+                                        <div
+                                            class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity bg-surface-dark px-1 rounded border border-surface-border">
+                                            14</div>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-bold text-white uppercase font-display">Out</span>
+                            </div>
+                        </div>
+                        <!-- Legend -->
+                        <div class="flex items-center justify-center gap-6 mt-2">
+                            <div class="flex items-center gap-2">
+                                <div class="size-3 bg-primary rounded-sm"></div>
+                                <span class="text-xs text-text-muted font-medium">Preventiva</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="size-3 bg-danger rounded-sm"></div>
+                                <span class="text-xs text-text-muted font-medium">Corretiva</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Alerts Section (1/3 width) -->
+                    <div class="lg:col-span-1 glass-panel rounded-lg p-0 flex flex-col h-[420px] overflow-hidden">
+                        <div class="p-5 border-b border-surface-border bg-surface-dark/40">
+                            <h3 class="text-lg font-bold text-white font-display">Próximas Preventivas</h3>
+                            <p class="text-sm text-text-muted">Atenção requerida nos próximos 7 dias</p>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-2 space-y-2">
+                            <!-- Alert Item 1 -->
+                            <div
+                                class="flex items-center p-3 hover:bg-surface-border/30 rounded-lg transition-colors group cursor-pointer border border-transparent hover:border-surface-border/50">
+                                <div
+                                    class="relative size-10 rounded bg-surface-border flex items-center justify-center mr-3 shrink-0">
+                                    <span
+                                        class="material-symbols-outlined text-text-muted group-hover:text-white transition-colors">air</span>
+                                    <div
+                                        class="absolute top-0 right-0 size-2.5 bg-warning rounded-full border-2 border-surface-dark">
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p
+                                        class="text-sm font-bold text-white truncate group-hover:text-primary transition-colors font-display">
+                                        Compressor C-102</p>
+                                    <p class="text-xs text-text-muted truncate">Setor de Pintura • #PREV-204</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold text-white font-display">12/Out</p>
+                                    <p
+                                        class="text-[10px] uppercase font-bold text-warning bg-warning/10 px-1.5 py-0.5 rounded inline-block mt-1">
+                                        2 dias</p>
+                                </div>
+                            </div>
+                            <!-- Alert Item 2 -->
+                            <div
+                                class="flex items-center p-3 hover:bg-surface-border/30 rounded-lg transition-colors group cursor-pointer border border-transparent hover:border-surface-border/50">
+                                <div
+                                    class="relative size-10 rounded bg-surface-border flex items-center justify-center mr-3 shrink-0">
+                                    <span
+                                        class="material-symbols-outlined text-text-muted group-hover:text-white transition-colors">conveyor_belt</span>
+                                    <div
+                                        class="absolute top-0 right-0 size-2.5 bg-success rounded-full border-2 border-surface-dark">
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p
+                                        class="text-sm font-bold text-white truncate group-hover:text-primary transition-colors font-display">
+                                        Esteira Principal</p>
+                                    <p class="text-xs text-text-muted truncate">Linha de Montagem A • #PREV-208</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold text-white font-display">14/Out</p>
+                                    <p
+                                        class="text-[10px] uppercase font-bold text-text-muted bg-surface-border/50 px-1.5 py-0.5 rounded inline-block mt-1">
+                                        4 dias</p>
+                                </div>
+                            </div>
+                            <!-- Alert Item 3 -->
+                            <div
+                                class="flex items-center p-3 hover:bg-surface-border/30 rounded-lg transition-colors group cursor-pointer border border-transparent hover:border-surface-border/50">
+                                <div
+                                    class="relative size-10 rounded bg-surface-border flex items-center justify-center mr-3 shrink-0">
+                                    <span
+                                        class="material-symbols-outlined text-text-muted group-hover:text-white transition-colors">precision_manufacturing</span>
+                                    <div
+                                        class="absolute top-0 right-0 size-2.5 bg-success rounded-full border-2 border-surface-dark">
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p
+                                        class="text-sm font-bold text-white truncate group-hover:text-primary transition-colors font-display">
+                                        Robô Braço A</p>
+                                    <p class="text-xs text-text-muted truncate">Célula de Solda • #PREV-210</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold text-white font-display">15/Out</p>
+                                    <p
+                                        class="text-[10px] uppercase font-bold text-text-muted bg-surface-border/50 px-1.5 py-0.5 rounded inline-block mt-1">
+                                        5 dias</p>
+                                </div>
+                            </div>
+                            <!-- Alert Item 4 -->
+                            <div
+                                class="flex items-center p-3 hover:bg-surface-border/30 rounded-lg transition-colors group cursor-pointer border border-transparent hover:border-surface-border/50">
+                                <div
+                                    class="relative size-10 rounded bg-surface-border flex items-center justify-center mr-3 shrink-0">
+                                    <span
+                                        class="material-symbols-outlined text-text-muted group-hover:text-white transition-colors">propane_tank</span>
+                                    <div
+                                        class="absolute top-0 right-0 size-2.5 bg-success rounded-full border-2 border-surface-dark">
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p
+                                        class="text-sm font-bold text-white truncate group-hover:text-primary transition-colors font-display">
+                                        Tanque Misturador</p>
+                                    <p class="text-xs text-text-muted truncate">Área Química • #PREV-215</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold text-white font-display">18/Out</p>
+                                    <p
+                                        class="text-[10px] uppercase font-bold text-text-muted bg-surface-border/50 px-1.5 py-0.5 rounded inline-block mt-1">
+                                        8 dias</p>
+                                </div>
+                            </div>
+                            <!-- Alert Item 5 -->
+                            <div
+                                class="flex items-center p-3 hover:bg-surface-border/30 rounded-lg transition-colors group cursor-pointer border border-transparent hover:border-surface-border/50 opacity-60">
+                                <div
+                                    class="relative size-10 rounded bg-surface-border flex items-center justify-center mr-3 shrink-0">
+                                    <span
+                                        class="material-symbols-outlined text-text-muted group-hover:text-white transition-colors">forklift</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p
+                                        class="text-sm font-bold text-white truncate group-hover:text-primary transition-colors font-display">
+                                        Empilhadeira E-04</p>
+                                    <p class="text-xs text-text-muted truncate">Logística • #PREV-222</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold text-white font-display">25/Out</p>
+                                    <p
+                                        class="text-[10px] uppercase font-bold text-text-muted bg-surface-border/50 px-1.5 py-0.5 rounded inline-block mt-1">
+                                        15 dias</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-3 border-t border-surface-border bg-surface-dark/40 text-center">
+                            <button
+                                class="text-xs text-primary font-bold hover:text-white transition-colors uppercase tracking-wider py-1">Ver
+                                calendário completo</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Recent Activity Table Section (Full Width) -->
+                <div class="glass-panel rounded-lg overflow-hidden">
+                    <div
+                        class="px-6 py-4 border-b border-surface-border bg-surface-dark/40 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-white font-display">Chamados Recentes</h3>
+                        <div class="flex gap-2">
+                            <button class="p-1 text-text-muted hover:text-white rounded hover:bg-surface-border">
+                                <span class="material-symbols-outlined text-[20px]">filter_list</span>
+                            </button>
+                            <button class="p-1 text-text-muted hover:text-white rounded hover:bg-surface-border">
+                                <span class="material-symbols-outlined text-[20px]">download</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead
+                                class="bg-surface-border/30 text-xs uppercase font-bold text-text-muted font-display tracking-wider">
+                                <tr>
+                                    <th class="px-6 py-3">ID</th>
+                                    <th class="px-6 py-3">Ativo</th>
+                                    <th class="px-6 py-3">Status</th>
+                                    <th class="px-6 py-3">Tipo</th>
+                                    <th class="px-6 py-3">Responsável</th>
+                                    <th class="px-6 py-3 text-right">Abertura</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-surface-border">
+                                <tr class="hover:bg-surface-border/20 transition-colors">
+                                    <td class="px-6 py-4 font-mono text-text-muted">#COR-1042</td>
+                                    <td class="px-6 py-4 font-bold text-white">Bomba Hidráulica 02</td>
+                                    <td class="px-6 py-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-warning/10 text-warning border border-warning/20">
+                                            <span class="size-1.5 rounded-full bg-warning animate-pulse"></span>
+                                            Em Andamento
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-danger font-medium">Corretiva</td>
+                                    <td class="px-6 py-4 text-text-muted">Carlos Mendes</td>
+                                    <td class="px-6 py-4 text-right text-text-muted">Hoje, 09:30</td>
+                                </tr>
+                                <tr class="hover:bg-surface-border/20 transition-colors">
+                                    <td class="px-6 py-4 font-mono text-text-muted">#PREV-2003</td>
+                                    <td class="px-6 py-4 font-bold text-white">Painel Elétrico Central</td>
+                                    <td class="px-6 py-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                            <span class="size-1.5 rounded-full bg-blue-400"></span>
+                                            Agendado
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-primary font-medium">Preventiva</td>
+                                    <td class="px-6 py-4 text-text-muted">Ana Souza</td>
+                                    <td class="px-6 py-4 text-right text-text-muted">Ontem, 16:45</td>
+                                </tr>
+                                <tr class="hover:bg-surface-border/20 transition-colors">
+                                    <td class="px-6 py-4 font-mono text-text-muted">#INS-0581</td>
+                                    <td class="px-6 py-4 font-bold text-white">Sensor de Temperatura Z</td>
+                                    <td class="px-6 py-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium bg-success/10 text-success border border-success/20">
+                                            <span class="size-1.5 rounded-full bg-success"></span>
+                                            Concluído
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-text-muted">Inspeção</td>
+                                    <td class="px-6 py-4 text-text-muted">Roberto Silva</td>
+                                    <td class="px-6 py-4 text-right text-text-muted">22 Out, 14:20</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>

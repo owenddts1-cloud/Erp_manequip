@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preventiva 360 - Gestão Inteligente</title>
+
+  <!-- Google Translate -->
+  <div id="google_translate_element" style="display:none"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({ pageLanguage: 'pt', autoDisplay: false }, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript"
+    src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Noto+Sans:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+
+  <!-- Flash Prevention Script -->
+  <script>
+    (function () {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('modo-light-dark', savedTheme);
+      // Compact Mode
+      const isCompact = localStorage.getItem('compact') === 'true';
+      if (isCompact) document.documentElement.classList.add('compact-mode');
+    })();
+  </script>
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0ea5e9">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ["selector", '[modo-light-dark="dark"], [modo-light-dark="contrast"]'],
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#0ea5e9", // Sky-500
+            "primary-hover": "#38bdf8", // Sky-400
+            "background-dark": "#020617", // Slate-950
+            "surface-dark": "#0f172a", // Slate-900
+            "surface-border": "#1e293b", // Slate-800
+            "text-main": "#f8fafc", // Slate-50
+            "text-muted": "#94a3b8", // Slate-400
+            "success": "#10b981",
+            "danger": "#ef4444",
+            "warning": "#f59e0b",
+          },
+          fontFamily: {
+            "display": ["Space Grotesk", "sans-serif"],
+            "body": ["Noto Sans", "sans-serif"],
+          },
+          backgroundImage: {
+            'cyber-grid': "radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.05) 0%, transparent 50%), linear-gradient(0deg, transparent 24%, rgba(30, 41, 59, .3) 25%, rgba(30, 41, 59, .3) 26%, transparent 27%, transparent 74%, rgba(30, 41, 59, .3) 75%, rgba(30, 41, 59, .3) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(30, 41, 59, .3) 25%, rgba(30, 41, 59, .3) 26%, transparent 27%, transparent 74%, rgba(30, 41, 59, .3) 75%, rgba(30, 41, 59, .3) 76%, transparent 77%, transparent)",
+          },
+          backgroundSize: {
+            'cyber-grid': '100% 100%, 60px 60px, 60px 60px',
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for cyberpunk feel */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(30, 41, 59, 0.7);
+    }
+  </style>
+</head>
+
+<body
+  class="bg-[var(--bg-color)] text-[var(--text-main)] font-body antialiased selection:bg-primary selection:text-white h-screen overflow-hidden">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>

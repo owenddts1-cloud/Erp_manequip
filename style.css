@@ -1,0 +1,212 @@
+/* 1. Design System Variables */
+:root {
+  --primary: #0ea5e9;
+  --primary-hover: #0284c7;
+  --bg-color: #f8fafc;
+  --surface-color: #ffffff;
+  --border-color: #e2e8f0;
+  --text-main: rgba(15, 23, 42, 0.9);
+  --text-secondary: rgba(100, 116, 139, 0.8);
+  --accent-glow: rgba(14, 165, 233, 0.1);
+}
+
+/* 2. Automatic System Detection */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #0f172a;
+    --surface-color: #1e293b;
+    --border-color: #334155;
+    --text-main: rgba(255, 255, 255, 0.9);
+    --text-secondary: rgba(148, 163, 184, 0.8);
+    --accent-glow: rgba(14, 165, 233, 0.15);
+  }
+
+  html {
+    color-scheme: dark;
+  }
+}
+
+/* 3. Manual Override (Forced Modes) */
+/* 3. Manual Override (Forced Modes) */
+:root[modo-light-dark="light"] {
+  color-scheme: light;
+  --bg-color: #f1f5f9 !important;
+  --surface-color: #ffffff !important;
+  --border-color: #cbd5e1 !important;
+  --text-main: #0f172a !important;
+  /* Slate 900 - Dark Text on Light BG */
+  --text-secondary: #475569 !important;
+  /* Slate 600 */
+  --accent-glow: rgba(14, 165, 233, 0.1) !important;
+}
+
+:root[modo-light-dark="dark"] {
+  color-scheme: dark;
+  --bg-color: #020617 !important;
+  --surface-color: #0f172a !important;
+  --border-color: #1e293b !important;
+  --text-main: #ffffff !important;
+  /* Pure White */
+  --text-secondary: #94a3b8 !important;
+  /* Slate 400 */
+  --accent-glow: rgba(14, 165, 233, 0.15) !important;
+}
+
+/* High Contrast Mode (WCAG AAA) */
+:root[modo-light-dark="contrast"] {
+  color-scheme: dark;
+  --bg-color: #000000 !important;
+  --surface-color: #000000 !important;
+  --border-color: #ffffff !important;
+  --text-main: #ffff00 !important;
+  /* Yellow on Black */
+  --text-secondary: #00ffff !important;
+  /* Cyan on Black */
+  --primary: #ffff00 !important;
+  --primary-hover: #e0e000 !important;
+  --accent-glow: rgba(255, 255, 0, 0.2) !important;
+}
+
+html {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  color-scheme: light dark;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Loader Animation */
+.loader {
+  font-size: 1.5rem;
+  font-weight: bold;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}
+
+/* Fade In */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Compact Mode Overrides */
+html.compact-mode {
+  font-size: 14px;
+  /* Reduce base font size */
+}
+
+html.compact-mode body {
+  line-height: 1.4;
+}
+
+html.compact-mode .p-4 {
+  padding: 0.75rem !important;
+}
+
+html.compact-mode .p-6 {
+  padding: 1rem !important;
+}
+
+html.compact-mode .gap-4 {
+  gap: 0.75rem !important;
+}
+
+html.compact-mode .gap-6 {
+  gap: 1rem !important;
+}
+
+html.compact-mode th,
+html.compact-mode td {
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
+html.compact-mode .text-3xl {
+  font-size: 1.5rem !important;
+  line-height: 2rem !important;
+}
+
+/* Input Text Visibility Fix - FORCED WHITE BG / BLACK TEXT as requested */
+input,
+textarea,
+select {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  caret-color: #0ea5e9;
+  border: 1px solid #cbd5e1 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1;
+}
+
+/* Ensure text is visible on autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #000000 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Force visible text in focused inputs */
+input:focus,
+textarea:focus,
+select:focus {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2) !important;
+}
+
+/* Option text in selects - keep readable */
+option {
+  background-color: #ffffff;
+  color: #000000;
+}

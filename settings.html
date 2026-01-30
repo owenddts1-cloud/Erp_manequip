@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Configurações do Sistema - Preventiva 360</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0aa0eb", // Sky blue accent
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#020617", // Slate-950
+                        "surface-dark": "#0f172a", // Slate-900
+                        "border-dark": "#1e293b", // Slate-800
+                        "text-secondary": "#94a3b8", // Slate-400
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Space Grotesk", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: "Space Grotesk", sans-serif;
+        }
+
+        /* Custom scrollbar for professional feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .glass-card {
+            background-color: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid #1e293b;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-dark text-white min-h-screen flex flex-col antialiased selection:bg-primary selection:text-white">
+    <!-- Top Navigation -->
+    <header class="sticky top-0 z-50 w-full border-b border-border-dark bg-[#0f172a]/90 backdrop-blur-md">
+        <div class="flex h-16 items-center justify-between px-6 lg:px-10">
+            <!-- Logo Section -->
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center size-10 rounded-lg bg-primary/10 text-primary">
+                    <span class="material-symbols-outlined text-3xl">build_circle</span>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-white">Preventiva 360</h1>
+            </div>
+            <!-- Search Bar (Desktop) -->
+            <div class="hidden md:flex flex-1 max-w-md mx-8">
+                <div class="relative w-full group">
+                    <div
+                        class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-text-secondary group-focus-within:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-xl">search</span>
+                    </div>
+                    <input
+                        class="block w-full rounded-lg border border-border-dark bg-[#1e293b]/50 py-2 pl-10 pr-3 text-sm text-white placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                        placeholder="Buscar configurações, ativos ou relatórios..." type="text" />
+                </div>
+            </div>
+            <!-- Right Actions -->
+            <div class="flex items-center gap-6">
+                <!-- Nav Links -->
+                <nav class="hidden lg:flex items-center gap-6 text-sm font-medium">
+                    <a class="text-text-secondary hover:text-white transition-colors" href="#">Dashboard</a>
+                    <a class="text-text-secondary hover:text-white transition-colors" href="#">Manutenção</a>
+                    <a class="text-text-secondary hover:text-white transition-colors" href="#">Equipamentos</a>
+                </nav>
+                <!-- Icons -->
+                <div class="flex items-center gap-3 border-l border-border-dark pl-6">
+                    <button
+                        class="relative rounded-lg p-2 text-text-secondary hover:bg-white/5 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span class="absolute top-2 right-2 size-2 rounded-full bg-red-500"></span>
+                    </button>
+                    <button
+                        class="rounded-lg p-2 text-text-secondary hover:bg-white/5 hover:text-white transition-colors">
+                        <span class="material-symbols-outlined">help</span>
+                    </button>
+                    <button
+                        class="ml-2 flex items-center gap-2 rounded-full border border-border-dark p-1 pr-3 hover:bg-white/5 transition-colors">
+                        <div class="size-8 rounded-full bg-cover bg-center"
+                            data-alt="User profile picture showing a man in professional attire"
+                            style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCz70qW37wFd-J2HYTZ4IACA9Zfv52iltfNfz47TpTVKPejf9nIeYeQPARBqTJIjhjSZl9qGP3DnO43fv6w8Cp_GTiKvSmggfNZTl-EMElmTIShw8b0VA0I_d8E7xH2GJnTW8LlKTRTBlpMI2lEUX1rBnngoYiLDdekGiMaaQwW-YIspVlouVnxhSJtQBrJcnOcXHQx0joqmyTNV32KxiHJ9yP9mv4kDlBn0JNPc_gBgSEHL-1I-T5JlLclqM_Ya2iW4FbLo8zCT9CC');">
+                        </div>
+                        <span class="text-sm font-medium">Admin</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- Main Layout -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="hidden w-64 flex-col border-r border-border-dark bg-surface-dark/30 lg:flex">
+            <div class="flex flex-col gap-1 p-4">
+                <div class="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                    Configurações
+                </div>
+                <a class="flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2.5 text-primary transition-colors border border-primary/20 shadow-[0_0_15px_-3px_rgba(10,160,235,0.2)]"
+                    href="#">
+                    <span class="material-symbols-outlined fill-1">tune</span>
+                    <span class="font-medium">Geral</span>
+                </a>
+                <a class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-text-secondary hover:bg-white/5 hover:text-white transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">notifications_active</span>
+                    <span class="font-medium">Notificações</span>
+                </a>
+                <a class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-text-secondary hover:bg-white/5 hover:text-white transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">shield</span>
+                    <span class="font-medium">Segurança</span>
+                </a>
+                <a class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-text-secondary hover:bg-white/5 hover:text-white transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">hub</span>
+                    <span class="font-medium">Integrações</span>
+                </a>
+                <a class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-text-secondary hover:bg-white/5 hover:text-white transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">group</span>
+                    <span class="font-medium">Usuários &amp; Permissões</span>
+                </a>
+                <a class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-text-secondary hover:bg-white/5 hover:text-white transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined">database</span>
+                    <span class="font-medium">Backup de Dados</span>
+                </a>
+            </div>
+            <div class="mt-auto border-t border-border-dark p-4">
+                <div class="rounded-xl bg-gradient-to-br from-primary/20 to-transparent p-4 border border-primary/10">
+                    <div class="mb-2 flex items-center gap-2 text-primary">
+                        <span class="material-symbols-outlined">rocket_launch</span>
+                        <span class="text-sm font-bold">Plano Enterprise</span>
+                    </div>
+                    <p class="text-xs text-text-secondary mb-3">Sua licença é válida até Dez 2024.</p>
+                    <button
+                        class="w-full rounded bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary/90">Gerenciar
+                        Assinatura</button>
+                </div>
+            </div>
+        </aside>
+        <!-- Main Content Scrollable Area -->
+        <main
+            class="flex-1 overflow-y-auto bg-[url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&amp;w=2070&amp;auto=format&amp;fit=crop')] bg-cover bg-fixed bg-no-repeat"
+            data-alt="Abstract dark technological background with subtle grid patterns">
+            <!-- Overlay to darken background image -->
+            <div class="min-h-full w-full bg-background-dark/95 p-6 lg:p-10 backdrop-blur-sm">
+                <div class="mx-auto max-w-5xl space-y-8">
+                    <!-- Breadcrumbs -->
+                    <nav class="flex items-center text-sm text-text-secondary">
+                        <a class="hover:text-white" href="#">Home</a>
+                        <span class="mx-2">/</span>
+                        <a class="hover:text-white" href="#">Configurações</a>
+                        <span class="mx-2">/</span>
+                        <span class="text-white font-medium">Geral</span>
+                    </nav>
+                    <!-- Page Heading -->
+                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h2 class="text-3xl font-bold tracking-tight text-white">Configurações do Sistema</h2>
+                            <p class="mt-1 text-text-secondary">Gerencie as preferências regionais, interface e
+                                parâmetros operacionais.</p>
+                        </div>
+                        <div class="flex gap-3 mt-4 md:mt-0">
+                            <button
+                                class="rounded-lg border border-border-dark bg-surface-dark px-4 py-2 text-sm font-medium text-white hover:bg-white/5 transition-colors">Restaurar
+                                Padrão</button>
+                            <button
+                                class="rounded-lg bg-primary px-6 py-2 text-sm font-bold text-white shadow-[0_0_20px_-5px_rgba(10,160,235,0.5)] hover:bg-primary/90 transition-all">Salvar
+                                Alterações</button>
+                        </div>
+                    </div>
+                    <!-- Content Grid -->
+                    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        <!-- Card: Regional Preferences -->
+                        <div class="glass-card rounded-xl p-6 col-span-1 lg:col-span-2">
+                            <div class="mb-6 flex items-center gap-3 border-b border-border-dark pb-4">
+                                <div class="rounded-lg bg-primary/10 p-2 text-primary">
+                                    <span class="material-symbols-outlined">public</span>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold leading-tight text-white">Preferências Regionais</h3>
+                                    <p class="text-sm text-text-secondary">Defina o idioma, fuso horário e formatos de
+                                        data.</p>
+                                </div>
+                            </div>
+                            <div class="grid gap-6 md:grid-cols-2">
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-text-secondary">Idioma do Sistema</label>
+                                    <div class="relative">
+                                        <select
+                                            class="w-full appearance-none rounded-lg border border-border-dark bg-surface-dark px-4 py-2.5 text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                                            <option>Português (Brasil)</option>
+                                            <option>English (United States)</option>
+                                            <option>Español (América Latina)</option>
+                                        </select>
+                                        <div
+                                            class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                                            <span class="material-symbols-outlined text-xl">expand_more</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-text-secondary">Fuso Horário</label>
+                                    <div class="relative">
+                                        <select
+                                            class="w-full appearance-none rounded-lg border border-border-dark bg-surface-dark px-4 py-2.5 text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                                            <option>(GMT-03:00) Brasília</option>
+                                            <option>(GMT-04:00) Manaus</option>
+                                            <option>(GMT+00:00) UTC</option>
+                                        </select>
+                                        <div
+                                            class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                                            <span class="material-symbols-outlined text-xl">expand_more</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-text-secondary">Formato de Data</label>
+                                    <div class="relative">
+                                        <select
+                                            class="w-full appearance-none rounded-lg border border-border-dark bg-surface-dark px-4 py-2.5 text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                                            <option>DD/MM/AAAA (31/12/2024)</option>
+                                            <option>MM/DD/AAAA (12/31/2024)</option>
+                                            <option>AAAA-MM-DD (2024-12-31)</option>
+                                        </select>
+                                        <div
+                                            class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                                            <span class="material-symbols-outlined text-xl">expand_more</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-text-secondary">Moeda Padrão</label>
+                                    <div class="relative">
+                                        <select
+                                            class="w-full appearance-none rounded-lg border border-border-dark bg-surface-dark px-4 py-2.5 text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                                            <option>BRL (R$)</option>
+                                            <option>USD ($)</option>
+                                            <option>EUR (€)</option>
+                                        </select>
+                                        <div
+                                            class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                                            <span class="material-symbols-outlined text-xl">expand_more</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card: Interface Settings -->
+                        <div class="glass-card rounded-xl p-6">
+                            <div class="mb-6 flex items-center gap-3 border-b border-border-dark pb-4">
+                                <div class="rounded-lg bg-primary/10 p-2 text-primary">
+                                    <span class="material-symbols-outlined">palette</span>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold leading-tight text-white">Interface</h3>
+                                    <p class="text-sm text-text-secondary">Personalize a aparência do sistema.</p>
+                                </div>
+                            </div>
+                            <div class="space-y-6">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-white">Tema Escuro</span>
+                                        <span class="text-sm text-text-secondary">Otimizado para ambientes
+                                            industriais.</span>
+                                    </div>
+                                    <!-- Toggle Switch -->
+                                    <label class="relative inline-flex cursor-pointer items-center">
+                                        <input checked="" class="peer sr-only" disabled="" type="checkbox" value="" />
+                                        <div
+                                            class="peer h-6 w-11 rounded-full bg-border-dark after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white opacity-50 cursor-not-allowed">
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-white">Modo Compacto</span>
+                                        <span class="text-sm text-text-secondary">Aumentar densidade de dados nas
+                                            tabelas.</span>
+                                    </div>
+                                    <label class="relative inline-flex cursor-pointer items-center">
+                                        <input class="peer sr-only" type="checkbox" value="" />
+                                        <div
+                                            class="peer h-6 w-11 rounded-full bg-border-dark after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50">
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-white">Animações Reduzidas</span>
+                                        <span class="text-sm text-text-secondary">Melhora performance em dispositivos
+                                            antigos.</span>
+                                    </div>
+                                    <label class="relative inline-flex cursor-pointer items-center">
+                                        <input class="peer sr-only" type="checkbox" value="" />
+                                        <div
+                                            class="peer h-6 w-11 rounded-full bg-border-dark after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50">
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card: Operational Parameters -->
+                        <div class="glass-card rounded-xl p-6">
+                            <div class="mb-6 flex items-center gap-3 border-b border-border-dark pb-4">
+                                <div class="rounded-lg bg-primary/10 p-2 text-primary">
+                                    <span class="material-symbols-outlined">settings_suggest</span>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold leading-tight text-white">Parâmetros Operacionais</h3>
+                                    <p class="text-sm text-text-secondary">Configurações de automação e alertas.</p>
+                                </div>
+                            </div>
+                            <div class="space-y-6">
+                                <div class="space-y-3">
+                                    <label class="block text-sm font-medium text-white">Tempo para Auto-logout
+                                        (minutos)</label>
+                                    <div class="flex items-center gap-4">
+                                        <input
+                                            class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-border-dark accent-primary"
+                                            max="60" min="5" type="range" value="15" />
+                                        <span
+                                            class="w-12 rounded border border-border-dark bg-surface-dark px-2 py-1 text-center text-sm font-medium text-white">15m</span>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-medium text-white">Limite de Alerta de Manutenção
+                                        (Dias)</label>
+                                    <div
+                                        class="flex rounded-lg border border-border-dark bg-surface-dark focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+                                        <input
+                                            class="w-full bg-transparent px-4 py-2.5 text-white outline-none placeholder:text-text-secondary"
+                                            placeholder="Ex: 7" type="number" value="7" />
+                                        <div
+                                            class="flex items-center bg-border-dark/50 px-3 text-sm text-text-secondary border-l border-border-dark">
+                                            Dias antes
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-text-secondary">O sistema enviará alertas quando a manutenção
+                                        preventiva estiver próxima do vencimento.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card: Maintenance Categories -->
+                        <div class="glass-card rounded-xl p-6 col-span-1 lg:col-span-2">
+                            <div class="mb-6 flex items-center justify-between border-b border-border-dark pb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="rounded-lg bg-primary/10 p-2 text-primary">
+                                        <span class="material-symbols-outlined">category</span>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-lg font-bold leading-tight text-white">Categorias de Manutenção
+                                        </h3>
+                                        <p class="text-sm text-text-secondary">Gerencie os tipos de serviços
+                                            disponíveis.</p>
+                                    </div>
+                                </div>
+                                <button
+                                    class="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition-colors">
+                                    <span class="material-symbols-outlined text-sm">add</span>
+                                    Nova Categoria
+                                </button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-surface-dark text-xs uppercase text-text-secondary">
+                                        <tr>
+                                            <th class="px-4 py-3 font-medium rounded-l-lg">Nome</th>
+                                            <th class="px-4 py-3 font-medium">Código</th>
+                                            <th class="px-4 py-3 font-medium">Prioridade Padrão</th>
+                                            <th class="px-4 py-3 font-medium text-right rounded-r-lg">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-border-dark">
+                                        <tr class="group hover:bg-white/5 transition-colors">
+                                            <td class="px-4 py-3 font-medium text-white">Preventiva Elétrica</td>
+                                            <td class="px-4 py-3 text-text-secondary">ELEC-PREV</td>
+                                            <td class="px-4 py-3">
+                                                <span
+                                                    class="inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500 ring-1 ring-inset ring-red-500/20">Alta</span>
+                                            </td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button class="text-text-secondary hover:text-white"><span
+                                                        class="material-symbols-outlined text-lg">edit</span></button>
+                                            </td>
+                                        </tr>
+                                        <tr class="group hover:bg-white/5 transition-colors">
+                                            <td class="px-4 py-3 font-medium text-white">Preventiva Mecânica</td>
+                                            <td class="px-4 py-3 text-text-secondary">MECH-PREV</td>
+                                            <td class="px-4 py-3">
+                                                <span
+                                                    class="inline-flex items-center rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-500/20">Média</span>
+                                            </td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button class="text-text-secondary hover:text-white"><span
+                                                        class="material-symbols-outlined text-lg">edit</span></button>
+                                            </td>
+                                        </tr>
+                                        <tr class="group hover:bg-white/5 transition-colors">
+                                            <td class="px-4 py-3 font-medium text-white">Inspeção de Rotina</td>
+                                            <td class="px-4 py-3 text-text-secondary">ROUT-INSP</td>
+                                            <td class="px-4 py-3">
+                                                <span
+                                                    class="inline-flex items-center rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500 ring-1 ring-inset ring-green-500/20">Baixa</span>
+                                            </td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button class="text-text-secondary hover:text-white"><span
+                                                        class="material-symbols-outlined text-lg">edit</span></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="mt-12 border-t border-border-dark pt-6 text-center text-sm text-text-secondary">
+                    <p>© 2024 Preventiva 360 Systems. Versão 2.4.0 (Build 9842)</p>
+                </footer>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>
