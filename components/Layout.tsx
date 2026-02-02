@@ -29,7 +29,7 @@ const Layout: React.FC = () => {
       </div>
 
       {/* Sidebar */}
-      <aside className={`fixed lg:relative inset-y-0 left-0 w-72 flex-col border-r border-[var(--border-color)] bg-[var(--surface-color)] backdrop-blur-sm z-40 transition-all duration-300 lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:flex`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 w-72 flex flex-col border-r border-[var(--border-color)] bg-[var(--surface-color)] backdrop-blur-sm z-40 transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="flex h-16 items-center px-6 border-b border-[var(--border-color)] justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-blue-700 shadow-lg shadow-primary/20">

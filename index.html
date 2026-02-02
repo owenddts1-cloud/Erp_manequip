@@ -50,8 +50,10 @@
             "background-dark": "#020617",
             "surface-dark": "#0f172a",
             "surface-border": "#1e293b",
+            "border-dark": "#1e293b",
             "text-main": "#f8fafc",
             "text-muted": "#94a3b8",
+            "text-secondary": "#94a3b8",
             "success": "#10b981",
             "danger": "#ef4444",
             "warning": "#f59e0b",
@@ -71,6 +73,33 @@
     }
   </script>
   <style>
+    /* CSS Variables for Theme */
+    :root {
+      --bg-color: #020617;
+      --surface-color: #0f172a;
+      --border-color: #1e293b;
+      --text-main: #f8fafc;
+      --text-secondary: #94a3b8;
+      --primary: #0ea5e9;
+      --primary-hover: #38bdf8;
+    }
+
+    [modo-light-dark="light"] {
+      --bg-color: #f8fafc;
+      --surface-color: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-secondary: #64748b;
+    }
+
+    [modo-light-dark="contrast"] {
+      --bg-color: #000000;
+      --surface-color: #0a0a0a;
+      --border-color: #27272a;
+      --text-main: #fafafa;
+      --text-secondary: #a1a1aa;
+    }
+
     /* Custom scrollbar for cyberpunk feel */
     ::-webkit-scrollbar {
       width: 8px;
@@ -96,11 +125,17 @@
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(30, 41, 59, 0.7);
     }
+
+    /* Ensure body fills screen */
+    body {
+      min-height: 100vh;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+    }
   </style>
 </head>
 
-<body
-  class="bg-[var(--bg-color)] text-[var(--text-main)] font-body antialiased selection:bg-primary selection:text-white h-screen overflow-hidden">
+<body class="font-body antialiased selection:bg-primary selection:text-white h-screen overflow-hidden">
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
