@@ -22,14 +22,14 @@ const Layout: React.FC = () => {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[var(--bg-color)] text-[var(--text-main)] transition-colors duration-300">
       {/* Mobile Toggle */}
-      <div className="lg:hidden absolute top-4 left-4 z-50">
+      <div className="md:hidden absolute top-4 left-4 z-50">
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 rounded-lg bg-surface-dark border border-border-dark text-white shadow-lg">
           <span className="material-symbols-outlined">{mobileMenuOpen ? 'close' : 'menu'}</span>
         </button>
       </div>
 
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 w-72 flex flex-col border-r border-[var(--border-color)] bg-[var(--surface-color)] backdrop-blur-sm z-40 transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed md:fixed inset-y-0 left-0 w-72 flex flex-col border-r border-[var(--border-color)] bg-[var(--surface-color)] backdrop-blur-sm z-40 transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="flex h-16 items-center px-6 border-b border-[var(--border-color)] justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-blue-700 shadow-lg shadow-primary/20">
@@ -118,9 +118,9 @@ const Layout: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+      <main className="flex-1 flex flex-col h-full overflow-hidden relative md:ml-72 transition-all duration-300">
         {/* Mobile Header Overlay */}
-        {mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setMobileMenuOpen(false)}></div>}
+        {mobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setMobileMenuOpen(false)}></div>}
         <Outlet />
       </main>
     </div>

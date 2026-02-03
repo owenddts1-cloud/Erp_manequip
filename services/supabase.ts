@@ -1,9 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // NEW SUPABASE PROJECT - MANEQUIP
-// Hardcoded Values for Maximum Reliability
-const SUPABASE_URL = 'https://oaexnkhyyncptzfvkqyo.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hZXhua2h5eW5jcHR6ZnZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczNjg0ODcsImV4cCI6MjA4Mjk0NDQ4N30.tS9BvFVQZpGMtoahMkpdfb4Q4F8uuAnFM3lnOYqesuA';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Create Supabase client with session persistence ENABLED
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -19,14 +18,18 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             const headers = new Headers(options.headers);
             headers.set('x-client-info', 'preventiva360-web');
 
-            try {
-                return await fetch(url, { ...options, headers });
-            } catch (error) {
-                console.warn('🔄 Supabase fetch failed, retrying...', error);
-                // Wait 1 second and retry once
-                await new Promise(r => setTimeout(r, 1000));
-                return fetch(url, { ...options, headers });
+            const MAX_RETRIES = 3;
+            for (let i = 0; i < MAX_RETRIES; i++) {
+                try {
+                    return await fetch(url, { ...options, headers });
+                } catch (error) {
+                    console.warn(`🔄 Supabase fetch failed (attempt ${i + 1}/${MAX_RETRIES}), retrying...`, error);
+                    if (i === MAX_RETRIES - 1) throw error;
+                    // Exponential backoff: 1s, 2s, 4s
+                    await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+                }
             }
+            return fetch(url, { ...options, headers }); // Fallback (should be unreachable)
         },
     },
 });
