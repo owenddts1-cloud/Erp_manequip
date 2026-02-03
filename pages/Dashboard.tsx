@@ -502,34 +502,61 @@ const Dashboard: React.FC = () => {
 };
 
 const KPICard: React.FC<{ icon: string, title: string, value: string, sub?: string, trend: string, trendUp: boolean, color: string }> = ({ icon, title, value, sub, trend, trendUp, color }) => {
-  const getColorClass = (c: string) => {
+  const getColorStyles = (c: string) => {
     switch (c) {
-      case 'primary': return 'bg-primary/10 text-primary border-primary/20 hover:bg-primary';
-      case 'danger': return 'bg-danger/10 text-danger border-danger/20 hover:bg-danger';
-      case 'warning': return 'bg-warning/10 text-warning border-warning/20 hover:bg-warning';
-      case 'purple': return 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:bg-purple-500';
-      default: return 'bg-primary/10 text-primary border-primary/20 hover:bg-primary';
+      case 'primary': return {
+        gradient: 'from-sky-500/20 to-sky-600/5',
+        iconBg: 'bg-gradient-to-br from-sky-400 to-sky-600',
+        iconColor: 'text-white',
+        accentBorder: 'border-sky-500/30'
+      };
+      case 'danger': return {
+        gradient: 'from-red-500/20 to-red-600/5',
+        iconBg: 'bg-gradient-to-br from-amber-400 to-amber-600',
+        iconColor: 'text-white',
+        accentBorder: 'border-amber-500/30'
+      };
+      case 'warning': return {
+        gradient: 'from-emerald-500/20 to-emerald-600/5',
+        iconBg: 'bg-gradient-to-br from-emerald-400 to-emerald-600',
+        iconColor: 'text-white',
+        accentBorder: 'border-emerald-500/30'
+      };
+      case 'purple': return {
+        gradient: 'from-cyan-500/20 to-cyan-600/5',
+        iconBg: 'bg-gradient-to-br from-cyan-400 to-cyan-600',
+        iconColor: 'text-white',
+        accentBorder: 'border-cyan-500/30'
+      };
+      default: return {
+        gradient: 'from-sky-500/20 to-sky-600/5',
+        iconBg: 'bg-gradient-to-br from-sky-400 to-sky-600',
+        iconColor: 'text-white',
+        accentBorder: 'border-sky-500/30'
+      };
     }
   };
 
-  const trendColor = trendUp ? 'text-success bg-success/10 border-success/20' : 'text-danger bg-danger/10 border-danger/20';
-  const isPositive = color === 'danger' ? !trendUp : trendUp;
-  const finalTrendColor = isPositive ? 'text-success bg-success/10 border-success/20' : 'text-danger bg-danger/10 border-danger/20';
-  const trendIcon = trend.startsWith('+') ? 'trending_up' : 'trending_down';
+  const styles = getColorStyles(color);
+  const trendIcon = trend.startsWith('+') || trendUp ? 'trending_up' : (trend.includes('%') && !trend.startsWith('+') && !trendUp ? 'trending_down' : 'check_circle');
+  const trendBadgeStyle = trendUp ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-500/20 text-slate-400 border-slate-500/30';
 
   return (
-    <div className="p-5 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 group border border-[var(--border-color)] bg-[var(--surface-color)]">
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-2 rounded-lg border transition-colors group-hover:bg-primary group-hover:text-white ${getColorClass(color)}`}>
-          <span className="material-symbols-outlined">{icon}</span>
+    <div className={`p-5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group border ${styles.accentBorder} bg-gradient-to-br ${styles.gradient} backdrop-blur-sm relative overflow-hidden`}>
+      {/* Glow effect */}
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all duration-500"></div>
+
+      <div className="flex justify-between items-start mb-4 relative">
+        <div className={`p-2.5 rounded-xl shadow-lg ${styles.iconBg}`}>
+          <span className={`material-symbols-outlined ${styles.iconColor}`}>{icon}</span>
         </div>
-        <span className={`text-xs font-bold px-2 py-0.5 rounded border flex items-center gap-1 ${finalTrendColor}`}>
+        <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1 ${trendBadgeStyle}`}>
           <span className="material-symbols-outlined text-[14px]">{trendIcon}</span> {trend}
         </span>
       </div>
-      <h3 className="text-[var(--text-secondary)] text-sm font-medium font-display">{title}</h3>
-      <p className="text-3xl font-bold text-[var(--text-main)] mt-1 font-display tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-[var(--text-secondary)] mt-1">{sub}</p>}
+      <h3 className="text-slate-400 text-sm font-medium font-display">{title}</h3>
+      <p className="text-3xl font-bold text-white mt-1 font-display tracking-tight">{value}</p>
+      {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
     </div>
   );
 };
