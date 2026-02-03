@@ -54,7 +54,8 @@ const Dashboard: React.FC = () => {
         .limit(3);
 
       workOrders?.forEach(wo => {
-        const ativoNome = Array.isArray(wo.ativos) ? wo.ativos[0]?.nome : wo.ativos?.nome;
+        const ativos = wo.ativos as { nome?: string } | { nome?: string }[] | null;
+        const ativoNome = Array.isArray(ativos) ? ativos[0]?.nome : ativos?.nome;
         results.push({
           type: 'chamado',
           icon: wo.tipo === 'Preventiva' ? 'calendar_month' : 'warning',
