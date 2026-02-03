@@ -168,45 +168,47 @@ html.compact-mode .text-3xl {
   line-height: 2rem !important;
 }
 
-/* Input Text Visibility Fix - FORCED WHITE BG / BLACK TEXT as requested */
+/* Input Styling - Dark Theme Compatible */
 input,
 textarea,
 select {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  caret-color: #0ea5e9;
-  border: 1px solid #cbd5e1 !important;
+  background-color: var(--surface-color) !important;
+  color: var(--text-main) !important;
+  caret-color: var(--primary);
+  border: 1px solid var(--border-color) !important;
+  border-radius: 0.5rem;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #94a3b8 !important;
-  opacity: 1;
+  color: var(--text-secondary) !important;
+  opacity: 0.7;
 }
 
-/* Ensure text is visible on autofill */
+/* Autofill styling for dark mode */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill,
 select:-webkit-autofill {
-  -webkit-text-fill-color: #000000 !important;
-  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  -webkit-text-fill-color: var(--text-main) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface-color) inset !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Force visible text in focused inputs */
+/* Focus states */
 input:focus,
 textarea:focus,
 select:focus {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  border-color: #0ea5e9 !important;
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2) !important;
+  background-color: var(--surface-color) !important;
+  color: var(--text-main) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow) !important;
+  outline: none;
 }
 
-/* Option text in selects - keep readable */
+/* Select options */
 option {
-  background-color: #ffffff;
-  color: #000000;
+  background-color: var(--surface-color);
+  color: var(--text-main);
 }
