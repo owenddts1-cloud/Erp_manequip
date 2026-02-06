@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
+import Chat from './pages/Chat';
 import Assets from './pages/Assets';
 import Inventory from './pages/Inventory';
 import WorkOrders from './pages/WorkOrders';
@@ -63,6 +64,7 @@ const App: React.FC = () => {
           <Route path="/app" element={<Layout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="chat" element={<Chat />} />
             <Route path="assets" element={<Assets />} />
             <Route path="inventory" element={<Inventory />} />
             <Route path="work-orders" element={<WorkOrders />} />
