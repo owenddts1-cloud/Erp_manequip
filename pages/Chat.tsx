@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { sendMessageToAI, AIProvider, AIConfig, AVAILABLE_MODELS } from '../services/aiService';
-import { usePreferences } from '../contexts/PreferencesContext';
 
 interface Message {
   id: number;
@@ -11,26 +10,14 @@ interface Message {
 }
 
 const Chat: React.FC = () => {
-  const { userProfile } = usePreferences();
-  const [hasInitialized, setHasInitialized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-
-  useEffect(() => {
-    if (userProfile && !hasInitialized) {
-      const now = new Date();
-      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      setMessages([
-        {
-          id: 1,
-          sender: 'ai',
-          text: `Olá, ${userProfile.name}. Sou o Assistente Preventiva 360. Como posso ajudar com a manutenção hoje?`,
-          time: timeString
-        }
-      ]);
-      setHasInitialized(true);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 1,
+      sender: 'ai',
+      text: 'Olá, Eng. Carlos. Sou o Assistente Preventiva 360. Como posso ajudar com a manutenção hoje?',
+      time: '09:12'
     }
-  }, [userProfile, hasInitialized]);
+  ]);
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiConfig, setAiConfig] = useState<AIConfig>({ provider: 'openai', model: 'gpt-4o-mini' });
@@ -88,7 +75,7 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background-dark relative">
+    <div className="flex flex-col h-full bg-transparent relative">
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border-dark bg-background-dark/80 px-6 backdrop-blur-md z-10 sticky top-0">
         <div className="flex flex-col">
           <h2 className="text-white text-lg font-bold tracking-tight flex items-center gap-2">

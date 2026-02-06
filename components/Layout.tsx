@@ -20,7 +20,9 @@ const Layout: React.FC = () => {
     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 border border-transparent';
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background-dark bg-cyber-grid text-text-main transition-colors duration-300">
+    <div className="flex h-screen w-full overflow-hidden bg-[#020617] text-[var(--text-main)] transition-colors duration-300 relative">
+      {/* Global Background Grid */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none z-0"></div>
       {/* Mobile Toggle */}
       <div className="md:hidden absolute top-4 left-4 z-50">
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 rounded-lg bg-surface-dark border border-border-dark text-white shadow-lg">
@@ -29,8 +31,8 @@ const Layout: React.FC = () => {
       </div>
 
       {/* Sidebar */}
-      <aside className={`fixed md:fixed inset-y-0 left-0 w-72 flex flex-col border-r border-surface-border bg-surface-dark/95 backdrop-blur-xl z-40 transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-        <div className="flex h-16 items-center px-6 border-b border-surface-border justify-between">
+      <aside className={`fixed md:fixed inset-y-0 left-0 w-72 flex flex-col border-r border-[var(--border-color)] bg-[var(--surface-color)] backdrop-blur-sm z-40 transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+        <div className="flex h-16 items-center px-6 border-b border-[var(--border-color)] justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-blue-700 shadow-lg shadow-primary/20">
               <span className="material-symbols-outlined text-white text-[20px]">precision_manufacturing</span>
@@ -48,9 +50,9 @@ const Layout: React.FC = () => {
         <div className="flex flex-col justify-between h-full p-4 overflow-y-auto">
           <div className="flex flex-col gap-6">
             {/* User Profile Mini */}
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-background-dark border border-surface-border">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg-color)] border border-[var(--border-color)]">
               <div
-                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20 bg-surface-dark overflow-hidden flex items-center justify-center relative"
+                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20 bg-[var(--surface-color)] overflow-hidden flex items-center justify-center relative"
                 style={{ backgroundImage: userProfile?.avatar_url ? `url(${userProfile.avatar_url})` : 'none' }}
               >
                 {!userProfile?.avatar_url && (
@@ -96,7 +98,7 @@ const Layout: React.FC = () => {
             </nav>
           </div>
 
-          <div className="flex flex-col gap-2 border-t border-surface-border pt-4">
+          <div className="flex flex-col gap-2 border-t border-border-dark pt-4">
             <Link to="/app/users" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive('users')}`}>
               <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
                 {isAdmin ? 'group' : isGestor ? 'how_to_reg' : 'person_edit'}

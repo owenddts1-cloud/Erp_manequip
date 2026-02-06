@@ -99,8 +99,7 @@ const Users: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-10 relative bg-background-dark">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-20 pointer-events-none z-0"></div>
+    <div className="flex-1 overflow-y-auto p-4 md:p-10 relative bg-transparent">
 
       <div className="relative z-10 mx-auto max-w-5xl flex flex-col gap-8">
         <div className="flex flex-col gap-2 text-center mb-4">

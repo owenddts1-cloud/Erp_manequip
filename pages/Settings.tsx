@@ -226,7 +226,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:px-8 md:py-8 overflow-y-auto max-w-4xl mx-auto w-full gap-8 animate-in fade-in duration-500 bg-[var(--bg-color)]">
+    <div className="flex-1 flex flex-col p-4 md:px-8 md:py-8 overflow-y-auto max-w-4xl mx-auto w-full gap-8 animate-in fade-in duration-500 bg-transparent">
 
       {/* Header */}
       <div>

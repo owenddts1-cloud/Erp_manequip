@@ -37,9 +37,9 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background-dark bg-cyber-grid font-display text-slate-100 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-background-dark font-display text-slate-100 flex flex-col relative overflow-hidden">
       {/* Background Effects */}
-
+      <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none"></div>
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[128px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[128px] pointer-events-none"></div>
 

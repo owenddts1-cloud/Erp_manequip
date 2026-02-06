@@ -168,7 +168,7 @@ const Inventory: React.FC = () => {
   const locations = Array.from(new Set(items.map(i => i.localizacao).filter(Boolean)));
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:px-8 md:py-8 max-w-[1600px] mx-auto w-full gap-6 overflow-y-auto bg-[var(--bg-color)]">
+    <div className="flex-1 flex flex-col p-4 md:px-8 md:py-8 max-w-[1600px] mx-auto w-full gap-6 overflow-y-auto bg-transparent">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] font-medium mb-1">

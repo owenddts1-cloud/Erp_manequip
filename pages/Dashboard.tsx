@@ -270,7 +270,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-[var(--bg-color)] transition-colors duration-300">
+    <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-transparent transition-colors duration-300">
       {/* ... Header ... */}
       <header className="h-16 border-b border-[var(--border-color)] sticky top-0 z-10 flex items-center justify-between px-8 bg-[var(--surface-color)]/90 backdrop-blur-md">
         {/* Search Bar - Keeping Unchanged */}

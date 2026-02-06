@@ -123,7 +123,7 @@ const Reports: React.FC = () => {
     .slice(0, 4);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-background-dark text-white print:bg-white print:text-black print:p-0">
+    <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-transparent text-white print:bg-white print:text-black print:p-0">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}

@@ -266,7 +266,7 @@ const WorkOrders: React.FC = () => {
   };
 
   return (
-    <div className="relative z-10 flex-1 overflow-y-auto p-8 scroll-smooth bg-[var(--bg-color)]">
+    <div className="relative z-10 flex-1 overflow-y-auto p-8 scroll-smooth bg-transparent">
       {/* ... stats row ... */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <WOCard icon="assignment" title="Abertos" value={stats.open.toString()} trend="--" trendColor="text-emerald-500" valueColor="text-primary" />

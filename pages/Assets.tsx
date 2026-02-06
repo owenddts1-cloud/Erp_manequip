@@ -213,7 +213,7 @@ const Assets: React.FC = () => {
   const critical = allAssets.filter(a => a.criticidade && a.criticidade.toLowerCase().includes('alta')).length;
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 lg:p-10 relative bg-[var(--bg-color)]">
+    <div className="flex-1 overflow-y-auto p-6 lg:p-10 relative bg-transparent">
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none z-0"></div>
       <div className="mx-auto max-w-7xl relative z-10 flex flex-col gap-8 h-full">
 

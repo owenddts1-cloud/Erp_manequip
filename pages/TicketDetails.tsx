@@ -71,7 +71,7 @@ const TicketDetails: React.FC = () => {
   const displayId = ticket.display_id || ticket.id.slice(0, 6).toUpperCase();
 
   return (
-    <div className="flex-1 px-4 md:px-8 lg:px-12 py-8 max-w-[1600px] mx-auto w-full overflow-y-auto bg-background-dark text-white">
+    <div className="flex-1 px-4 md:px-8 lg:px-12 py-8 max-w-[1600px] mx-auto w-full overflow-y-auto bg-transparent text-white">
       {/* Breadcrumb */}
       <nav className="flex mb-6 text-sm font-medium text-slate-500">
         <button onClick={() => navigate('/app/dashboard')} className="hover:text-primary transition-colors">Dashboard</button>
