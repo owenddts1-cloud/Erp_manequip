@@ -12,16 +12,16 @@ export default {
     theme: {
         extend: {
             colors: {
-                "primary": "#0ea5e9",
-                "primary-hover": "#38bdf8",
-                "background-dark": "#020617",
-                "surface-dark": "#0f172a",
-                "surface-border": "#1e293b",
-                "text-main": "#f8fafc",
-                "text-muted": "#94a3b8",
-                "success": "#10b981",
-                "danger": "#ef4444",
-                "warning": "#f59e0b",
+                "primary": "#0ea5e9", // Sky 500
+                "primary-hover": "#0284c7", // Sky 600
+                "background-dark": "#020617", // Slate 950
+                "surface-dark": "#0f172a", // Slate 900
+                "surface-border": "#1e293b", // Slate 800
+                "text-main": "#f8fafc", // Slate 50
+                "text-muted": "#94a3b8", // Slate 400
+                "success": "#10b981", // Emerald 500
+                "danger": "#ef4444", // Red 500
+                "warning": "#f59e0b", // Amber 500
             },
             fontFamily: {
                 "display": ["Space Grotesk", "sans-serif"],

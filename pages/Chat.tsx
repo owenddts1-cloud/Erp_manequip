@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { sendMessageToAI, AIProvider, AIConfig, AVAILABLE_MODELS } from '../services/aiService';
+import { usePreferences } from '../contexts/PreferencesContext';
 
 interface Message {
   id: number;
@@ -10,14 +11,26 @@ interface Message {
 }
 
 const Chat: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      sender: 'ai',
-      text: 'Olá, Eng. Carlos. Sou o Assistente Preventiva 360. Como posso ajudar com a manutenção hoje?',
-      time: '09:12'
+  const { userProfile } = usePreferences();
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  useEffect(() => {
+    if (userProfile && !hasInitialized) {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      setMessages([
+        {
+          id: 1,
+          sender: 'ai',
+          text: `Olá, ${userProfile.name}. Sou o Assistente Preventiva 360. Como posso ajudar com a manutenção hoje?`,
+          time: timeString
+        }
+      ]);
+      setHasInitialized(true);
     }
-  ]);
+  }, [userProfile, hasInitialized]);
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [aiConfig, setAiConfig] = useState<AIConfig>({ provider: 'openai', model: 'gpt-4o-mini' });
