@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+import { validateEmail, validatePassword, validateSafeText, sanitizeInput } from '../services/validation';
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
@@ -47,16 +48,41 @@ const Register: React.FC = () => {
             return;
         }
 
+        // --- Security: Validate and sanitize all inputs ---
+        const nameValidation = validateSafeText(formData.nome, 'Nome');
+        if (!nameValidation.valid) {
+            setError(nameValidation.error || 'Nome inválido');
+            return;
+        }
+
+        const emailValidation = validateEmail(formData.email);
+        if (!emailValidation.valid) {
+            setError(emailValidation.error || 'Email inválido');
+            return;
+        }
+
+        const passwordValidation = validatePassword(formData.senha);
+        if (!passwordValidation.valid) {
+            setError(passwordValidation.error || 'Senha não atende os requisitos');
+            return;
+        }
+
+        if (!formData.cargo) {
+            setError('Selecione seu cargo.');
+            return;
+        }
+
         try {
             setLoading(true);
-            const cleanEmail = formData.email.replace(/\s/g, '').toLowerCase(); // Remove all spaces and lowercase
+            const cleanEmail = sanitizeInput(formData.email, 320).toLowerCase();
+            const cleanName = sanitizeInput(formData.nome, 255);
 
             const { data, error: authError } = await supabase.auth.signUp({
                 email: cleanEmail,
                 password: formData.senha,
                 options: {
                     data: {
-                        full_name: formData.nome,
+                        full_name: cleanName,
                         job_title: formData.cargo,
                     }
                 }

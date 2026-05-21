@@ -111,7 +111,13 @@ const Layout: React.FC = () => {
               <span className="material-symbols-outlined group-hover:scale-110 transition-transform">settings</span>
               <span className="font-medium font-display text-sm">{t('nav_settings')}</span>
             </Link>
-            <button onClick={() => navigate('/')} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors group mt-2">
+            <button onClick={async () => {
+              // --- Security: Proper sign out with full cleanup ---
+              await supabase.auth.signOut();
+              localStorage.removeItem('manequip-auth');
+              sessionStorage.clear();
+              navigate('/');
+            }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-text-secondary hover:text-slate-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors group mt-2">
               <span className="material-symbols-outlined">logout</span>
               <span className="font-medium font-display text-sm">{t('nav_logout')}</span>
             </button>

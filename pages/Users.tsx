@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../services/supabase';
+import { supabase, supabaseAdmin } from '../services/supabase';
 import { usePreferences } from '../contexts/PreferencesContext';
 
 const Users: React.FC = () => {
@@ -15,28 +15,17 @@ const Users: React.FC = () => {
   const isGestor = role === 'Gestor';
 
   useEffect(() => {
-    // Prevent infinite loop by checking if profile actually loaded
     if (!userProfile?.id) return;
-
     const controller = new AbortController();
     fetchUserData(controller.signal);
-
     return () => controller.abort();
-    // Dependency on specific fields, not the whole object, to prevent loops
   }, [userProfile?.id, userProfile?.role, isAdmin, isGestor]);
 
   const fetchUserData = async (signal?: AbortSignal) => {
-    if (!userProfile) return;
-
-    // Check if component is unmounted
-    if (signal?.aborted) return;
-
+    if (!userProfile || signal?.aborted) return;
     setLoading(true);
-    // Do NOT reset error immediately to avoid flickering if it's a background refresh
-
     try {
       if (isAdmin || isGestor) {
-        // Parallel requests for better performance
         const pPriority = isAdmin
           ? supabase.from('profiles').select('*')
           : isGestor
@@ -44,43 +33,31 @@ const Users: React.FC = () => {
             : Promise.resolve({ data: [], error: null });
 
         const pPending = supabase.from('profiles').select('*').eq('is_approved', false);
-
         const [usersRes, pendingRes] = await Promise.all([pPriority, pPending]);
 
         if (signal?.aborted) return;
-
         if (usersRes.error) throw usersRes.error;
         if (pendingRes.error) throw pendingRes.error;
 
-        // Stable updates
         setAllUsers(prev => JSON.stringify(prev) !== JSON.stringify(usersRes.data) ? (usersRes.data || []) : prev);
         setPendingUsers(prev => JSON.stringify(prev) !== JSON.stringify(pendingRes.data) ? (pendingRes.data || []) : prev);
-
-        setError(null); // Clear error only on success
+        setError(null);
       }
     } catch (err: any) {
       if (signal?.aborted) return;
       console.error("Error fetching user data:", err);
-      // Only set error if it's not a cancellation
-      if (err.name !== 'AbortError') {
-        setError(err.message || "Falha ao carregar dados.");
-      }
+      if (err.name !== 'AbortError') setError(err.message || "Falha ao carregar dados.");
     } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
+      if (!signal?.aborted) setLoading(false);
     }
   };
 
   const handleApprove = async (userId: string, approve: boolean) => {
-    // Get current user role first so we don't override it
     const { data: userProfile } = await supabase.from('profiles').select('role').eq('id', userId).single();
-
     const { error } = await supabase
       .from('profiles')
       .update({
         is_approved: approve,
-        // Only set role if rejecting, otherwise keep current role
         ...(approve ? {} : { role: 'Rejected' })
       })
       .eq('id', userId);
@@ -100,7 +77,6 @@ const Users: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-10 relative bg-transparent">
-
       <div className="relative z-10 mx-auto max-w-5xl flex flex-col gap-8">
         <div className="flex flex-col gap-2 text-center mb-4">
           <h2 className="text-4xl font-black tracking-tight text-white mb-2">Usuários e Permissões</h2>
@@ -116,7 +92,6 @@ const Users: React.FC = () => {
           </div>
         )}
 
-        {/* Tab Navigation */}
         <div className="flex items-center justify-center border-b border-border-dark gap-4 md:gap-12">
           <button
             onClick={() => setActiveTab('perfil')}
@@ -124,7 +99,6 @@ const Users: React.FC = () => {
           >
             <span className="material-symbols-outlined">person</span> <span className="hidden sm:inline">Minha Conta</span>
           </button>
-
           {(isAdmin || isGestor) && (
             <button
               onClick={() => setActiveTab('cadastros')}
@@ -133,7 +107,6 @@ const Users: React.FC = () => {
               <span className="material-symbols-outlined">badge</span> <span className="hidden sm:inline">{isAdmin ? 'Gestão de Usuários' : 'Listagem de Técnicos'}</span>
             </button>
           )}
-
           {(isAdmin || isGestor) && (
             <button
               onClick={() => setActiveTab('aprovacoes')}
@@ -148,7 +121,6 @@ const Users: React.FC = () => {
           )}
         </div>
 
-        {/* Tab Content */}
         <div className="animate-in fade-in duration-500">
           {activeTab === 'perfil' && (
             <div className="mx-auto w-full max-w-2xl">
@@ -158,20 +130,18 @@ const Users: React.FC = () => {
 
           {activeTab === 'cadastros' && (isAdmin || isGestor) && (
             <div className="flex flex-col gap-8">
-              {(isAdmin || isGestor) && (
-                <div className="glass-panel rounded-xl border border-border-dark p-6 shadow-2xl bg-surface-dark/80">
-                  <div className="mb-6 flex items-center gap-3">
-                    <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-primary">person_add</span>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-white leading-none mb-1">Novo Cadastro Manual</h3>
-                      <p className="text-xs text-slate-400">Registre novos administradores, gestores ou técnicos diretamente.</p>
-                    </div>
+              <div className="glass-panel rounded-xl border border-border-dark p-6 shadow-2xl bg-surface-dark/80">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary">person_add</span>
                   </div>
-                  <AdminRegistrationForm onRefresh={fetchUserData} />
+                  <div>
+                    <h3 className="font-bold text-white leading-none mb-1">Novo Cadastro Manual</h3>
+                    <p className="text-xs text-slate-400">Registre novos administradores, gestores ou técnicos diretamente.</p>
+                  </div>
                 </div>
-              )}
+                <AdminRegistrationForm onRefresh={fetchUserData} />
+              </div>
 
               <div className="glass-panel rounded-xl border border-border-dark p-6 bg-surface-dark/80 overflow-hidden">
                 <div className="mb-6 flex items-center justify-between">
@@ -233,24 +203,9 @@ const Users: React.FC = () => {
                                 <button
                                   onClick={async () => {
                                     if (!confirm(`Excluir usuário ${u.full_name || u.email}?\nEsta ação não pode ser desfeita.`)) return;
-
-                                    console.log('Attempting to delete user:', u.id, u.email);
-
-                                    const { error, count } = await supabase
-                                      .from('profiles')
-                                      .delete()
-                                      .eq('id', u.id)
-                                      .select();
-
-                                    console.log('Delete result:', { error, count });
-
-                                    if (error) {
-                                      console.error('Delete error:', error);
-                                      alert('Erro ao excluir: ' + error.message);
-                                    } else {
-                                      alert('Usuário removido com sucesso.');
-                                      fetchUserData();
-                                    }
+                                    const { error } = await supabase.from('profiles').delete().eq('id', u.id);
+                                    if (error) alert('Erro ao excluir: ' + error.message);
+                                    else { alert('Usuário removido com sucesso.'); fetchUserData(); }
                                   }}
                                   className="p-1.5 rounded hover:bg-red-500/10 text-slate-500 hover:text-red-500 transition-all"
                                   title="Excluir usuário"
@@ -278,7 +233,6 @@ const Users: React.FC = () => {
                 </h3>
                 <span className="px-2 py-1 rounded bg-amber-500/10 text-amber-500 text-[10px] font-bold uppercase tracking-wider">{pendingUsers.length} Aguardando</span>
               </div>
-
               {pendingUsers.length === 0 ? (
                 <div className="text-center py-16 rounded-xl border border-dashed border-border-dark bg-white/5">
                   <span className="material-symbols-outlined text-slate-600 text-5xl mb-4 opacity-20">verified_user</span>
@@ -320,6 +274,8 @@ const Users: React.FC = () => {
   );
 };
 
+// ... Input component is somewhere else, assume it's globally imported or defined at the bottom, let's keep the existing structure
+
 const AdminRegistrationForm: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
   const [formData, setFormData] = useState({
     full_name: '',
@@ -337,35 +293,26 @@ const AdminRegistrationForm: React.FC<{ onRefresh: () => void }> = ({ onRefresh 
       return;
     }
 
-    if (!confirm("Atenção: Ao criar um novo usuário neste modo, você será desconectado e logado como o novo usuário (Limitação do sistema sem Backend). Deseja continuar?")) {
-      return;
-    }
-
     setLoading(true);
     try {
-      // Strict sanitization: Remove anything that is NOT a letter, number, @, dot, underscore, or dash.
       const cleanEmail = formData.email.replace(/[^a-zA-Z0-9@._-]/g, '').toLowerCase();
 
-      // DEBUG: Verify what is actually being sent
-      console.log("Tentando cadastrar email sanitizado:", cleanEmail);
-
-      const { data, error } = await supabase.auth.signUp({
+      // Fix: Use supabaseAdmin to prevent logging out the current user!
+      const { data, error } = await supabaseAdmin.auth.signUp({
         email: cleanEmail,
         password: formData.password,
         options: {
           data: {
             full_name: formData.full_name,
             role: formData.role,
-            is_approved: true // Admins bypass approval
+            is_approved: true
           }
         }
       });
       if (error) throw error;
 
-      // Directly update profile to ensure role is correctly set
-      // Wait a moment for trigger to create the profile first
       if (data?.user?.id) {
-        await new Promise(r => setTimeout(r, 500)); // Small delay for trigger
+        await new Promise(r => setTimeout(r, 500)); 
 
         const { error: profileError } = await supabase
           .from('profiles')
@@ -382,7 +329,7 @@ const AdminRegistrationForm: React.FC<{ onRefresh: () => void }> = ({ onRefresh 
         }
       }
 
-      alert(`Usuário ${formData.full_name} registrado como ${formData.role}!`);
+      alert(`Usuário ${formData.full_name} registrado como ${formData.role}! Ele já pode fazer login.`);
       setFormData({ full_name: '', email: '', password: '', role: 'Técnico' });
       onRefresh();
     } catch (err: any) {

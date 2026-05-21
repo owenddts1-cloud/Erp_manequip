@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+import { validateEmail, sanitizeInput, checkLoginRateLimit, recordLoginAttempt, resetLoginRateLimit } from '../services/validation';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -15,156 +16,209 @@ const Login: React.FC = () => {
     setIsLoading(true);
     setError(null);
 
+    // --- Security: Client-side rate limiting ---
+    const rateCheck = checkLoginRateLimit();
+    if (!rateCheck.allowed) {
+      setError(`Muitas tentativas de login. Tente novamente em ${Math.ceil((rateCheck.retryAfterSeconds || 900) / 60)} minutos.`);
+      setIsLoading(false);
+      return;
+    }
+
+    // --- Security: Input validation ---
+    const sanitizedEmail = sanitizeInput(email, 320).toLowerCase();
+    const emailValidation = validateEmail(sanitizedEmail);
+    if (!emailValidation.valid) {
+      setError(emailValidation.error || 'Email inválido');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: sanitizedEmail,
         password,
       });
 
       if (error) {
+        recordLoginAttempt();
         throw error;
       }
 
       if (data.session) {
+        resetLoginRateLimit();
         navigate('/app/dashboard');
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || 'Falha ao fazer login. Verifique suas credenciais.');
+      // --- Security: Generic error message (don't reveal if email exists) ---
+      setError('Credenciais inválidas. Verifique seu e-mail e senha.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background-dark font-display text-slate-100 flex flex-col relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none"></div>
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[128px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[128px] pointer-events-none"></div>
+    <div className="min-h-screen bg-[#0A0F1C] font-display text-slate-100 flex relative overflow-hidden">
+      {/* Dynamic Background Effects */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] opacity-50"></div>
+      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-sky-500/20 rounded-full blur-[150px] mix-blend-screen animate-pulse pointer-events-none" style={{ animationDuration: '8s' }}></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[150px] mix-blend-screen animate-pulse pointer-events-none" style={{ animationDuration: '10s' }}></div>
 
-      <div className="relative z-10 w-full px-8 py-6 flex justify-between items-center">
-        <div className="flex items-center gap-3 text-white">
-          <div className="size-8 text-primary animate-pulse">
-            <span className="material-symbols-outlined text-[32px]">hub</span>
+      {/* Main Container: Split Screen Design */}
+      <div className="relative z-10 flex w-full h-screen">
+        
+        {/* Left Side: Branding & Value Proposition (Hidden on small screens) */}
+        <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative border-r border-white/5 bg-gradient-to-br from-[#0B1221]/90 to-[#0A0F1C]/90 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
+              <span className="material-symbols-outlined text-white text-[24px]">hub</span>
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-white">Preventiva <span className="text-sky-400">360</span></h2>
           </div>
-          <h2 className="text-xl font-bold tracking-tight">Preventiva <span className="text-primary">360</span></h2>
-        </div>
-      </div>
 
-      <div className="relative z-10 flex-1 flex flex-col lg:flex-row items-center justify-center p-4 lg:p-0">
-        <div className="hidden lg:flex flex-1 flex-col justify-center items-start px-20 h-full relative">
-          <div className="max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-medium mb-6">
+          <div className="max-w-xl mx-auto w-full my-auto">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-400 text-xs font-semibold mb-8 shadow-sm">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
               </span>
-              Sistema Operacional v2.4.0 Online
+              Sistema Operacional v2.4.0
             </div>
-            <h1 className="text-5xl font-bold leading-tight mb-6">
-              Gestão Industrial de <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-cyan-300">Alta Performance</span>
+            
+            <h1 className="text-6xl font-black leading-[1.1] mb-6 tracking-tight">
+              Gestão Industrial de <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-400 to-sky-300">Alta Performance</span>
             </h1>
-            <p className="text-slate-400 text-lg mb-8 leading-relaxed">
-              Monitore ativos, preveja falhas e otimize sua operação com a plataforma mais avançada do mercado. Sua manutenção, redefinida.
+            
+            <p className="text-slate-400 text-lg mb-12 leading-relaxed max-w-md">
+              Monitore ativos, preveja falhas e otimize sua operação com a plataforma mais avançada do mercado.
             </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-surface-dark border border-border-dark">
-                <span className="material-symbols-outlined text-primary">insights</span>
-                <div>
-                  <h3 className="text-sm font-bold text-white">Analytics em Tempo Real</h3>
-                  <p className="text-xs text-slate-500 mt-1">Dashboards preditivos instantâneos.</p>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2 p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors">
+                <div className="size-10 rounded-full bg-sky-500/10 flex items-center justify-center mb-2">
+                  <span className="material-symbols-outlined text-sky-400">insights</span>
                 </div>
+                <h3 className="text-sm font-bold text-white">Analytics em Tempo Real</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">Dashboards preditivos e instantâneos para decisões ágeis.</p>
               </div>
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-surface-dark border border-border-dark">
-                <span className="material-symbols-outlined text-primary">security</span>
-                <div>
-                  <h3 className="text-sm font-bold text-white">Segurança Avançada</h3>
-                  <p className="text-xs text-slate-500 mt-1">Criptografia de ponta a ponta.</p>
+              <div className="flex flex-col gap-2 p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors">
+                <div className="size-10 rounded-full bg-indigo-500/10 flex items-center justify-center mb-2">
+                  <span className="material-symbols-outlined text-indigo-400">security</span>
                 </div>
+                <h3 className="text-sm font-bold text-white">Segurança Avançada</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">Criptografia de ponta a ponta e controle granular de acessos.</p>
               </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+            <p>© {new Date().getFullYear()} Manequip Systems. Todos os direitos reservados.</p>
+            <div className="flex items-center gap-2">
+              <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+              Todos os sistemas operacionais
             </div>
           </div>
         </div>
 
-        <div className="w-full lg:w-[480px] lg:mr-20">
-          <div className="glass-panel rounded-2xl p-8 lg:p-10 w-full relative overflow-hidden group">
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-primary/20 rounded-full blur-[60px] pointer-events-none"></div>
-            <div className="relative z-10">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-white mb-2">Acesse sua conta</h2>
-                <p className="text-slate-400 text-sm">Entre com suas credenciais corporativas.</p>
+        {/* Right Side: Login Form */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 relative">
+          
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center gap-3 mb-10 absolute top-8 left-8">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
+              <span className="material-symbols-outlined text-white text-[20px]">hub</span>
+            </div>
+            <h2 className="text-xl font-bold tracking-tight text-white">Preventiva <span className="text-sky-400">360</span></h2>
+          </div>
+
+          <div className="w-full max-w-[420px]">
+            <div className="mb-10 text-center lg:text-left">
+              <h2 className="text-3xl font-bold text-white mb-3">Bem-vindo de volta</h2>
+              <p className="text-slate-400 text-sm">Insira suas credenciais corporativas para acessar o painel de controle.</p>
+            </div>
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-500 text-sm font-medium animate-in fade-in slide-in-from-top-2">
+                <span className="material-symbols-outlined text-[20px] mt-0.5">error</span>
+                <p className="leading-tight">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-2 group">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest pl-1 transition-colors group-focus-within:text-sky-400">E-mail Corporativo</label>
+                <div className="relative flex items-center">
+                  <span className="material-symbols-outlined absolute left-4 text-slate-500 group-focus-within:text-sky-400 transition-colors">mail</span>
+                  <input
+                    className="w-full bg-[#111827]/50 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all shadow-sm"
+                    placeholder="nome@empresa.com"
+                    required
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2 group">
+                <div className="flex justify-between items-center pl-1">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest transition-colors group-focus-within:text-sky-400">Senha</label>
+                  <Link to="/forgot-password" className="text-xs font-medium text-sky-400 hover:text-sky-300 transition-colors">Esqueceu a senha?</Link>
+                </div>
+                <div className="relative flex items-center">
+                  <span className="material-symbols-outlined absolute left-4 text-slate-500 group-focus-within:text-sky-400 transition-colors">lock</span>
+                  <input
+                    className="w-full bg-[#111827]/50 border border-white/10 rounded-xl py-3.5 pl-12 pr-12 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all shadow-sm"
+                    placeholder="••••••••"
+                    required
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 text-slate-500 hover:text-white transition-colors focus:outline-none flex items-center justify-center"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
               </div>
 
-              {error && (
-                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-lg flex items-center gap-2 text-red-500 text-sm">
-                  <span className="material-symbols-outlined text-[18px]">error</span>
-                  {error}
-                </div>
-              )}
+              <button 
+                type="submit" 
+                disabled={isLoading} 
+                className={`relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 transition-all duration-300 h-[52px] mt-6 shadow-lg shadow-sky-500/25 ${isLoading ? 'opacity-80 cursor-wait' : 'hover:-translate-y-0.5 hover:shadow-sky-500/40'}`}
+              >
+                {!isLoading && <div className="absolute inset-0 w-full h-full bg-white/20 -translate-x-full hover:translate-x-full transition-transform duration-700 ease-in-out"></div>}
+                <span className="relative flex items-center justify-center gap-2 text-white font-bold text-sm tracking-wide">
+                  {isLoading ? (
+                    <>
+                      <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                      AUTENTICANDO...
+                    </>
+                  ) : (
+                    <>
+                      ENTRAR NO SISTEMA
+                      <span className="material-symbols-outlined text-[18px]">login</span>
+                    </>
+                  )}
+                </span>
+              </button>
+            </form>
 
-              <form onSubmit={handleLogin} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider ml-1">E-mail Corporativo</label>
-                  <div className="flex items-center w-full bg-slate-900/50 border border-border-dark rounded-lg transition-colors duration-200 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
-                    <span className="material-symbols-outlined text-slate-500 pl-4">mail</span>
-                    <input
-                      className="w-full bg-transparent border-none text-white placeholder-slate-600 focus:ring-0 h-12 text-sm"
-                      placeholder="nome@empresa.com"
-                      required
-                      type="email"
-                      autoComplete="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center ml-1">
-                    <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Senha</label>
-                    <Link to="/forgot-password" className="text-xs text-primary hover:text-cyan-400 transition-colors">Esqueci minha senha</Link>
-                  </div>
-                  <div className="flex items-center w-full bg-slate-900/50 border border-border-dark rounded-lg transition-colors duration-200 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
-                    <span className="material-symbols-outlined text-slate-500 pl-4">lock</span>
-                    <input
-                      className="w-full bg-transparent border-none text-white placeholder-slate-600 focus:ring-0 h-12 text-sm"
-                      placeholder="••••••••"
-                      required
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="pr-4 text-slate-500 hover:text-white transition-colors focus:outline-none"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">
-                        {showPassword ? 'visibility_off' : 'visibility'}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-                <button type="submit" disabled={isLoading} className={`relative w-full overflow-hidden rounded-lg group bg-primary hover:bg-sky-600 transition-all duration-300 h-12 mt-4 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                  {!isLoading && <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>}
-                  <span className="relative flex items-center justify-center gap-2 text-white font-bold text-sm tracking-wide">
-                    {isLoading ? 'ACESSANDO...' : 'ENTRAR NO SISTEMA'}
-                    {!isLoading && <span className="material-symbols-outlined text-sm">arrow_forward</span>}
-                  </span>
-                </button>
-              </form>
-              <div className="mt-8 pt-6 border-t border-border-dark text-center">
-                <p className="text-slate-500 text-xs">
-                  Ainda não tem acesso? <Link to="/register" className="text-white font-medium hover:text-primary transition-colors ml-1">Criar conta</Link>
-                </p>
-              </div>
+            <div className="mt-10 text-center">
+              <p className="text-slate-500 text-sm">
+                Ainda não tem acesso? <Link to="/register" className="text-white font-bold hover:text-sky-400 transition-colors ml-1 border-b border-white/20 hover:border-sky-400/50 pb-0.5">Solicite uma conta</Link>
+              </p>
             </div>
           </div>
-          <div className="mt-6 flex justify-between text-[10px] text-slate-600 uppercase tracking-widest px-2">
-            <span>Server: SA-EAST-1</span>
-            <span>Status: <span className="text-emerald-500">Operational</span></span>
-          </div>
+          
         </div>
       </div>
     </div>

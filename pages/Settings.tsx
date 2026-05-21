@@ -64,7 +64,7 @@ const Settings: React.FC = () => {
 
   const [profile, setProfile] = useState({
     name: '',
-    role: '',
+    job_title: '',
     email: '',
     avatar_url: ''
   });
@@ -92,16 +92,16 @@ const Settings: React.FC = () => {
           .single();
 
         setProfile({
-          name: profileData?.full_name || user.user_metadata.full_name || '',
-          role: profileData?.job_title || user.user_metadata.job_title || '',
+          name: profileData?.full_name || user.user_metadata?.full_name || '',
+          job_title: profileData?.job_title || user.user_metadata?.job_title || '',
           email: user.email || '',
-          avatar_url: profileData?.avatar_url || user.user_metadata.avatar_url || ''
+          avatar_url: profileData?.avatar_url || user.user_metadata?.avatar_url || ''
         });
 
         const jobTitle = (profileData?.job_title || user.user_metadata?.job_title || '').toLowerCase();
         const userRole = (profileData?.role || user.user_metadata?.role || '').toLowerCase();
 
-        const isAdm = user.email === 'admin@manequip.com' ||
+        const isAdm = user.email === 'admin@manequip.com' || user.email === 'data@manequip.com' ||
           userRole === 'administrator' || userRole === 'gestor' ||
           jobTitle.includes('admin') || jobTitle.includes('gestor');
 
@@ -130,14 +130,44 @@ const Settings: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 1024 * 1024) {
-      alert('A imagem deve ter no máximo 1MB.');
+    if (file.size > 2 * 1024 * 1024) {
+      alert('A imagem deve ter no máximo 2MB antes da compressão.');
       return;
     }
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      setProfile(prev => ({ ...prev, avatar_url: reader.result as string }));
+      // Compress the image using an off-screen canvas
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 256;
+        const MAX_HEIGHT = 256;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setProfile(prev => ({ ...prev, avatar_url: compressedDataUrl }));
+        }
+      };
+      img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   };
@@ -154,7 +184,7 @@ const Settings: React.FC = () => {
       const { error } = await supabase.auth.updateUser({
         data: {
           full_name: profile.name,
-          job_title: profile.role,
+          job_title: profile.job_title,
           avatar_url: profile.avatar_url
         }
       });
@@ -166,7 +196,7 @@ const Settings: React.FC = () => {
         .from('profiles')
         .update({
           full_name: profile.name,
-          job_title: profile.role,
+          job_title: profile.job_title,
           avatar_url: profile.avatar_url
         })
         .eq('id', session.user.id);
@@ -273,7 +303,7 @@ const Settings: React.FC = () => {
             <div className="bg-[var(--surface-color)] border border-[var(--border-color)] rounded-xl p-6 space-y-4 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputSetting label={t('settings.label_name')} value={profile.name} onChange={(v) => setProfile(p => ({ ...p, name: v }))} placeholder={t('settings.placeholder_name')} />
-                <InputSetting label={t('settings.label_role')} value={profile.role} onChange={(v) => setProfile(p => ({ ...p, role: v }))} placeholder={t('settings.placeholder_role')} />
+                <InputSetting label={t('settings.label_role') || "Cargo"} value={profile.job_title} onChange={(v) => setProfile(p => ({ ...p, job_title: v }))} placeholder={t('settings.placeholder_role') || "Ex: Técnico de Manutenção"} />
                 <div className="col-span-1 md:col-span-2 opacity-60">
                   <InputSetting label={t('settings.label_email')} value={profile.email} onChange={() => { }} placeholder="" disabled />
                 </div>

@@ -10,10 +10,21 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        flowType: 'pkce', // Security: PKCE flow for enhanced OAuth security
+        storageKey: 'manequip-auth', // Security: Unique storage key to prevent cross-site conflicts
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     },
     global: {
         fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }),
+    },
+});
+
+// Create secondary client for Admin operations (creating users) without logging out current user
+export const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
     },
 });
 

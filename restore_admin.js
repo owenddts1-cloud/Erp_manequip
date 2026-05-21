@@ -1,7 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://oaexnkhyyncptzfvkqyo.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hZXhua2h5eW5jcHR6ZnZrcXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjczNjg0ODcsImV4cCI6MjA4Mjk0NDQ4N30.tS9BvFVQZpGMtoahMkpdfb4Q4F8uuAnFM3lnOYqesuA';
+import { readFileSync } from 'fs';
+
+// Load .env.local
+const envContent = readFileSync('.env.local', 'utf-8');
+const env = {};
+envContent.split('\n').forEach(line => {
+    const [key, ...valueParts] = line.split('=');
+    if (key && valueParts.length) env[key.trim()] = valueParts.join('=').trim();
+});
+
+const supabaseUrl = env.VITE_SUPABASE_URL;
+const supabaseKey = env.VITE_SUPABASE_ANON_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

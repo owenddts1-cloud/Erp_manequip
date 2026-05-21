@@ -4,7 +4,7 @@ import './index.css'; // Optimized Tailwind Import
 import App from './App';
 import { PreferencesProvider } from './contexts/PreferencesContext';
 import './style.css';
-
+import { Analytics } from '@vercel/analytics/react';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -16,6 +16,7 @@ root.render(
   <React.StrictMode>
     <PreferencesProvider>
       <App />
+      <Analytics />
     </PreferencesProvider>
   </React.StrictMode>
 );
