@@ -1,5 +1,6 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -69,6 +70,7 @@ const App: React.FC = () => {
           </Route>
         </Routes>
       </React.Suspense>
+      <Analytics />
     </HashRouter>
   );
 };
