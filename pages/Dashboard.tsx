@@ -196,7 +196,7 @@ const Dashboard: React.FC = () => {
           `)
         .eq('tipo', 'Preventiva')
         .neq('status', 'Concluída')
-        .order('data_abertura', { ascending: true })
+        .order('created_at', { ascending: true })
         .limit(7);
 
       setUpcomingPreventives(preventives || []);

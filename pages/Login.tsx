@@ -44,14 +44,58 @@ const Login: React.FC = () => {
         throw error;
       }
 
-      if (data.session) {
+      if (data.user) {
+        const isSystemAdmin = sanitizedEmail === 'admin@manequip.com' || sanitizedEmail === 'data@manequip.com';
+        
+        if (!isSystemAdmin) {
+          const { data: profile, error: profileErr } = await supabase
+            .from('profiles')
+            .select('is_approved')
+            .eq('id', data.user.id)
+            .single();
+
+          if (profileErr) {
+            console.error('Error checking profile approval:', profileErr);
+          }
+
+          if (profile && profile.is_approved === false) {
+            await supabase.auth.signOut();
+            setError('Sua conta está aguardando aprovação de um administrador.');
+            setIsLoading(false);
+            return;
+          }
+        }
+
         resetLoginRateLimit();
         navigate('/app/dashboard');
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      // --- Security: Generic error message (don't reveal if email exists) ---
-      setError('Credenciais inválidas. Verifique seu e-mail e senha.');
+      const msg = err.message || '';
+      
+      try {
+        const { data: statusData, error: rpcError } = await supabase.rpc('check_user_approval_status', {
+          user_email: sanitizedEmail
+        });
+        
+        if (!rpcError && statusData && statusData.length > 0) {
+          const { email_exists, is_approved } = statusData[0];
+          if (email_exists && !is_approved) {
+            setError('Seu cadastro foi realizado com sucesso, mas está aguardando aprovação de um administrador. O acesso será liberado após a aprovação.');
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (rpcErr) {
+        console.error('RPC check error:', rpcErr);
+      }
+
+      if (msg.includes('Email not confirmed') || msg.includes('confirm')) {
+        setError('Seu cadastro foi realizado com sucesso, mas está aguardando aprovação de um administrador. O acesso será liberado após a aprovação.');
+      } else {
+        // --- Security: Generic error message (don't reveal if email exists) ---
+        setError('Credenciais inválidas. Verifique seu e-mail e senha.');
+      }
     } finally {
       setIsLoading(false);
     }

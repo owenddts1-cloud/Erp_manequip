@@ -24,7 +24,7 @@ interface Peca {
 const Inventory: React.FC = () => {
   const { t, userProfile } = usePreferences();
   const role = userProfile?.role || 'Técnico';
-  const isAuthorized = role === 'Administrator' || role === 'Gestor';
+  const isAuthorized = role === 'Administrator' || role === 'Gestor' || role === 'Técnico';
 
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -88,7 +88,7 @@ const Inventory: React.FC = () => {
 
   const handleOpenModal = (item: Peca | null = null) => {
     if (!isAuthorized) {
-      alert("Acesso Negado: Apenas Administradores ou Gestores podem editar o inventário.");
+      alert("Acesso Negado: Você não possui permissão para editar o inventário.");
       return;
     }
     if (item) {

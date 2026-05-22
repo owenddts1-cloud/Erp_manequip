@@ -50,14 +50,14 @@ export const PreferencesProvider: React.FC<{ children: ReactNode }> = ({ childre
                 return;
             }
 
-            const email = user.email || '';
+            const email = (user.email || '').toLowerCase();
             let role = 'Técnico';
             let profileData: any = null;
 
             try {
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('role, full_name, job_title, avatar_url')
+                    .select('role, full_name, job_title, avatar_url, is_approved')
                     .eq('id', user.id)
                     .single();
 
@@ -78,9 +78,18 @@ export const PreferencesProvider: React.FC<{ children: ReactNode }> = ({ childre
                 console.error("Critical Profile Fetch Error:", err);
             }
 
-            // OVERRIDE: Master Admin always gets Administrator
-            if (email === 'admin@manequip.com') {
+            const isSystemAdmin = email === 'admin@manequip.com' || email === 'data@manequip.com';
+
+            // OVERRIDE: Master Admin and Data Admin always get Administrator
+            if (isSystemAdmin) {
                 role = 'Administrator';
+            }
+
+            // Force logout if not approved (excluding system admins)
+            if (profileData && profileData.is_approved === false && !isSystemAdmin) {
+                await supabase.auth.signOut();
+                setUserProfile(null);
+                return;
             }
 
             setUserProfile({

@@ -32,7 +32,7 @@ const Assets: React.FC = () => {
   });
 
   const { userProfile } = usePreferences();
-  const isAuthorized = userProfile?.role === 'Administrator' || userProfile?.role === 'Gestor';
+  const isAuthorized = userProfile?.role === 'Administrator' || userProfile?.role === 'Gestor' || userProfile?.role === 'Técnico';
 
   // Expanded Filters State
   const [showMoreFilters, setShowMoreFilters] = useState(false);
@@ -84,7 +84,7 @@ const Assets: React.FC = () => {
 
   const handleOpenModal = (asset: any = null) => {
     if (!isAuthorized) {
-      alert("Acesso Negado: Apenas Administradores ou Gestores podem editar ativos.");
+      alert("Acesso Negado: Você não possui permissão para editar ativos.");
       return;
     }
     const defaultSector = sectors.length > 0 ? sectors[0] : 'Usinagem';

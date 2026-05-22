@@ -31,7 +31,8 @@ const WorkOrders: React.FC = () => {
   });
 
   const { userProfile } = usePreferences();
-  const isAuthorized = userProfile?.role === 'Administrator' || userProfile?.role === 'Gestor';
+  const isAuthorized = userProfile?.role === 'Administrator' || userProfile?.role === 'Gestor' || userProfile?.role === 'Técnico';
+  const canDelete = userProfile?.role === 'Administrator' || userProfile?.role === 'Gestor';
 
   // Filter logic including Search
   const filteredTickets = useMemo(() => {
@@ -395,7 +396,7 @@ const WorkOrders: React.FC = () => {
                     )}
 
                     {/* Delete Button */}
-                    {isAuthorized && (
+                    {canDelete && (
                       <button onClick={() => handleDeleteTicket(ticket.id)} className="p-1.5 rounded hover:bg-red-500/10 text-red-500/50 hover:text-red-500 transition-all" title="Excluir">
                         <span className="material-symbols-outlined text-[20px]">delete</span>
                       </button>

@@ -9,7 +9,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/supabase': {
-        target: 'https://ldtamdnkzepaobpiskrl.supabase.co',
+        target: 'https://geenpztkeonjkclfnsfp.supabase.co',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/supabase/, ''),
         secure: false,

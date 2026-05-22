@@ -14,6 +14,34 @@ const Users: React.FC = () => {
   const isAdmin = role === 'Administrator';
   const isGestor = role === 'Gestor';
 
+  const getReadableJobTitle = (jobTitle: string, userRole: string) => {
+    const rawVal = (jobTitle || userRole || '').trim().toLowerCase();
+    const normalized = rawVal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    if (!normalized) {
+      return 'Cadastro';
+    }
+
+    if (normalized.includes('tecnico')) {
+      return 'Técnico de Manutenção';
+    }
+    if (normalized.includes('engenheiro') || normalized.includes('supervisor')) {
+      return 'Engenheiro / Supervisor';
+    }
+    if (normalized.includes('operador')) {
+      return 'Operador de Máquina';
+    }
+    if (normalized.includes('gestor')) {
+      return 'Gestor de Planta';
+    }
+    if (normalized.includes('admin')) {
+      return 'Administrador';
+    }
+
+    const original = jobTitle || userRole || 'Cadastro';
+    return original.charAt(0).toUpperCase() + original.slice(1);
+  };
+
   useEffect(() => {
     if (!userProfile?.id) return;
     const controller = new AbortController();
@@ -248,7 +276,8 @@ const Users: React.FC = () => {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-white font-bold">{user.full_name || 'Usuário Novo'}</span>
-                          <span className="text-xs text-slate-500 flex items-center gap-1 font-mono">
+                          <span className="text-xs text-slate-400 font-medium">Cargo solicitado: {getReadableJobTitle(user.job_title, user.role)}</span>
+                          <span className="text-xs text-slate-500 flex items-center gap-1 font-mono mt-1">
                             <span className="material-symbols-outlined text-[14px]">mail</span> {user.email}
                           </span>
                         </div>
@@ -259,7 +288,7 @@ const Users: React.FC = () => {
                         </button>
                         <button onClick={() => handleApprove(user.id, true)} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition-all shadow-lg hover:shadow-emerald-500/20">
                           <span className="material-symbols-outlined text-[18px]">done_all</span>
-                          Aprovar Técnico
+                          Aprovar {getReadableJobTitle(user.job_title, user.role)}
                         </button>
                       </div>
                     </div>

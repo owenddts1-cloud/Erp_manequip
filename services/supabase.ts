@@ -14,9 +14,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         storageKey: 'manequip-auth', // Security: Unique storage key to prevent cross-site conflicts
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     },
-    global: {
-        fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }),
-    },
 });
 
 // Create secondary client for Admin operations (creating users) without logging out current user

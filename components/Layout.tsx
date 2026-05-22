@@ -85,12 +85,10 @@ const Layout: React.FC = () => {
                 <span className="material-symbols-outlined group-hover:scale-110 transition-transform">category</span>
                 <span className="font-medium font-display text-sm">{t('nav_inventory')}</span>
               </Link>
-              {(isAdmin || isGestor) && (
-                <Link to="/app/reports" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive('reports')}`}>
-                  <span className="material-symbols-outlined group-hover:scale-110 transition-transform">bar_chart</span>
-                  <span className="font-medium font-display text-sm">{t('nav_reports')}</span>
-                </Link>
-              )}
+              <Link to="/app/reports" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive('reports')}`}>
+                <span className="material-symbols-outlined group-hover:scale-110 transition-transform">bar_chart</span>
+                <span className="font-medium font-display text-sm">{t('nav_reports')}</span>
+              </Link>
               <Link to="/app/chat" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive('chat')}`}>
                 <span className="material-symbols-outlined group-hover:scale-110 transition-transform">smart_toy</span>
                 <span className="font-medium font-display text-sm">{t('nav_chat')}</span>
