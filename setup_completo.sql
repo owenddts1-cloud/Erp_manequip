@@ -414,4 +414,49 @@ WHERE email IN ('admin@manequip.com', 'data@manequip.com')
 ON CONFLICT (id) DO UPDATE
 SET role = 'Administrator', is_approved = true;
 
+-- 8. PREVENTIVE MAINTENANCE SCHEMAS
+CREATE TABLE IF NOT EXISTS public.preventivas_planejamento (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ativo_id UUID REFERENCES public.ativos(id) ON DELETE CASCADE,
+    titulo TEXT NOT NULL,
+    descricao TEXT,
+    periodicidade TEXT CHECK (periodicidade IN ('Semanal', 'Mensal', 'Bimestral', 'Trimestral', 'Semestral', 'Anual')),
+    meses_execucao INTEGER[] NOT NULL, -- Array of months (e.g. [1, 7] for Jan and Jul)
+    icone TEXT DEFAULT 'precision_manufacturing',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.preventivas_mensais (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    planejamento_id UUID REFERENCES public.preventivas_planejamento(id) ON DELETE SET NULL,
+    ativo_id UUID REFERENCES public.ativos(id) ON DELETE CASCADE,
+    titulo TEXT NOT NULL,
+    descricao TEXT,
+    mes INTEGER CHECK (mes BETWEEN 1 AND 12),
+    ano INTEGER NOT NULL,
+    tecnico_responsavel UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    tecnico_responsavel_2 UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    status TEXT DEFAULT 'Em aberto' CHECK (status IN ('Em aberto', 'Em atendimento', 'Concluído')),
+    icone TEXT DEFAULT 'precision_manufacturing',
+    data_limite DATE,
+    concluido_em TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Policies for preventivas_planejamento
+ALTER TABLE public.preventivas_planejamento ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "preventivas_planejamento_select" ON public.preventivas_planejamento FOR SELECT TO authenticated USING (true);
+CREATE POLICY "preventivas_planejamento_insert" ON public.preventivas_planejamento FOR INSERT TO authenticated WITH CHECK (public.is_approved_user());
+CREATE POLICY "preventivas_planejamento_update" ON public.preventivas_planejamento FOR UPDATE TO authenticated USING (public.is_approved_user());
+CREATE POLICY "preventivas_planejamento_delete" ON public.preventivas_planejamento FOR DELETE TO authenticated USING (public.is_approved_user());
+
+-- Policies for preventivas_mensais
+ALTER TABLE public.preventivas_mensais ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "preventivas_mensais_select" ON public.preventivas_mensais FOR SELECT TO authenticated USING (true);
+CREATE POLICY "preventivas_mensais_insert" ON public.preventivas_mensais FOR INSERT TO authenticated WITH CHECK (public.is_approved_user());
+CREATE POLICY "preventivas_mensais_update" ON public.preventivas_mensais FOR UPDATE TO authenticated USING (public.is_approved_user());
+CREATE POLICY "preventivas_mensais_delete" ON public.preventivas_mensais FOR DELETE TO authenticated USING (public.is_approved_user());
+
 SELECT '✅ MANEQUIP MASTER SETUP COMPLETED SUCCESSFULLY' as status;

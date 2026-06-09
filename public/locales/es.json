@@ -12,7 +12,7 @@
     "dashboard.tickets": "Tickets Abiertos",
     "dashboard.cost": "Costo Mensual",
     "dashboard.downtime": "Tiempo de Inactividad",
-    "dashboard.evolution": "Evolución de Mantenimiento",
+    "dashboard.evolution": "Análisis de Tickets",
     "dashboard.preventives": "Próximas Preventivas",
     "dashboard.recent": "Tickets Recientes",
     "dashboard.no_preventives": "No hay preventivas programadas.",

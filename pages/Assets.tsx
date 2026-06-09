@@ -8,6 +8,16 @@ const Assets: React.FC = () => {
   const [allAssets, setAllAssets] = useState<any[]>([]);
   const [displayedAssets, setDisplayedAssets] = useState<any[]>([]);
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Sectors State
   const [sectors, setSectors] = useState<string[]>([]);
   const [isSectorModalOpen, setIsSectorModalOpen] = useState(false);
@@ -16,6 +26,19 @@ const Assets: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSector, setFilterSector] = useState('Todos');
   const [filterCriticality, setFilterCriticality] = useState('Todas');
+  
+  // Sorting State
+  const [sortKey, setSortKey] = useState<'tag_id' | 'nome' | 'setor' | 'modelo' | 'criticidade' | 'status' | null>('nome');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (key: 'tag_id' | 'nome' | 'setor' | 'modelo' | 'criticidade' | 'status') => {
+    if (sortKey === key) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortOrder('asc');
+    }
+  };
 
   // Form State
   const [editingAsset, setEditingAsset] = useState<any>(null);
@@ -28,11 +51,12 @@ const Assets: React.FC = () => {
     status: 'Operacional',
     custo_aquisicao: 0,
     data_aquisicao: new Date().toISOString().split('T')[0],
-    saude: 100
+    saude: 100,
+    url: ''
   });
 
   const { userProfile } = usePreferences();
-  const isAuthorized = userProfile?.role === 'Administrator' || userProfile?.role === 'Gestor' || userProfile?.role === 'Técnico';
+  const isAuthorized = userProfile?.role === 'Administrator' || userProfile?.role === 'Gestor' || userProfile?.role === 'Técnico' || userProfile?.role === 'Supervisor';
 
   // Expanded Filters State
   const [showMoreFilters, setShowMoreFilters] = useState(false);
@@ -59,7 +83,7 @@ const Assets: React.FC = () => {
     const { data, error } = await supabase
       .from('ativos')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('nome', { ascending: true });
 
     if (error) console.error('Error fetching assets:', error);
     if (data) {
@@ -100,7 +124,8 @@ const Assets: React.FC = () => {
         status: asset.status || 'Operacional',
         custo_aquisicao: asset.custo_aquisicao || 0,
         data_aquisicao: asset.data_aquisicao || new Date().toISOString().split('T')[0],
-        saude: asset.saude || 100
+        saude: asset.saude || 100,
+        url: asset.url || ''
       });
 
     } else {
@@ -114,7 +139,8 @@ const Assets: React.FC = () => {
         status: 'Operacional',
         custo_aquisicao: 0,
         data_aquisicao: new Date().toISOString().split('T')[0],
-        saude: 100
+        saude: 100,
+        url: ''
       });
 
     }
@@ -170,6 +196,25 @@ const Assets: React.FC = () => {
     }
   };
 
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    if (!isAuthorized) {
+      alert("Acesso Negado: Você não possui permissão para alterar o status do ativo.");
+      return;
+    }
+    const newStatus = currentStatus === 'Operacional' ? 'Parado' : 'Operacional';
+    try {
+      const { error } = await supabase
+        .from('ativos')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchAssets();
+    } catch (err: any) {
+      alert(`Erro ao alterar status: ${err.message}`);
+    }
+  };
+
   // Filter Logic
   React.useEffect(() => {
     let filtered = [...allAssets];
@@ -204,21 +249,321 @@ const Assets: React.FC = () => {
       filtered = filtered.filter(a => a.data_aquisicao === filterDate);
     }
 
+    // Apply sorting
+    if (sortKey) {
+      filtered.sort((a, b) => {
+        let valA = a[sortKey];
+        let valB = b[sortKey];
+
+        if (sortKey === 'criticidade') {
+          const priority: Record<string, number> = { 'Alta': 3, 'Média': 2, 'Baixa': 1 };
+          const pA = priority[valA as string] || 0;
+          const pB = priority[valB as string] || 0;
+          return sortOrder === 'asc' ? pA - pB : pB - pA;
+        }
+
+        if (valA === undefined || valA === null) valA = '';
+        if (valB === undefined || valB === null) valB = '';
+
+        if (typeof valA === 'string') {
+          valA = valA.toLowerCase();
+          valB = (valB as string).toLowerCase();
+        }
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
     setDisplayedAssets(filtered);
-  }, [searchTerm, filterSector, filterCriticality, filterStatus, filterModel, filterDate, allAssets]);
+    setCurrentPage(1);
+  }, [searchTerm, filterSector, filterCriticality, filterStatus, filterModel, filterDate, sortKey, sortOrder, allAssets]);
 
   const totalAssets = allAssets.length;
   const operational = allAssets.filter(a => a.status && a.status.toLowerCase() === 'operacional').length;
   const inAlert = allAssets.filter(a => a.status && (a.status.toLowerCase() === 'em alerta' || a.status.toLowerCase() === 'alerta')).length;
   const critical = allAssets.filter(a => a.criticidade && a.criticidade.toLowerCase().includes('alta')).length;
 
-  return (
-    <div className="flex-1 overflow-y-auto p-6 lg:p-10 relative bg-transparent">
-      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none z-0"></div>
-      <div className="mx-auto max-w-7xl relative z-10 flex flex-col gap-8 h-full">
+  if (isMobile) {
+    const paginatedAssets = displayedAssets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const totalPages = Math.ceil(displayedAssets.length / itemsPerPage);
 
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    return (
+      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4 bg-[#0a0f1d] text-slate-100 pb-24 relative">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+          <span className="material-symbols-outlined text-[14px]">home</span>
+          <span>/</span>
+          <span>Inventário</span>
+          <span>/</span>
+          <span className="text-[#00d2ff] font-bold">Gestão de Ativos</span>
+        </div>
+
+        {/* Title & Description */}
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-white font-display">Gestão de Ativos</h2>
+          <p className="text-slate-400 text-xs mt-1 leading-relaxed font-display">
+            Gerencie o ciclo de vida, localização e status operacional dos equipamentos industriais.
+          </p>
+        </div>
+
+        {/* KPIs (2x2 Grid) */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Card 1: Operacionais */}
+          <div className="p-3.5 rounded-xl bg-[#111827] border border-[#1f2937]/55 flex flex-col justify-between min-h-[90px] relative overflow-hidden">
+            <div className="flex justify-between items-center w-full">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Operacionais</span>
+              <span className="material-symbols-outlined text-emerald-500 text-[16px]">check_circle</span>
+            </div>
+            <div className="mt-2">
+              <h3 className="text-2xl font-extrabold text-white leading-none tracking-tight">{operational}</h3>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-emerald-500/50"></div>
+          </div>
+
+          {/* Card 2: Em Alerta */}
+          <div className="p-3.5 rounded-xl bg-[#111827] border border-[#1f2937]/55 flex flex-col justify-between min-h-[90px] relative overflow-hidden">
+            <div className="flex justify-between items-center w-full">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Em Alerta</span>
+              <span className="material-symbols-outlined text-amber-500 text-[16px]">warning</span>
+            </div>
+            <div className="mt-2">
+              <h3 className="text-2xl font-extrabold text-white leading-none tracking-tight">{inAlert}</h3>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-amber-500/50"></div>
+          </div>
+
+          {/* Card 3: Críticos (A) */}
+          <div className="p-3.5 rounded-xl bg-[#111827] border border-[#1f2937]/55 flex flex-col justify-between min-h-[90px] relative overflow-hidden">
+            <div className="flex justify-between items-center w-full">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Críticos (A)</span>
+              <span className="material-symbols-outlined text-rose-500 text-[16px]">info</span>
+            </div>
+            <div className="mt-2">
+              <h3 className="text-2xl font-extrabold text-white leading-none tracking-tight">{critical}</h3>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-rose-500/50"></div>
+          </div>
+
+          {/* Card 4: Total Ativos */}
+          <div className="p-3.5 rounded-xl bg-[#111827] border border-[#1f2937]/55 flex flex-col justify-between min-h-[90px] relative overflow-hidden">
+            <div className="flex justify-between items-center w-full">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Total Ativos</span>
+              <span className="material-symbols-outlined text-slate-400 text-[16px]">inventory_2</span>
+            </div>
+            <div className="mt-2">
+              <h3 className="text-2xl font-extrabold text-white leading-none tracking-tight">{totalAssets}</h3>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-slate-500/50"></div>
+          </div>
+        </div>
+
+        {/* Search & Filters */}
+        <div className="space-y-3">
+          {/* Search bar */}
+          <div className="relative w-full group">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 flex items-center">
+              <span className="material-symbols-outlined text-[18px]">search</span>
+            </span>
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-xl border border-slate-800 bg-[#111827] py-3 pl-11 pr-4 text-xs text-white placeholder-slate-500 focus:border-[#00d2ff] focus:outline-none transition-all"
+              placeholder="Buscar por nome, tag ou código..."
+              type="text"
+            />
+          </div>
+
+          {/* Filters buttons */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1.5 custom-scrollbar">
+            {/* Sector select styled as pill button */}
+            <div className="relative shrink-0">
+              <select
+                value={filterSector}
+                onChange={(e) => setFilterSector(e.target.value)}
+                className="appearance-none bg-slate-900 border border-slate-800 rounded-full px-4 py-2 pr-8 text-[11px] font-semibold text-slate-350 outline-none cursor-pointer"
+              >
+                <option value="Todos">SETOR: Todos</option>
+                {sectors.map(sec => <option key={sec} value={sec}>SETOR: {sec}</option>)}
+              </select>
+              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 flex items-center">
+                <span className="material-symbols-outlined text-[14px]">keyboard_arrow_down</span>
+              </span>
+            </div>
+
+            {/* Criticality select styled as pill button */}
+            <div className="relative shrink-0">
+              <select
+                value={filterCriticality}
+                onChange={(e) => setFilterCriticality(e.target.value)}
+                className="appearance-none bg-slate-900 border border-slate-800 rounded-full px-4 py-2 pr-8 text-[11px] font-semibold text-slate-355 outline-none cursor-pointer"
+              >
+                <option value="Todas">CRITICIDADE: Todas</option>
+                <option value="Alta">CRITICIDADE: Alta</option>
+                <option value="Média">CRITICIDADE: Média</option>
+                <option value="Baixa">CRITICIDADE: Baixa</option>
+              </select>
+              <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-505 flex items-center">
+                <span className="material-symbols-outlined text-[14px]">keyboard_arrow_down</span>
+              </span>
+            </div>
+
+            {/* More filters button */}
+            <button
+              onClick={() => setShowMoreFilters(!showMoreFilters)}
+              className={`flex items-center gap-1.5 rounded-full border ${showMoreFilters ? 'border-[#00d2ff] text-[#00d2ff]' : 'border-slate-800 text-slate-400'} bg-slate-900 px-4 py-2 text-[11px] font-semibold shrink-0`}
+            >
+              <span className="material-symbols-outlined text-[14px]">tune</span>
+              <span>Mais Filtros</span>
+            </button>
+          </div>
+
+          {/* More filters panel on mobile */}
+          {showMoreFilters && (
+            <div className="p-4 rounded-xl border border-slate-800 bg-[#111827]/80 space-y-3">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">Status Operacional</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none cursor-pointer"
+                >
+                  <option>Qualquer Status</option>
+                  <option>Operacional</option>
+                  <option>Parado</option>
+                  <option>Em Manutenção</option>
+                  <option>Em Alerta</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">Fabricante / Modelo</label>
+                <select
+                  value={filterModel}
+                  onChange={(e) => setFilterModel(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none cursor-pointer"
+                >
+                  <option>Todos</option>
+                  {Array.from(new Set(allAssets.map(a => a.modelo).filter(Boolean))).map(m => (
+                    <option key={m as string} value={m as string}>{m as string}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">Data de Aquisição</label>
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none [color-scheme:dark]"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Asset Card List Container */}
+        <div className="rounded-xl border border-slate-850 bg-[#111827]/50 divide-y divide-slate-800/60 overflow-hidden shadow-lg mb-6">
+          {paginatedAssets.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 italic text-xs">
+              Nenhum ativo encontrado.
+            </div>
+          ) : (
+            paginatedAssets.map((asset) => (
+              <div key={asset.id} className="p-4 flex flex-col relative group hover:bg-slate-800/20 transition-all">
+                {/* Top bar info */}
+                <div className="flex justify-between items-center w-full">
+                  <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">{asset.tag_id || 'N/A'}</span>
+                  {isAuthorized && (
+                    <button 
+                      onClick={() => handleOpenModal(asset)}
+                      className="p-1 text-slate-400 hover:text-white"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Main Asset details */}
+                <div className="mt-1">
+                  <h4 className="text-sm font-bold text-white tracking-tight">{asset.nome}</h4>
+                  <p className="text-[10px] text-slate-450 font-semibold uppercase tracking-wider mt-0.5">{asset.setor || 'Geral'}</p>
+                </div>
+
+                {/* Sub info row */}
+                <div className="flex items-center gap-3 mt-3">
+                  {/* Criticidade pill */}
+                  <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[9px] font-extrabold uppercase border ${
+                    asset.criticidade?.includes('Alta') 
+                      ? 'bg-red-500/10 text-red-400 border-red-500/20' 
+                      : asset.criticidade?.includes('Média') 
+                        ? 'bg-amber-500/10 text-amber-405 border-amber-500/20' 
+                        : 'bg-sky-500/10 text-[#00d2ff] border-sky-500/20'
+                  }`}>
+                    {asset.criticidade || 'Baixa'}
+                  </span>
+
+                  {/* Status dot indicator */}
+                  <div className="flex items-center gap-1.5">
+                    <span className={`size-1.5 rounded-full ${
+                      asset.status === 'Operacional'
+                        ? 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse'
+                        : asset.status === 'Em Alerta'
+                          ? 'bg-amber-400'
+                          : 'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse'
+                    }`}></span>
+                    <span className="text-[10px] font-semibold text-slate-300">{asset.status || 'Operacional'}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+
+          {/* Mobile Pagination */}
+          {displayedAssets.length > 0 && (
+            <div className="p-4 flex items-center justify-between bg-[#111827] text-xs text-slate-400 border-t border-slate-800/80">
+              <span>
+                Mostrando {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, displayedAssets.length)} de {displayedAssets.length} ativos
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className="p-1.5 rounded bg-slate-900 border border-slate-800 disabled:opacity-45 hover:text-white active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[16px] block">chevron_left</span>
+                </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  className="p-1.5 rounded bg-slate-900 border border-slate-800 disabled:opacity-45 hover:text-white active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[16px] block">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Floating Action Button */}
+        {isAuthorized && (
+          <button 
+            onClick={() => handleOpenModal()} 
+            className="fixed bottom-20 right-4 size-12 rounded-full bg-gradient-to-br from-cyan-400 via-sky-500 to-purple-600 hover:from-cyan-300 hover:to-purple-500 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 active:scale-95 transition-all z-40"
+          >
+            <span className="material-symbols-outlined text-[24px]">add</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative z-10 flex-1 min-h-0 overflow-y-auto p-8 scroll-smooth bg-transparent flex flex-col gap-6 font-display">
+      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none z-0"></div>
+
+      {/* Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between flex-shrink-0">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-[var(--text-secondary)] text-sm">home</span>
@@ -231,7 +576,7 @@ const Assets: React.FC = () => {
             <p className="text-[var(--text-secondary)] max-w-2xl text-lg">Gerencie o ciclo de vida, localização e status operacional dos equipamentos industriais.</p>
           </div>
           {isAuthorized && (
-            <button onClick={() => handleOpenModal()} className="group flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-bold text-white shadow-[0_0_20px_rgba(14,165,233,0.3)] transition-all hover:bg-primary-hover hover:shadow-[0_0_30px_rgba(14,165,233,0.5)] hover:translate-y-[-1px]">
+            <button onClick={() => handleOpenModal()} className="group flex items-center gap-2 rounded-lg bg-[#00a3e0] hover:bg-[#008ebd] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#00a3e0]/20 hover:shadow-[#00a3e0]/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer">
               <span className="material-symbols-outlined">add_circle</span>
               Novo Ativo
             </button>
@@ -240,7 +585,7 @@ const Assets: React.FC = () => {
 
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-shrink-0">
           <StatCard icon="check_circle" label="Operacionais" value={operational.toString()} color="text-emerald-400" bg="bg-emerald-500/10" />
           <StatCard icon="warning" label="Em Alerta" value={inAlert.toString()} color="text-amber-400" bg="bg-amber-500/10" />
           <StatCard icon="error" label="Críticos (A)" value={critical.toString()} color="text-red-400" bg="bg-red-500/10" />
@@ -248,7 +593,7 @@ const Assets: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 flex-shrink-0">
           <div className="flex flex-col gap-4 rounded-xl border border-[var(--border-color)] bg-[var(--surface-color)]/80 p-4 backdrop-blur-md lg:flex-row lg:items-center lg:justify-between">
             <div className="relative flex-1 max-w-md group">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] group-focus-within:text-primary transition-colors">
@@ -330,18 +675,48 @@ const Assets: React.FC = () => {
         </div>
 
         {/* Table */}
-        <div className="flex-1 overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--surface-color)]/60 shadow-xl backdrop-blur-sm flex flex-col">
+        <div className="rounded-xl border border-[var(--border-color)] bg-[var(--surface-color)]/60 shadow-xl backdrop-blur-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[var(--surface-color)] text-xs uppercase font-semibold text-[var(--text-secondary)]">
+            <table className="w-full text-left text-sm border-collapse min-w-[850px]">
+              <thead className="bg-[var(--surface-color)] text-xs uppercase font-semibold text-[var(--text-secondary)] border-b border-[var(--border-color)]">
                 <tr>
-                  <th className="px-6 py-4 tracking-wider">Tag ID</th>
-                  <th className="px-6 py-4 tracking-wider">Nome do Ativo</th>
-                  <th className="px-6 py-4 tracking-wider">Setor</th>
-                  <th className="px-6 py-4 tracking-wider">Modelo / Fab.</th>
-                  <th className="px-6 py-4 tracking-wider text-center">Criticidade</th>
-                  <th className="px-6 py-4 tracking-wider">Status</th>
-                  <th className="px-6 py-4 tracking-wider text-right">Ações</th>
+                  <th onClick={() => handleSort('tag_id')} className="py-2.5 px-4 align-middle tracking-wider cursor-pointer select-none hover:text-white transition-colors">
+                    <div className="flex items-center gap-1">
+                      <span>Tag ID</span>
+                      {sortKey === 'tag_id' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('nome')} className="py-2.5 px-4 align-middle tracking-wider cursor-pointer select-none hover:text-white transition-colors">
+                    <div className="flex items-center gap-1">
+                      <span>Nome do Ativo</span>
+                      {sortKey === 'nome' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('setor')} className="py-2.5 px-4 align-middle tracking-wider cursor-pointer select-none hover:text-white transition-colors">
+                    <div className="flex items-center gap-1">
+                      <span>Setor</span>
+                      {sortKey === 'setor' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('modelo')} className="py-2.5 px-4 align-middle tracking-wider cursor-pointer select-none hover:text-white transition-colors">
+                    <div className="flex items-center gap-1">
+                      <span>Modelo / Fab.</span>
+                      {sortKey === 'modelo' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('criticidade')} className="py-2.5 px-4 align-middle tracking-wider text-center cursor-pointer select-none hover:text-white transition-colors">
+                    <div className="flex items-center justify-center gap-1">
+                      <span>Criticidade</span>
+                      {sortKey === 'criticidade' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('status')} className="py-2.5 px-4 align-middle tracking-wider cursor-pointer select-none hover:text-white transition-colors">
+                    <div className="flex items-center gap-1">
+                      <span>Status</span>
+                      {sortKey === 'status' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    </div>
+                  </th>
+                  <th className="py-2.5 px-4 align-middle tracking-wider text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-color)] text-[var(--text-main)]">
@@ -355,14 +730,15 @@ const Assets: React.FC = () => {
                   displayedAssets.map((asset) => (
                     <TableRow
                       key={asset.id}
+                      id={asset.id}
                       tag={asset.tag_id || 'N/A'}
                       name={asset.nome}
-                      icon="settings_power"
                       sector={asset.setor || 'Geral'}
                       model={asset.modelo || '-'}
                       criticality={asset.criticidade || 'Baixa'}
                       status={asset.status || 'Parado'}
                       statusColor={asset.status === 'Operacional' ? 'text-emerald-500' : asset.status === 'Em Alerta' ? 'text-amber-500' : 'text-[var(--text-secondary)]'}
+                      url={asset.url}
                       onEdit={() => handleOpenModal(asset)}
                       onDelete={() => handleDeleteAsset(asset.id)}
                       isAuthorized={isAuthorized}
@@ -374,85 +750,107 @@ const Assets: React.FC = () => {
             </table>
           </div>
         </div>
-      </div>
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative w-full max-w-2xl transform overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--surface-color)] shadow-2xl transition-all">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
-            <div className="flex items-center justify-between border-b border-[var(--border-color)] px-6 py-4">
-              <h3 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">add_circle</span>
-                Cadastro de Ativo
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-xl bg-[var(--surface-color)] border border-[var(--border-color)] rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col animate-scale-up">
+            <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+            
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">{editingAsset ? 'edit' : 'add_circle'}</span>
+                {editingAsset ? 'Editar Ativo' : 'Cadastro de Ativo'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="rounded-lg p-1 text-[var(--text-secondary)] hover:bg-[var(--bg-color)] hover:text-[var(--text-main)] transition-colors">
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="text-slate-400 hover:text-white rounded-lg p-1 transition cursor-pointer"
+              >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            <div className="px-6 py-6">
-              <form id="asset-form" onSubmit={handleSaveAsset} className="space-y-6">
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+
+            <div className="overflow-y-auto max-h-[70vh] pr-1">
+              <form id="asset-form" onSubmit={handleSaveAsset} className="grid grid-cols-2 gap-4">
+                <div className="col-span-1">
                   <InputGroup
                     label="Patrimônio / Tag"
                     placeholder="TAG-000"
                     icon="qr_code_2"
+                    iconColor="text-sky-400"
                     value={formData.tag_id}
                     onChange={(v) => setFormData({ ...formData, tag_id: v })}
                   />
+                </div>
+                <div className="col-span-1">
                   <SelectGroup
                     label="Status Inicial"
                     icon="toggle_on"
+                    iconColor="text-amber-400"
                     options={['Operacional', 'Parado', 'Em Manutenção', 'Em Alerta']}
                     value={formData.status}
                     onChange={(v) => setFormData({ ...formData, status: v })}
                   />
                 </div>
-                <InputGroup
-                  label="Nome do Ativo"
-                  placeholder="Ex: Motor Elétrico Trifásico"
-                  icon="precision_manufacturing"
-                  value={formData.nome}
-                  onChange={(v) => setFormData({ ...formData, nome: v })}
-                />
-                <InputGroup
-                  label="Modelo / Fabricante"
-                  placeholder="Ex: WEG W22 Premium"
-                  icon="extension"
-                  value={formData.modelo}
-                  onChange={(v) => setFormData({ ...formData, modelo: v })}
-                  required={false}
-                />
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div className="col-span-2">
+                  <InputGroup
+                    label="Nome do Ativo"
+                    placeholder="Ex: Motor Elétrico Trifásico"
+                    icon="precision_manufacturing"
+                    iconColor="text-primary"
+                    value={formData.nome}
+                    onChange={(v) => setFormData({ ...formData, nome: v })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <InputGroup
+                    label="Modelo / Fabricante"
+                    placeholder="Ex: WEG W22 Premium"
+                    icon="extension"
+                    iconColor="text-violet-400"
+                    value={formData.modelo}
+                    onChange={(v) => setFormData({ ...formData, modelo: v })}
+                    required={false}
+                  />
+                </div>
+                <div className="col-span-1">
                   <SelectGroup
                     label="Setor"
                     icon="factory"
+                    iconColor="text-emerald-400"
                     options={sectors}
                     value={formData.setor}
                     onChange={(v) => setFormData({ ...formData, setor: v })}
                     onAction={isAuthorized ? () => setIsSectorModalOpen(true) : undefined}
                   />
+                </div>
+                <div className="col-span-1">
                   <SelectGroup
                     label="Criticidade"
                     icon="priority_high"
+                    iconColor="text-rose-400"
                     options={['Alta', 'Média', 'Baixa']}
                     value={formData.criticidade}
                     onChange={(v) => setFormData({ ...formData, criticidade: v })}
                   />
                 </div>
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <InputGroup
-                    label="Custo de Aquisição (R$)"
-                    placeholder="0.00"
-                    icon="payments"
-                    value={formData.custo_aquisicao.toString()}
-                    onChange={(v) => setFormData({ ...formData, custo_aquisicao: parseFloat(v) || 0 })}
-                  />
+                
+                {/* Cost & Health Sub-card */}
+                <div className="col-span-2 grid grid-cols-2 gap-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
                   <div>
-                    <label className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[16px]">health_and_safety</span>
-                      Saúde do Ativo (%)
+                    <InputGroup
+                      label="Custo de Aquisição (R$)"
+                      placeholder="0.00"
+                      icon="payments"
+                      iconColor="text-emerald-500"
+                      value={formData.custo_aquisicao.toString()}
+                      onChange={(v) => setFormData({ ...formData, custo_aquisicao: parseFloat(v) || 0 })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                      <span className="material-symbols-outlined text-[14px] text-teal-400">health_and_safety</span>
+                      Saúde do Ativo ({formData.saude}%)
                     </label>
                     <input
                       type="range"
@@ -460,33 +858,48 @@ const Assets: React.FC = () => {
                       max="100"
                       value={formData.saude}
                       onChange={(e) => setFormData({ ...formData, saude: parseInt(e.target.value) })}
-                      className="mt-2 w-full h-1.5 bg-[var(--border-color)] rounded-lg appearance-none cursor-pointer accent-primary"
+                      className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-primary mt-3"
                     />
-                    <div className="flex justify-between text-xs mt-1 font-bold text-primary">
-                      <span>{formData.saude}%</span>
-                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px]">calendar_month</span>
-                    Data de Aquisição
-                  </label>
-                  <input
+
+                <div className="col-span-2">
+                  <InputGroup
+                    label="Data de Aquisição"
+                    icon="calendar_month"
+                    iconColor="text-amber-500"
                     type="date"
                     value={formData.data_aquisicao}
-                    onChange={(e) => setFormData({ ...formData, data_aquisicao: e.target.value })}
-                    className="mt-1.5 block w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)] py-2.5 px-3 text-sm text-[var(--text-main)] focus:border-primary focus:ring-1 focus:ring-primary transition-all outline-none [color-scheme:dark]"
+                    onChange={(v) => setFormData({ ...formData, data_aquisicao: v })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <InputGroup
+                    label="Link URL do Ativo"
+                    placeholder="https://exemplo.com/detalhes-ativo"
+                    icon="link"
+                    iconColor="text-primary"
+                    value={formData.url || ''}
+                    onChange={(v) => setFormData({ ...formData, url: v })}
+                    required={false}
                   />
                 </div>
               </form>
-
             </div>
 
-
-            <div className="flex items-center justify-end gap-3 border-t border-[var(--border-color)] bg-[var(--surface-color)]/50 px-6 py-4 backdrop-blur-sm">
-              <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg border border-[var(--border-color)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-color)] hover:text-[var(--text-main)] transition-all">Cancelar</button>
-              <button form="asset-form" type="submit" className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-bold text-white shadow-neon hover:bg-primary-hover transition-all transform hover:scale-[1.02]">
+            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-800">
+              <button 
+                type="button" 
+                onClick={() => setIsModalOpen(false)} 
+                className="px-4 py-2 text-sm text-slate-500 font-bold hover:text-white transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button 
+                form="asset-form" 
+                type="submit" 
+                className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-neon hover:bg-sky-400 transition-all cursor-pointer"
+              >
                 <span className="material-symbols-outlined text-[20px]">save</span>
                 {editingAsset ? 'Atualizar' : 'Salvar'}
               </button>
@@ -525,49 +938,72 @@ const StatCard: React.FC<{ icon: string, label: string, value: string, color: st
 );
 
 const FilterSelect: React.FC<{ label: string, current: string, options: string[], onChange: (val: string) => void }> = ({ label, current, options, onChange }) => (
-  <div className="relative">
-    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-xs font-semibold uppercase">{label}:</div>
-    <select
-      value={current}
-      onChange={(e) => onChange(e.target.value)}
-      className="appearance-none rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]/50 py-2.5 pl-14 to-pl-4 pr-10 text-sm font-medium text-[var(--text-main)] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary hover:bg-[var(--surface-color)] transition-colors cursor-pointer w-full min-w-[140px]"
-    >
-      {options.map(opt => <option key={opt}>{opt}</option>)}
-    </select>
-    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]">
-      <span className="material-symbols-outlined text-[20px]">keyboard_arrow_down</span>
-    </span>
+  <div className="flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]/50 px-3 py-2 text-sm font-medium text-[var(--text-main)] focus-within:border-primary focus-within:ring-1 focus-within:ring-primary hover:bg-[var(--surface-color)]/30 transition-all min-w-[140px]">
+    <span className="text-[var(--text-secondary)] text-[10px] font-bold uppercase whitespace-nowrap">{label}:</span>
+    <div className="relative flex-1 flex items-center">
+      <select
+        value={current}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none w-full bg-transparent pr-7 py-0.5 text-sm font-semibold text-[var(--text-main)] focus:outline-none cursor-pointer"
+      >
+        {options.map(opt => <option key={opt} className="bg-[var(--surface-color)] text-[var(--text-main)]">{opt}</option>)}
+      </select>
+      <span className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] flex items-center">
+        <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+      </span>
+    </div>
   </div>
 );
 
-const TableRow: React.FC<{ tag: string, name: string, icon: string, sector: string, model: string, criticality: string, status: string, statusColor: string, onEdit: () => void, onDelete: () => void, isAuthorized: boolean }> = ({ tag, name, icon, sector, model, criticality, status, statusColor, onEdit, onDelete, isAuthorized }) => (
+const TableRow: React.FC<{ id: string, tag: string, name: string, sector: string, model: string, criticality: string, status: string, statusColor: string, url?: string, onEdit: () => void, onDelete: () => void, isAuthorized: boolean }> = ({ id, tag, name, sector, model, criticality, status, statusColor, url, onEdit, onDelete, isAuthorized }) => (
   <tr className="group hover:bg-[var(--bg-color)]/40 transition-colors">
-    <td className="whitespace-nowrap px-6 py-4 font-mono text-[var(--text-secondary)] group-hover:text-[var(--text-main)]">{tag}</td>
-    <td className="whitespace-nowrap px-6 py-4 font-medium text-[var(--text-main)]">
-      <div className="flex items-center gap-3">
-        <div className="h-8 w-8 rounded bg-[var(--bg-color)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-secondary)]">
-          <span className="material-symbols-outlined text-[18px]">{icon}</span>
-        </div>
-        {name}
-      </div>
+    <td className="whitespace-nowrap py-2.5 px-4 align-middle font-mono text-[var(--text-secondary)] group-hover:text-[var(--text-main)]">{tag}</td>
+    <td className="py-2.5 px-4 align-middle font-medium text-[var(--text-main)]">
+      <span className="truncate max-w-[200px] sm:max-w-[260px] block" title={name}>{name}</span>
     </td>
-    <td className="whitespace-nowrap px-6 py-4 text-[var(--text-secondary)] group-hover:text-[var(--text-main)]">{sector}</td>
-    <td className="whitespace-nowrap px-6 py-4 text-[var(--text-secondary)] group-hover:text-[var(--text-main)]">{model}</td>
-    <td className="whitespace-nowrap px-6 py-4 text-center">
+    <td className="py-2.5 px-4 align-middle text-[var(--text-secondary)] group-hover:text-[var(--text-main)] truncate max-w-[150px]" title={sector}>{sector}</td>
+    <td className="py-2.5 px-4 align-middle text-[var(--text-secondary)] group-hover:text-[var(--text-main)] truncate max-w-[150px]" title={model}>{model}</td>
+    <td className="whitespace-nowrap py-2.5 px-4 align-middle text-center">
       <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-bold ring-1 ring-inset ${criticality.includes('Alta') ? 'bg-red-500/10 text-red-500 ring-red-500/20' : criticality.includes('Média') ? 'bg-amber-500/10 text-amber-500 ring-amber-500/20' : 'bg-primary/10 text-primary ring-primary/30'}`}>
         {criticality}
       </span>
     </td>
-    <td className="whitespace-nowrap px-6 py-4">
-      <div className="flex items-center gap-2">
-        <span className={`relative flex h-2.5 w-2.5 ${status === 'Operacional' ? '' : 'rounded-full'} ${status === 'Parado' ? 'bg-slate-500' : ''} ${status === 'Em Alerta' ? 'bg-amber-500' : ''}`}>
-          {status === 'Operacional' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-          {status === 'Operacional' && <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>}
-        </span>
-        <span className={statusColor}>{status}</span>
-      </div>
+    <td className="whitespace-nowrap py-2.5 px-4 align-middle">
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border transition-all ${
+        status === 'Operacional'
+          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          : status === 'Em Alerta'
+            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+            : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+      }`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${
+          status === 'Operacional'
+            ? 'bg-emerald-400 animate-pulse'
+            : status === 'Em Alerta'
+              ? 'bg-amber-400'
+              : 'bg-rose-400 animate-pulse'
+        }`}></span>
+        {status}
+      </span>
     </td>
-    <td className="whitespace-nowrap px-6 py-4 text-right">
+    <td className="whitespace-nowrap py-2.5 px-4 align-middle text-right">
+      <button 
+        onClick={() => {
+          if (url && url.trim()) {
+            window.open(url.startsWith('http') ? url : `https://${url}`, '_blank', 'noopener,noreferrer');
+          } else {
+            alert('Nenhum link cadastrado para este ativo. Edite o ativo para definir um link.');
+          }
+        }} 
+        className={`rounded p-1 transition-colors mr-1 inline-flex items-center justify-center cursor-pointer ${
+          url && url.trim() 
+            ? 'text-primary hover:bg-[var(--bg-color)] hover:text-sky-400' 
+            : 'text-slate-650 hover:bg-transparent cursor-not-allowed'
+        }`}
+        title={url && url.trim() ? "Acessar Link do Ativo" : "Sem link cadastrado"}
+      >
+        <span className="material-symbols-outlined text-[20px]">link</span>
+      </button>
       {isAuthorized && (
         <>
           <button onClick={onEdit} className="rounded p-1 text-[var(--text-secondary)] hover:bg-[var(--bg-color)] hover:text-[var(--text-main)] transition-colors">
@@ -583,54 +1019,70 @@ const TableRow: React.FC<{ tag: string, name: string, icon: string, sector: stri
 );
 
 
-const InputGroup: React.FC<{ label: string, placeholder?: string, icon?: string, value: string, onChange: (v: string) => void, required?: boolean }> = ({ label, placeholder, icon, value, onChange, required = true }) => (
-  <div className="space-y-1.5">
-    <label className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)]">
-      {label} {required && <span className="text-red-500">*</span>}
-    </label>
-    <div className="relative group">
+const InputGroup: React.FC<{ 
+  label: string;
+  placeholder?: string;
+  icon?: string;
+  iconColor?: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  type?: string;
+}> = ({ label, placeholder, icon, iconColor = "text-primary", value, onChange, required = true, type = "text" }) => (
+  <div className="space-y-1">
+    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
       {icon && (
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] group-focus-within:text-primary transition-colors">
-          <span className="material-symbols-outlined text-[20px]">{icon}</span>
+        <span className={`material-symbols-outlined text-[14px] ${iconColor}`}>
+          {icon}
         </span>
       )}
-      <input
-        className={`block w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)] py-2.5 ${icon ? 'pl-10' : 'px-3'} pr-3 text-sm text-[var(--text-main)] placeholder-[var(--text-secondary)] focus:border-primary focus:ring-1 focus:ring-primary transition-all outline-none`}
-        placeholder={placeholder}
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-      />
-    </div>
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <input
+      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:border-primary placeholder-slate-600 text-sm transition-all"
+      placeholder={placeholder}
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      required={required}
+    />
   </div>
 );
 
-const SelectGroup: React.FC<{ label: string, options: string[], value: string, onChange: (v: string) => void, icon?: string, onAction?: () => void }> = ({ label, options, value, onChange, icon, onAction }) => (
-  <div className="space-y-1.5">
+const SelectGroup: React.FC<{ 
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+  icon?: string;
+  iconColor?: string;
+  onAction?: () => void;
+  required?: boolean;
+}> = ({ label, options, value, onChange, icon, iconColor = "text-primary", onAction, required = true }) => (
+  <div className="space-y-1">
     <div className="flex justify-between items-center">
-      <label className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] flex items-center gap-2">
-        {icon && <span className="material-symbols-outlined text-[16px]">{icon}</span>}
-        {label} <span className="text-red-500">*</span>
+      <label className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+        {icon && (
+          <span className={`material-symbols-outlined text-[14px] ${iconColor}`}>
+            {icon}
+          </span>
+        )}
+        {label} {required && <span className="text-red-500">*</span>}
       </label>
       {onAction && (
-        <button type="button" onClick={onAction} className="text-primary hover:text-primary-hover p-0.5 rounded transition-colors" title="Gerenciar Setores">
-          <span className="material-symbols-outlined text-[16px]">edit</span>
+        <button type="button" onClick={onAction} className="text-primary hover:text-sky-400 p-0.5 rounded transition-colors" title="Gerenciar Setores">
+          <span className="material-symbols-outlined text-[14px]">edit</span>
         </button>
       )}
     </div>
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="block w-full appearance-none rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)] py-2.5 pl-3 pr-10 text-sm text-[var(--text-main)] focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer outline-none"
-      >
-        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-      </select>
-      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]">
-        <span className="material-symbols-outlined text-[20px]">keyboard_arrow_down</span>
-      </span>
-    </div>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:border-primary cursor-pointer text-sm transition-all"
+      required={required}
+    >
+      {options.map(opt => <option key={opt} value={opt} className="bg-slate-900">{opt}</option>)}
+    </select>
   </div>
 );
 
@@ -640,7 +1092,6 @@ const SectorManagerModal: React.FC<{ isOpen: boolean; initialSectors: string[]; 
   const [sectors, setSectors] = useState(initialSectors);
 
   useEffect(() => {
-    // Refresh list locally when opening (though parent manages it, we want instant feedback here)
     const fetch = async () => {
       const { data } = await supabase.from('sectors').select('name, id').order('name');
       if (data) setSectors(data.map(d => d.name));
@@ -652,7 +1103,6 @@ const SectorManagerModal: React.FC<{ isOpen: boolean; initialSectors: string[]; 
     e.preventDefault();
     if (!sectorName.trim()) return;
 
-    // Optimistic
     setSectors([...sectors, sectorName]);
 
     const { error } = await supabase.from('sectors').insert([{ name: sectorName }]);
@@ -660,7 +1110,6 @@ const SectorManagerModal: React.FC<{ isOpen: boolean; initialSectors: string[]; 
       alert('Erro ao salvar setor: ' + error.message);
     } else {
       setSectorName('');
-      // Fetch again to ensure sync
       const { data } = await supabase.from('sectors').select('name').order('name');
       if (data) setSectors(data.map(d => d.name));
     }
@@ -669,7 +1118,6 @@ const SectorManagerModal: React.FC<{ isOpen: boolean; initialSectors: string[]; 
   const handleDelete = async (name: string) => {
     if (!confirm(`Excluir o setor "${name}"?`)) return;
 
-    // Get ID first? Or delete by name (unique)
     const { error } = await supabase.from('sectors').delete().eq('name', name);
     if (error) {
       alert('Erro ao excluir: ' + error.message);
@@ -679,33 +1127,41 @@ const SectorManagerModal: React.FC<{ isOpen: boolean; initialSectors: string[]; 
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="relative w-full max-w-md rounded-xl border border-[var(--border-color)] bg-[var(--surface-color)] shadow-2xl p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-[var(--text-main)]">Gerenciar Setores</h3>
-          <button onClick={onClose}><span className="material-symbols-outlined text-[var(--text-secondary)]">close</span></button>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-md bg-[var(--surface-color)] border border-[var(--border-color)] rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col animate-scale-up">
+        <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">domain</span>
+            Gerenciar Setores
+          </h3>
+          <button 
+            onClick={onClose}
+            className="text-slate-400 hover:text-white rounded-lg p-1 transition cursor-pointer"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
         </div>
 
-        <form onSubmit={handleAdd} className="flex gap-2 mb-4">
+        <form onSubmit={handleAdd} className="flex gap-2 mb-6">
           <input
-            className="flex-1 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)] px-3 py-2 text-sm text-[var(--text-main)] outline-none focus:border-primary"
+            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white outline-none focus:border-primary placeholder-slate-600"
             placeholder="Novo Setor..."
             value={sectorName}
             onChange={e => setSectorName(e.target.value)}
           />
-          <button type="submit" className="bg-primary text-white rounded-lg px-4 py-2 font-bold text-sm shadow-neon hover:bg-primary-hover">
-            <span className="material-symbols-outlined">add</span>
+          <button type="submit" className="bg-primary hover:bg-sky-400 text-white rounded-lg px-4 py-2.5 font-bold text-sm shadow-neon flex items-center justify-center transition-all cursor-pointer">
+            <span className="material-symbols-outlined text-[20px]">add</span>
           </button>
         </form>
 
-        <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-          {sectors.length === 0 && <p className="text-sm text-[var(--text-secondary)] text-center italic">Nenhum setor cadastrado.</p>}
+        <div className="max-h-60 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+          {sectors.length === 0 && <p className="text-xs text-slate-500 text-center italic">Nenhum setor cadastrado.</p>}
           {sectors.map(s => (
-            <div key={s} className="flex justify-between items-center p-2 rounded bg-[var(--bg-color)] border border-[var(--border-color)]">
-              <span className="text-sm text-[var(--text-main)]">{s}</span>
-              <button onClick={() => handleDelete(s)} className="text-red-500 hover:text-red-400 p-1">
-                <span className="material-symbols-outlined text-[16px]">delete</span>
+            <div key={s} className="flex justify-between items-center p-3 rounded-xl bg-slate-900 border border-slate-850">
+              <span className="text-sm font-semibold text-slate-200">{s}</span>
+              <button onClick={() => handleDelete(s)} className="text-slate-500 hover:text-rose-500 p-1 rounded-lg hover:bg-rose-500/10 transition-all cursor-pointer">
+                <span className="material-symbols-outlined text-[16px] block">delete</span>
               </button>
             </div>
           ))}

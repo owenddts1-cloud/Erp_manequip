@@ -1,0 +1,110 @@
+Created At: 2026-05-27T00:41:02Z
+Completed At: 2026-05-27T00:41:02Z
+File Path: `file:///c:/Users/Manuten%C3%A7%C3%A3o/MANEQUIP/pages/Login.tsx`
+Total Lines: 1154
+Total Bytes: 52258
+Showing lines 1 to 200
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import React, { useState, useEffect, useRef } from 'react';
+2: import { useNavigate, Link } from 'react-router-dom';
+3: import { supabase } from '../services/supabase';
+4: import { validateEmail, sanitizeInput, checkLoginRateLimit, recordLoginAttempt, resetLoginRateLimit } from '../services/validation';
+5: 
+6: const AntigravityCanvas: React.FC = () => {
+7:   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+8: 
+9:   React.useEffect(() => {
+10:     const canvas = canvasRef.current;
+11:     if (!canvas) return;
+12:     const ctx = canvas.getContext('2d');
+13:     if (!ctx) return;
+14: 
+15:     let animationFrameId: number;
+16:     let width = (canvas.width = window.innerWidth);
+17:     let height = (canvas.height = window.innerHeight);
+18: 
+19:     const particles: Array<{
+20:       x: number;
+21:       y: number;
+22:       x0: number;
+23:       y0: number;
+24:       size: number;
+25:       color: string;
+26:       angle: number;
+27:       speed: number;
+28:     }> = [];
+29: 
+30:     const mouse = {
+31:       x: -1000,
+32:       y: -1000,
+33:       targetX: -1000,
+34:       targetY: -1000,
+35:       active: false
+36:     };
+37: 
+38:     const initParticles = () => {
+39:       particles.length = 0;
+40:       
+41:       // Calculate spacing based on screen size for optimal density
+42:       const spacing = Math.max(45, Math.min(60, Math.floor(width / 30)));
+43:       const cols = Math.floor(width / spacing);
+44:       const rows = Math.floor(height / spacing);
+45: 
+46:       for (let i = 0; i < cols; i++) {
+47:         for (let j = 0; j < rows; j++) {
+48:           cons
+<truncated 3546 bytes>
+   const speed = Math.sqrt(vx * vx + vy * vy);
+149: 
+150:         ctx.beginPath();
+151: 
+152:         // Draw dynamic line/dash segments based on velocity
+153:         const len = 3 + speed * 0.8;
+154:         const drawAngle = speed > 0.2 ? Math.atan2(vy, vx) : p.angle + time;
+155: 
+156:         ctx.strokeStyle = p.color;
+157:         ctx.lineWidth = p.size;
+158:         ctx.lineCap = 'round';
+159:         ctx.moveTo(p.x - Math.cos(drawAngle) * len, p.y - Math.sin(drawAngle) * len);
+160:         ctx.lineTo(p.x + Math.cos(drawAngle) * len, p.y + Math.sin(drawAngle) * len);
+161:         ctx.stroke();
+162:       });
+163: 
+164:       animationFrameId = requestAnimationFrame(animate);
+165:     };
+166: 
+167:     animate();
+168: 
+169:     return () => {
+170:       cancelAnimationFrame(animationFrameId);
+171:       window.removeEventListener('mousemove', handleMouseMove);
+172:       document.removeEventListener('mouseleave', handleMouseLeave);
+173:       window.removeEventListener('resize', handleResize);
+174:     };
+175:   }, []);
+176: 
+177:   return (
+178:     <canvas
+179:       ref={canvasRef}
+180:       className="fixed inset-0 w-full h-full pointer-events-none z-0"
+181:     />
+182:   );
+183: };
+184: 
+185: // ==========================================
+186: // 1. Component for 3D Entrance Reveals on Scroll
+187: // ==========================================
+188: interface RevealOnScrollProps {
+189:   children: React.ReactNode;
+190:   delay?: number;
+191:   direction?: 'up' | 'down' | 'left' | 'right';
+192: }
+193: 
+194: const RevealOnScroll: React.FC<RevealOnScrollProps> = ({ children, delay = 0, direction = 'up' }) => {
+195:   const [isVisible, setIsVisible] = useState(false);
+196:   const domRef = useRef<HTMLDivElement>(null);
+197: 
+198:   useEffect(() => {
+199:     const observer = new IntersectionObserver(
+200:       (entries) => {
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

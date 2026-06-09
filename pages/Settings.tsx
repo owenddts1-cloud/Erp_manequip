@@ -414,13 +414,41 @@ const Settings: React.FC = () => {
 
       {/* Confirmation Modal */}
       {isConfirmOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[var(--surface-color)] border border-[var(--border-color)] rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-in zoom-in-95">
-            <h3 className="text-xl font-bold text-[var(--text-main)] mb-2">Confirmar Mudança</h3>
-            <p className="text-[var(--text-secondary)] text-sm mb-6">Deseja realmente atualizar a chave <strong>{pendingUpdate?.key}</strong>?</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setIsConfirmOpen(false)} className="px-4 py-2 text-[var(--text-secondary)] font-medium">Cancelar</button>
-              <button onClick={confirmUpdateKey} className="px-5 py-2 bg-primary text-white font-bold rounded-lg shadow-lg shadow-primary/20">Confirmar</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-sm bg-[var(--surface-color)] border border-[var(--border-color)] rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col animate-scale-up">
+            <div className="absolute top-0 left-0 w-full h-1 bg-amber-500"></div>
+
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-500">warning</span>
+                Confirmar Alteração
+              </h3>
+              <button 
+                onClick={() => setIsConfirmOpen(false)} 
+                className="text-slate-400 hover:text-white rounded-lg p-1 transition cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <p className="text-slate-300 text-sm mb-6 leading-relaxed">
+              Deseja realmente atualizar o valor da configuração <strong className="text-primary font-mono">{pendingUpdate?.key}</strong>? Esta ação pode impactar a integração com os sistemas externos.
+            </p>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <button 
+                onClick={() => setIsConfirmOpen(false)} 
+                className="px-4 py-2 text-sm text-slate-500 font-bold hover:text-white transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmUpdateKey} 
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-amber-500 hover:bg-amber-400 shadow-neon transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">check</span>
+                Confirmar
+              </button>
             </div>
           </div>
         </div>
@@ -428,16 +456,84 @@ const Settings: React.FC = () => {
 
       {/* Add Key Modal */}
       {isAddKeyOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[var(--surface-color)] border border-[var(--border-color)] rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95">
-            <h3 className="text-xl font-bold text-[var(--text-main)] mb-4">Adicionar Chave</h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md bg-[var(--surface-color)] border border-[var(--border-color)] rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col animate-scale-up">
+            <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">key</span>
+                Adicionar Chave
+              </h3>
+              <button 
+                onClick={() => setIsAddKeyOpen(false)} 
+                className="text-slate-400 hover:text-white rounded-lg p-1 transition cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
             <form onSubmit={handleAddKey} className="space-y-4">
-              <InputSetting label="Nome da Chave" value={newKeyData.key} onChange={v => setNewKeyData(p => ({ ...p, key: v.toUpperCase().replace(/\s/g, '_') }))} placeholder="Ex: GOOGLE_MAPS_KEY" />
-              <InputSetting label="Valor" value={newKeyData.value} onChange={v => setNewKeyData(p => ({ ...p, value: v }))} placeholder="Cole a chave aqui" />
-              <InputSetting label="Descrição" value={newKeyData.description} onChange={v => setNewKeyData(p => ({ ...p, description: v }))} placeholder="Para que serve?" />
-              <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border-color)]">
-                <button type="button" onClick={() => setIsAddKeyOpen(false)} className="px-4 py-2 text-[var(--text-secondary)] font-medium">Cancelar</button>
-                <button type="submit" className="px-5 py-2 bg-primary text-white font-bold rounded-lg">Salvar Chave</button>
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                  <span className="material-symbols-outlined text-[14px] text-primary">vpn_key</span>
+                  Nome da Chave
+                </label>
+                <input
+                  type="text"
+                  value={newKeyData.key}
+                  onChange={e => setNewKeyData(p => ({ ...p, key: e.target.value.toUpperCase().replace(/\s/g, '_') }))}
+                  placeholder="Ex: GOOGLE_MAPS_KEY"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-primary outline-none text-sm font-mono"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                  <span className="material-symbols-outlined text-[14px] text-sky-400">visibility</span>
+                  Valor
+                </label>
+                <input
+                  type="text"
+                  value={newKeyData.value}
+                  onChange={e => setNewKeyData(p => ({ ...p, value: e.target.value }))}
+                  placeholder="Cole o token ou chave de API aqui"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-primary outline-none text-sm font-mono"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                  <span className="material-symbols-outlined text-[14px] text-violet-400">description</span>
+                  Descrição
+                </label>
+                <input
+                  type="text"
+                  value={newKeyData.description}
+                  onChange={e => setNewKeyData(p => ({ ...p, description: e.target.value }))}
+                  placeholder="Ex: Utilizada para geolocalização dos ativos"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-primary outline-none text-sm"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-6 border-t border-slate-800 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setIsAddKeyOpen(false)} 
+                  className="px-4 py-2 text-sm text-slate-500 font-bold hover:text-white transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-sky-400 shadow-neon transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">save</span>
+                  Salvar Chave
+                </button>
               </div>
             </form>
           </div>

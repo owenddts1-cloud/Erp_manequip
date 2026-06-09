@@ -1,0 +1,44 @@
+Created At: 2026-05-27T00:41:30Z
+Completed At: 2026-05-27T00:41:30Z
+File Path: `file:///c:/Users/Manuten%C3%A7%C3%A3o/MANEQUIP/pages/Login.tsx`
+Total Lines: 1154
+Total Bytes: 52258
+Showing lines 460 to 495
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+460: const Login: React.FC = () => {
+461:   const navigate = useNavigate();
+462:   const [email, setEmail] = useState('');
+463:   const [password, setPassword] = useState('');
+464:   const [showPassword, setShowPassword] = useState(false);
+465:   const [isLoading, setIsLoading] = useState(false);
+466:   const [error, setError] = useState<string | null>(null);
+467: 
+468:   const [scrollY, setScrollY] = useState(0);
+469:   const videoRef = useRef<HTMLVideoElement>(null);
+470:   const globeVideoRef = useRef<HTMLVideoElement>(null);
+471:   const [activeHighlight, setActiveHighlight] = useState<string | null>(null);
+472: 
+473:   useEffect(() => {
+474:     const handleScroll = () => {
+475:       setScrollY(window.scrollY);
+476:     };
+477:     window.addEventListener('scroll', handleScroll, { passive: true });
+478:     return () => window.removeEventListener('scroll', handleScroll);
+479:   }, []);
+480: 
+481:   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>, id: string) => {
+482:     e.preventDefault();
+483:     const element = document.getElementById(id);
+484:     if (element) {
+485:       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+486:       setActiveHighlight(id);
+487:       setTimeout(() => {
+488:         setActiveHighlight(null);
+489:       }, 1500); // Glow flash duration
+490:     }
+491:   };
+492: 
+493:   // Control background videos playback speed based on mouse movement velocity
+494:   useEffect(() => {
+495:     const video = videoRef.current;
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

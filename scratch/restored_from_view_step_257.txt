@@ -1,0 +1,39 @@
+Created At: 2026-05-27T00:41:40Z
+Completed At: 2026-05-27T00:41:40Z
+File Path: `file:///c:/Users/Manuten%C3%A7%C3%A3o/MANEQUIP/pages/Login.tsx`
+Total Lines: 1182
+Total Bytes: 53246
+Showing lines 790 to 820
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+790:         >
+791:           <span className="material-symbols-outlined text-[14px] text-purple-400/70 group-hover:text-purple-400">developer_board</span>
+792:           Motor Core 360
+793:         </button>
+794:         <button
+795:           onClick={(e) => handleNavClick(e, 'metric-uptime')}
+796:           className="text-left text-[11px] text-slate-400 hover:text-[#00d2ff] transition-colors flex items-center gap-2 group cursor-pointer"
+797:         >
+798:           <span className="material-symbols-outlined text-[14px] text-emerald-400/70 group-hover:text-emerald-400">speed</span>
+799:           Uptime de 99.8%
+800:         </button>
+801:         <button
+802:           onClick={(e) => handleNavClick(e, 'contact-form')}
+803:           className="text-left text-[11px] text-slate-400 hover:text-[#00d2ff] transition-colors flex items-center gap-2 group cursor-pointer"
+804:         >
+805:           <span className="material-symbols-outlined text-[14px] text-rose-400/70 group-hover:text-rose-400">mail</span>
+806:           Contato Direto
+807:         </button>
+808:       </div>
+809: 
+810:       {/* Hero Section & Login Form */}
+811:       <section className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center min-h-[calc(100vh-64px)] px-6 md:px-16 pt-24 pb-12" id="inicio">
+812:         
+813:         {/* Left Column: Branding Copy (Parallax) */}
+814:         <div 
+815:           className="lg:col-span-7 flex flex-col justify-center text-left transition-transform duration-100 ease-out"
+816:           style={{ transform: `translate3d(0, ${scrollY * 0.08}px, 0)` }}
+817:         >
+818:           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/10 text-[#00d2ff] text-xs font-semibold mb-6 shadow-sm w-fit animate-pulse">
+819:             <span className="relative flex h-2 w-2">
+820:               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

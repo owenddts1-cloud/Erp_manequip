@@ -27,17 +27,268 @@
 }
 
 /* 3. Manual Override (Forced Modes) */
-/* 3. Manual Override (Forced Modes) */
 :root[modo-light-dark="light"] {
   color-scheme: light;
-  --bg-color: #f1f5f9 !important;
-  --surface-color: #ffffff !important;
+  --bg-color: #ffffff !important;
+  --surface-color: #f8fafc !important;
   --border-color: #cbd5e1 !important;
   --text-main: #0f172a !important;
   /* Slate 900 - Dark Text on Light BG */
   --text-secondary: #475569 !important;
   /* Slate 600 */
   --accent-glow: rgba(14, 165, 233, 0.1) !important;
+}
+
+/* Scoped overrides to resolve hardcoded dark background classes in Light Mode */
+:root[modo-light-dark="light"] main {
+  background-color: var(--bg-color) !important;
+  color: var(--text-main) !important;
+}
+
+/* Scrollbar theme compatibility */
+:root[modo-light-dark="light"] ::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+:root[modo-light-dark="light"] ::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+}
+:root[modo-light-dark="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+
+:root[modo-light-dark="light"] main .bg-\[\#0a0f1d\],
+:root[modo-light-dark="light"] main .bg-\[\#0a0f1d\]\/90,
+:root[modo-light-dark="light"] main .bg-\[\#0c101d\],
+:root[modo-light-dark="light"] main .bg-\[\#070c15\],
+:root[modo-light-dark="light"] main .bg-\[\#050b14\],
+:root[modo-light-dark="light"] main .bg-\[\#050B14\],
+:root[modo-light-dark="light"] main .bg-\[\#050811\],
+:root[modo-light-dark="light"] main .bg-\[\#0f111a\],
+:root[modo-light-dark="light"] main .bg-\[\#0f111a\]\/50,
+:root[modo-light-dark="light"] main .bg-slate-950,
+:root[modo-light-dark="light"] main .bg-slate-950\/60,
+:root[modo-light-dark="light"] main .bg-slate-900,
+:root[modo-light-dark="light"] main .bg-slate-900\/50,
+:root[modo-light-dark="light"] main .bg-slate-900\/60,
+:root[modo-light-dark="light"] main .bg-slate-900\/80,
+:root[modo-light-dark="light"] main .bg-\[\#111827\]\/60 {
+  background-color: var(--bg-color) !important;
+}
+
+:root[modo-light-dark="light"] main .bg-\[\#111827\],
+:root[modo-light-dark="light"] main .bg-\[\#111827\]\/30,
+:root[modo-light-dark="light"] main .bg-\[\#111827\]\/40,
+:root[modo-light-dark="light"] main .bg-\[\#111827\]\/70,
+:root[modo-light-dark="light"] main .bg-\[\#111827\]\/80,
+:root[modo-light-dark="light"] main .bg-\[\#0f111a\]\/40,
+:root[modo-light-dark="light"] main .bg-\[\#0f111a\]\/95,
+:root[modo-light-dark="light"] main .bg-\[\#0b1120\]\/80,
+:root[modo-light-dark="light"] main .bg-\[\#0b1120\]\/75,
+:root[modo-light-dark="light"] main .bg-\[\#0b1120\]\/95,
+:root[modo-light-dark="light"] main .bg-\[\#0b1120\]\/55,
+:root[modo-light-dark="light"] main .bg-\[\#0b1120\]\/60,
+:root[modo-light-dark="light"] main .bg-\[\#0b1120\],
+:root[modo-light-dark="light"] main .bg-\[\#080d1a\]\/92,
+:root[modo-light-dark="light"] main .bg-\[\#080d1a\]\/80,
+:root[modo-light-dark="light"] main .bg-\[\#0b111e\]\/90,
+:root[modo-light-dark="light"] main .bg-\[\#0b111e\],
+:root[modo-light-dark="light"] main .bg-\[\#111827\]\/40,
+:root[modo-light-dark="light"] main .bg-\[\#0c1222\],
+:root[modo-light-dark="light"] main .bg-\[\#1f2937\]\/50,
+:root[modo-light-dark="light"] main .bg-slate-900\/40,
+:root[modo-light-dark="light"] main .bg-\[\#1e293b\],
+:root[modo-light-dark="light"] main .bg-slate-800,
+:root[modo-light-dark="light"] main .bg-slate-800\/80,
+:root[modo-light-dark="light"] main .bg-slate-850,
+:root[modo-light-dark="light"] main .bg-slate-900\/95,
+:root[modo-light-dark="light"] main .bg-slate-950\/80 {
+  background-color: var(--surface-color) !important;
+}
+
+/* Specific details cards */
+:root[modo-light-dark="light"] main .bg-cyan-950\/80 {
+  background-color: #ecfeff !important;
+}
+:root[modo-light-dark="light"] main .bg-rose-950\/80 {
+  background-color: #fef2f2 !important;
+}
+:root[modo-light-dark="light"] main .bg-emerald-950 {
+  background-color: #f0fdf4 !important;
+}
+
+/* Suggestion buttons / translucent elements */
+:root[modo-light-dark="light"] main .bg-white\/5 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+:root[modo-light-dark="light"] main .bg-white\/10 {
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+}
+:root[modo-light-dark="light"] main .hover\:bg-white\/5:hover {
+  background-color: #cbd5e1 !important;
+}
+:root[modo-light-dark="light"] main .hover\:bg-white\/10:hover {
+  background-color: #cbd5e1 !important;
+}
+
+/* Chat bottom overlay gradient */
+:root[modo-light-dark="light"] main .from-\[\#050B14\],
+:root[modo-light-dark="light"] main .from-\[\#050b14\] {
+  --tw-gradient-from: #ffffff !important;
+  --tw-gradient-to: rgba(255, 255, 255, 0) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+:root[modo-light-dark="light"] main .via-\[\#050B14\]\/90,
+:root[modo-light-dark="light"] main .via-\[\#050b14\]\/90 {
+  --tw-gradient-stops: var(--tw-gradient-from), rgba(255, 255, 255, 0.9) 50%, var(--tw-gradient-to) !important;
+}
+
+/* Overrides for specific gradients like headers in Preventives */
+:root[modo-light-dark="light"] main .bg-gradient-to-r.from-slate-800 {
+  background-image: none !important;
+  background-color: #e2e8f0 !important;
+  color: var(--text-main) !important;
+}
+
+/* Overrides for table rows in WorkOrders (Preventive, Corrective, Normal) */
+:root[modo-light-dark="light"] main .bg-sky-950\/5 {
+  background-color: #f0f9ff !important;
+}
+:root[modo-light-dark="light"] main .bg-rose-950\/5 {
+  background-color: #fff1f2 !important;
+}
+:root[modo-light-dark="light"] main .bg-slate-900\/10,
+:root[modo-light-dark="light"] main .bg-slate-900\/30 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Specific overrides for mobile header and bottom navigation */
+:root[modo-light-dark="light"] .bg-\[\#0c101d\],
+:root[modo-light-dark="light"] .bg-\[\#0a0f1d\] {
+  background-color: var(--bg-color) !important;
+}
+
+/* Active bottom navigation items high contrast in light mode */
+:root[modo-light-dark="light"] div.fixed.bottom-0 .text-\[\#00d2ff\] {
+  color: #0369a1 !important;
+}
+:root[modo-light-dark="light"] div.flex.h-14.w-full .text-\[\#00d2ff\] {
+  color: #0369a1 !important;
+}
+
+:root[modo-light-dark="light"] main .border-slate-800,
+:root[modo-light-dark="light"] main .border-slate-800\/30,
+:root[modo-light-dark="light"] main .border-slate-800\/40,
+:root[modo-light-dark="light"] main .border-slate-800\/60,
+:root[modo-light-dark="light"] main .border-slate-800\/80,
+:root[modo-light-dark="light"] main .border-slate-800\/95,
+:root[modo-light-dark="light"] main .border-slate-700,
+:root[modo-light-dark="light"] main .border-slate-700\/30,
+:root[modo-light-dark="light"] main .border-slate-700\/50,
+:root[modo-light-dark="light"] main .border-slate-850,
+:root[modo-light-dark="light"] main .border-slate-900,
+:root[modo-light-dark="light"] main .border-\[\#1f2937\],
+:root[modo-light-dark="light"] main .border-\[\#1f2937\]\/50,
+:root[modo-light-dark="light"] main .border-\[\#1f2937\]\/60,
+:root[modo-light-dark="light"] main .border-\[\#1f2937\]\/75,
+:root[modo-light-dark="light"] main .border-white\/5,
+:root[modo-light-dark="light"] main .border-white\/10,
+:root[modo-light-dark="light"] main .border-white\/20,
+:root[modo-light-dark="light"] main .border-\[\#00d2ff\]\/20,
+:root[modo-light-dark="light"] main .border-\[\#00d2ff\]\/40,
+:root[modo-light-dark="light"] main .divide-slate-900 > :not([hidden]) ~ :not([hidden]),
+:root[modo-light-dark="light"] main .divide-\[\#1f2937\]\/50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-color) !important;
+}
+
+:root[modo-light-dark="light"] main .text-white,
+:root[modo-light-dark="light"] main .text-slate-100,
+:root[modo-light-dark="light"] main .text-slate-200,
+:root[modo-light-dark="light"] main .text-slate-300 {
+  color: var(--text-main) !important;
+}
+
+:root[modo-light-dark="light"] main .text-slate-400,
+:root[modo-light-dark="light"] main .text-slate-350,
+:root[modo-light-dark="light"] main .text-slate-450,
+:root[modo-light-dark="light"] main .text-slate-550,
+:root[modo-light-dark="light"] main .text-slate-500,
+:root[modo-light-dark="light"] main .text-slate-600 {
+  color: var(--text-secondary) !important;
+}
+
+/* Maintain white text on gradient buttons and status badges in light mode */
+:root[modo-light-dark="light"] main button[class*="from-"].text-white,
+:root[modo-light-dark="light"] main button[class*="bg-gradient"].text-white,
+:root[modo-light-dark="light"] main button.bg-primary.text-white,
+:root[modo-light-dark="light"] main button.bg-emerald-600.text-white,
+:root[modo-light-dark="light"] main button.bg-rose-600.text-white,
+:root[modo-light-dark="light"] main button.bg-\[\#00d2ff\].text-white,
+:root[modo-light-dark="light"] main .bg-gradient-to-br.text-white,
+:root[modo-light-dark="light"] main .bg-gradient-to-r.text-white,
+:root[modo-light-dark="light"] main .bg-primary.text-white,
+:root[modo-light-dark="light"] main .bg-rose-500.text-white,
+:root[modo-light-dark="light"] main .bg-emerald-500.text-white,
+:root[modo-light-dark="light"] main .bg-cyan-500.text-white,
+:root[modo-light-dark="light"] main .bg-violet-500.text-white {
+  color: #ffffff !important;
+}
+
+/* Recharts overrides in light mode for readability */
+:root[modo-light-dark="light"] main .recharts-cartesian-grid-horizontal line {
+  stroke: #cbd5e1 !important;
+}
+:root[modo-light-dark="light"] main .recharts-legend-item-text {
+  color: var(--text-main) !important;
+}
+
+/* Ensure blue/green/red text colors are readable on light background */
+:root[modo-light-dark="light"] main .text-\[\#00d2ff\],
+:root[modo-light-dark="light"] main .text-cyan-400,
+:root[modo-light-dark="light"] main .text-sky-400 {
+  color: #0369a1 !important; /* sky-700 - high contrast and readability */
+}
+
+:root[modo-light-dark="light"] main .text-emerald-400 {
+  color: #15803d !important;
+}
+
+:root[modo-light-dark="light"] main .text-rose-400,
+:root[modo-light-dark="light"] main .text-red-400 {
+  color: #b91c1c !important;
+}
+
+:root[modo-light-dark="light"] main .text-amber-400,
+:root[modo-light-dark="light"] main .text-amber-500 {
+  color: #b45309 !important;
+}
+
+/* Overrides for hover and active interactive states */
+:root[modo-light-dark="light"] main .hover\:bg-slate-800:hover,
+:root[modo-light-dark="light"] main .hover\:bg-slate-900:hover,
+:root[modo-light-dark="light"] main .hover\:bg-slate-900\/40:hover,
+:root[modo-light-dark="light"] main .hover\:bg-slate-900\/30:hover {
+  background-color: #cbd5e1 !important;
+}
+
+:root[modo-light-dark="light"] main .active\:bg-slate-800:active {
+  background-color: #94a3b8 !important;
+}
+
+:root[modo-light-dark="light"] main .hover\:bg-\[\#ffffff\]\/10:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+:root[modo-light-dark="light"] input::placeholder,
+:root[modo-light-dark="light"] textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+:root[modo-light-dark="light"] .bg-grid-pattern-dark {
+  background-image: 
+    linear-gradient(to right, rgba(100, 116, 139, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(100, 116, 139, 0.05) 1px, transparent 1px) !important;
 }
 
 :root[modo-light-dark="dark"] {
@@ -172,10 +423,10 @@ html.compact-mode .text-3xl {
 input,
 textarea,
 select {
-  background-color: var(--surface-color) !important;
-  color: var(--text-main) !important;
+  background-color: var(--surface-color);
+  color: var(--text-main);
   caret-color: var(--primary);
-  border: 1px solid var(--border-color) !important;
+  border: 1px solid var(--border-color);
   border-radius: 0.5rem;
 }
 
@@ -211,4 +462,145 @@ select:focus {
 option {
   background-color: var(--surface-color);
   color: var(--text-main);
+}
+
+/* Blueprint Dark Grid Pattern */
+.bg-grid-pattern-dark {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+}
+
+/* High-vibrancy override for TVs and Large Displays */
+@media (min-width: 1400px) {
+  :root {
+    --text-main: #ffffff !important;
+    --text-secondary: #cbd5e1 !important;
+  }
+  
+  html {
+    /* Prevents washed-out colors on uncalibrated TV HDMI screens */
+    filter: contrast(1.04) saturate(1.18);
+  }
+
+  .bg-\[\#0a0f1d\] {
+    background-color: #0d1527 !important;
+  }
+
+  .bg-\[\#0b111e\]\/90 {
+    background-color: rgba(15, 23, 42, 0.95) !important;
+  }
+}
+
+/* ========================================================================= */
+/* 4. Modal / Popup Standardisation (Light Theme) */
+/* ========================================================================= */
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #cbd5e1 !important;
+  color: var(--text-main) !important;
+  padding-top: 32px !important;
+  position: relative;
+  overflow: hidden !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08) !important;
+}
+
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to right, #00d2ff, #1d4ed8) !important;
+  z-index: 50;
+}
+
+/* Modal Title Icon & Heading contrast */
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl h3 {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl h3 span {
+  color: #0ea5e9 !important;
+}
+
+/* Form Labels inside Modals */
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl label {
+  color: #475569 !important; /* slate-600 */
+  font-weight: 700 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 6px !important;
+}
+
+/* Inputs and textareas inside Modals */
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl input,
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl select,
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl textarea {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 0.5rem !important; /* rounded-lg equivalent */
+  color: #0f172a !important;
+  font-weight: 500 !important;
+  padding: 8px 12px !important;
+}
+
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl input:focus,
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl select:focus,
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl textarea:focus {
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15) !important;
+}
+
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl input::placeholder,
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.8 !important;
+}
+
+/* Modal Footer & Buttons standardisation */
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl .flex.justify-end {
+  border-top: 1px solid #f1f5f9 !important;
+  padding-top: 20px !important;
+  margin-top: 20px !important;
+}
+
+/* Cancel / Left button inside modal footer */
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl .flex.justify-end button:first-child {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: #475569 !important; /* text-slate-600 */
+  border: none !important;
+  box-shadow: none !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  transition: all 0.2s ease !important;
+  padding: 8px 16px !important;
+}
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl .flex.justify-end button:first-child:hover {
+  color: #0f172a !important; /* text-slate-900 */
+  background-color: #f1f5f9 !important;
+  border-radius: 0.5rem !important;
+}
+
+/* Submit / Right button inside modal footer */
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl .flex.justify-end button:last-child {
+  background: linear-gradient(to right, #00d2ff, #1d4ed8) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  border-radius: 0.75rem !important; /* rounded-xl */
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2) !important;
+  border: none !important;
+  transition: all 0.2s ease !important;
+  padding: 8px 20px !important;
+}
+:root[modo-light-dark="light"] main div.fixed.inset-0 .rounded-2xl.shadow-2xl .flex.justify-end button:last-child:hover {
+  opacity: 0.95 !important;
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3) !important;
+  transform: translateY(-0.5px) !important;
 }

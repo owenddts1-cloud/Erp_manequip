@@ -21,13 +21,35 @@ interface Peca {
   created_at: string;
 }
 
+const getPageNumbers = (current: number, total: number) => {
+  const pages: (number | string)[] = [];
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    if (current <= 4) {
+      pages.push(1, 2, 3, 4, 5, '...', total);
+    } else if (current >= total - 3) {
+      pages.push(1, '...', total - 4, total - 3, total - 2, total - 1, total);
+    } else {
+      pages.push(1, '...', current - 1, current, current + 1, '...', total);
+    }
+  }
+  return pages;
+};
+
 const Inventory: React.FC = () => {
   const { t, userProfile } = usePreferences();
   const role = userProfile?.role || 'Técnico';
-  const isAuthorized = role === 'Administrator' || role === 'Gestor' || role === 'Técnico';
-
+  const isAuthorized = role === 'Administrator' || role === 'Gestor' || role === 'Técnico' || role === 'Supervisor';
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [items, setItems] = useState<Peca[]>([]);
   const [filteredItems, setFilteredItems] = useState<Peca[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,10 +58,18 @@ const Inventory: React.FC = () => {
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'Todos' | 'Critico' | 'Baixo' | 'Estavel'>('Todos');
+  const [sortKey, setSortKey] = useState<'nome_peca' | 'categoria' | 'localizacao' | 'quantidade_estoque' | 'valor_unitario' | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  
+  // Column specific filters
+  const [colFilterNome, setColFilterNome] = useState('');
+  const [colFilterCategoria, setColFilterCategoria] = useState('');
+  const [colFilterLocalizacao, setColFilterLocalizacao] = useState('');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const [itemsPerPage, setItemsPerPage] = useState(30);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -73,18 +103,72 @@ const Inventory: React.FC = () => {
     setLoading(false);
   };
 
+  const handleSort = (key: 'nome_peca' | 'categoria' | 'localizacao' | 'quantidade_estoque' | 'valor_unitario') => {
+    if (sortKey === key) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortOrder('asc');
+    }
+  };
+
   useEffect(() => {
-    let result = items;
+    let result = [...items];
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
       result = result.filter(i => (i.nome_peca?.toLowerCase().includes(lower)) || (i.sku?.toLowerCase().includes(lower)));
     }
+    if (colFilterNome) {
+      const lower = colFilterNome.toLowerCase();
+      result = result.filter(i => (i.nome_peca?.toLowerCase().includes(lower)) || (i.sku?.toLowerCase().includes(lower)));
+    }
+    if (colFilterCategoria) {
+      const lower = colFilterCategoria.toLowerCase();
+      result = result.filter(i => i.categoria?.toLowerCase().includes(lower));
+    }
+    if (colFilterLocalizacao) {
+      const lower = colFilterLocalizacao.toLowerCase();
+      result = result.filter(i => i.localizacao?.toLowerCase().includes(lower));
+    }
     if (locationFilter) {
       result = result.filter(i => i.localizacao === locationFilter);
     }
+    if (statusFilter !== 'Todos') {
+      result = result.filter(i => {
+        const min = i.estoque_minimo || 0;
+        if (statusFilter === 'Critico') {
+          return i.quantidade_estoque <= min;
+        }
+        if (statusFilter === 'Baixo') {
+          return i.quantidade_estoque > min && i.quantidade_estoque <= min * 1.5;
+        }
+        if (statusFilter === 'Estavel') {
+          return i.quantidade_estoque > min * 1.5;
+        }
+        return true;
+      });
+    }
+    if (sortKey) {
+      result.sort((a, b) => {
+        let valA = a[sortKey];
+        let valB = b[sortKey];
+        
+        if (valA === undefined || valA === null) valA = '';
+        if (valB === undefined || valB === null) valB = '';
+
+        if (typeof valA === 'string') {
+          valA = valA.toLowerCase();
+          valB = (valB as string).toLowerCase();
+        }
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
     setFilteredItems(result);
     setCurrentPage(1);
-  }, [searchTerm, locationFilter, items]);
+  }, [searchTerm, locationFilter, statusFilter, sortKey, sortOrder, items, colFilterNome, colFilterCategoria, colFilterLocalizacao]);
 
   const handleOpenModal = (item: Peca | null = null) => {
     if (!isAuthorized) {
@@ -167,6 +251,224 @@ const Inventory: React.FC = () => {
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
   const locations = Array.from(new Set(items.map(i => i.localizacao).filter(Boolean)));
 
+  if (isMobile) {
+    return (
+      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4 bg-[#0a0f1d] text-slate-100 pb-24">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-1 text-xs text-slate-400 font-medium">
+          <span>Almoxarifado</span>
+          <span className="material-symbols-outlined text-[12px]">chevron_right</span>
+          <span className="text-[#00d2ff] font-bold font-display">Inventário de Peças</span>
+        </div>
+
+        {/* Title */}
+        <div>
+          <h1 className="text-2xl font-black text-white tracking-tight font-display">Estoque de Manutenção</h1>
+        </div>
+
+        {/* Vertical KPIs Stack */}
+        <div className="space-y-3">
+          {/* Card 1: Peças Cadastradas */}
+          <div className="p-4 rounded-xl bg-[#111827] border-b-2 border-b-[#00d2ff] border border-slate-800/60 shadow-md">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="material-symbols-outlined text-[18px] text-[#00d2ff]">inventory_2</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Peças Cadastradas</span>
+            </div>
+            <h3 className="text-3xl font-extrabold text-white leading-none tracking-tight font-display">{totalSKUs}</h3>
+            <p className="text-[10px] text-slate-450 font-bold uppercase mt-2">SKUs ativos</p>
+          </div>
+
+          {/* Card 2: Valor Patrimonial */}
+          <div className="p-4 rounded-xl bg-[#111827] border-b-2 border-b-amber-500 border border-slate-800/60 shadow-md">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="material-symbols-outlined text-[18px] text-amber-500">payments</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Valor Patrimonial</span>
+            </div>
+            <h3 className="text-3xl font-extrabold text-white leading-none tracking-tight font-display">{formatCurrency(totalValue)}</h3>
+            <p className="text-[10px] text-slate-455 font-bold uppercase mt-2">Total avaliado</p>
+          </div>
+
+          {/* Card 3: Nível Crítico */}
+          <div className="p-4 rounded-xl bg-[#111827] border-b-2 border-b-rose-500 border border-slate-800/60 shadow-md">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="material-symbols-outlined text-[18px] text-rose-500">warning</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Nível Crítico</span>
+            </div>
+            <h3 className="text-3xl font-extrabold text-white leading-none tracking-tight font-display">{itemsCritical}</h3>
+            <p className="text-[10px] text-rose-450 font-bold uppercase mt-2">{healthPercent}% em conformidade</p>
+          </div>
+        </div>
+
+        {/* Search & Filters */}
+        <div className="space-y-3 bg-[#111827]/40 p-4 rounded-xl border border-slate-800/80">
+          {/* Search bar */}
+          <div className="relative w-full group">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 flex items-center">
+              <span className="material-symbols-outlined text-[18px]">search</span>
+            </span>
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-xl border border-slate-800 bg-[#111827] py-3 pl-11 pr-4 text-xs text-white placeholder-slate-500 focus:border-[#00d2ff] focus:outline-none transition-all"
+              placeholder="Buscar por nome ou SKU..."
+              type="text"
+            />
+          </div>
+
+          {/* Dropdown selects */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="relative">
+              <select
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                className="appearance-none w-full bg-slate-900 border border-slate-800 rounded-xl px-2 py-3 pr-6 text-[10px] font-semibold text-slate-300 outline-none cursor-pointer"
+              >
+                <option value="">Localizações</option>
+                {locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+              </select>
+              <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-500 flex items-center">
+                <span className="material-symbols-outlined text-[14px]">keyboard_arrow_down</span>
+              </span>
+            </div>
+
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="appearance-none w-full bg-slate-900 border border-slate-800 rounded-xl px-2 py-3 pr-6 text-[10px] font-semibold text-slate-300 outline-none cursor-pointer"
+              >
+                <option value="Todos">Status</option>
+                <option value="Critico">Crítico (≤ Mín)</option>
+                <option value="Baixo">Baixo (≤ 1.5x Mín)</option>
+                <option value="Estavel">Estável</option>
+              </select>
+              <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-500 flex items-center">
+                <span className="material-symbols-outlined text-[14px]">keyboard_arrow_down</span>
+              </span>
+            </div>
+
+            <div className="relative">
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="appearance-none w-full bg-slate-900 border border-slate-800 rounded-xl px-2 py-3 pr-6 text-[10px] font-semibold text-slate-300 outline-none cursor-pointer"
+              >
+                <option value={10}>10 Linhas</option>
+                <option value={30}>30 Linhas</option>
+                <option value={50}>50 Linhas</option>
+                <option value={100}>100 Linhas</option>
+                <option value={1000}>1000 Linhas</option>
+              </select>
+              <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-500 flex items-center">
+                <span className="material-symbols-outlined text-[14px]">keyboard_arrow_down</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Action Button */}
+          {isAuthorized && (
+            <button 
+              onClick={() => handleOpenModal()} 
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold text-xs tracking-wide shadow-lg active:scale-95 transition-all mt-1"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Nova Peça
+            </button>
+          )}
+        </div>
+
+        {/* Parts Card List */}
+        <div className="space-y-4">
+          {displayedItems.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 italic text-xs bg-[#111827]/40 rounded-xl border border-slate-800">
+              Vazio.
+            </div>
+          ) : (
+            displayedItems.map((item) => {
+              const status = getStockStatus(item);
+              return (
+                <div key={item.id} className="p-5 rounded-xl bg-[#111827] border border-slate-800 relative flex flex-col justify-between shadow-md">
+                  {/* Top line with title and edit button */}
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="min-w-0">
+                      <h4 className="text-base font-bold text-white tracking-tight truncate font-display">{item.nome_peca}</h4>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">SKU: {item.sku}</p>
+                    </div>
+                    {isAuthorized && (
+                      <button 
+                        onClick={() => handleOpenModal(item)}
+                        className="size-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-white hover:bg-slate-800 active:scale-95 transition-all shrink-0 animate-in fade-in"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Grid details */}
+                  <div className="grid grid-cols-2 gap-y-3 gap-x-4 mt-5 pt-4 border-t border-slate-800/80 text-xs">
+                    <div>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Categoria</span>
+                      <span className="text-slate-200 font-semibold mt-0.5 block truncate">{item.categoria || '-'}</span>
+                    </div>
+
+                    <div>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Localização</span>
+                      <span className="text-slate-200 font-semibold mt-0.5 flex items-center gap-1 truncate">
+                        <span className="material-symbols-outlined text-[14px] text-amber-500">location_on</span>
+                        {item.localizacao || '-'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Estoque</span>
+                      <span className={`font-bold mt-0.5 block ${status.isCritical ? 'text-red-500 animate-pulse' : 'text-slate-200'}`}>
+                        {item.quantidade_estoque} un
+                      </span>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase">MÍN: {item.estoque_minimo}</span>
+                    </div>
+
+                    <div>
+                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Preço Unit.</span>
+                      <span className="text-slate-200 font-semibold mt-0.5 block font-mono">{formatCurrency(item.valor_unitario)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="p-4 flex items-center justify-between bg-[#111827] rounded-xl border border-slate-800 text-xs text-slate-400 border-t border-slate-800/80">
+              <span>
+                Mostrando {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredItems.length)} de {filteredItems.length} peças
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className="p-1.5 rounded bg-slate-900 border border-slate-800 disabled:opacity-45 hover:text-white active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[16px] block">chevron_left</span>
+                </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  className="p-1.5 rounded bg-slate-900 border border-slate-800 disabled:opacity-45 hover:text-white active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[16px] block">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col p-4 md:px-8 md:py-8 max-w-[1600px] mx-auto w-full gap-6 overflow-y-auto bg-transparent">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -205,6 +507,30 @@ const Inventory: React.FC = () => {
             <option value="">Todas Localizações</option>
             {locations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
           </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="w-full sm:w-48 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]/50 py-2.5 px-4 text-sm text-[var(--text-main)] outline-none cursor-pointer"
+          >
+            <option value="Todos">Todos os Status</option>
+            <option value="Critico">Crítico (≤ Mín)</option>
+            <option value="Baixo">Baixo (≤ 1.5x Mín)</option>
+            <option value="Estavel">Estável</option>
+          </select>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="w-full sm:w-36 rounded-lg border border-[var(--border-color)] bg-[var(--bg-color)]/50 py-2.5 px-4 text-sm text-[var(--text-main)] outline-none cursor-pointer"
+          >
+            <option value={10}>10 Linhas</option>
+            <option value={30}>30 Linhas</option>
+            <option value={50}>50 Linhas</option>
+            <option value={100}>100 Linhas</option>
+            <option value={1000}>1000 Linhas</option>
+          </select>
         </div>
         {isAuthorized && (
           <button onClick={() => handleOpenModal()} className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-primary hover:bg-sky-400 text-white font-bold shadow-neon transition-all">
@@ -218,12 +544,77 @@ const Inventory: React.FC = () => {
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead>
               <tr className="border-b border-[var(--border-color)] bg-[var(--bg-color)]/50">
-                <th className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)]">Item / SKU</th>
-                <th className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)] hidden sm:table-cell">Categoria</th>
-                <th className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)] hidden md:table-cell">Localização</th>
-                <th className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)] text-right">Estoque</th>
-                <th className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)] text-right hidden lg:table-cell">Preço</th>
+                <th onClick={() => handleSort('nome_peca')} className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)] cursor-pointer select-none hover:text-white transition-colors">
+                  <div className="flex items-center gap-1">
+                    <span>Item / SKU</span>
+                    <span className="material-symbols-outlined text-[16px] transition-all">
+                      {sortKey === 'nome_peca' ? (sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
+                    </span>
+                  </div>
+                </th>
+                <th onClick={() => handleSort('categoria')} className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)] hidden sm:table-cell cursor-pointer select-none hover:text-white transition-colors">
+                  <div className="flex items-center gap-1">
+                    <span>Categoria</span>
+                    <span className="material-symbols-outlined text-[16px] transition-all">
+                      {sortKey === 'categoria' ? (sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
+                    </span>
+                  </div>
+                </th>
+                <th onClick={() => handleSort('localizacao')} className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)] hidden md:table-cell cursor-pointer select-none hover:text-white transition-colors">
+                  <div className="flex items-center gap-1">
+                    <span>Localização</span>
+                    <span className="material-symbols-outlined text-[16px] transition-all">
+                      {sortKey === 'localizacao' ? (sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
+                    </span>
+                  </div>
+                </th>
+                <th onClick={() => handleSort('quantidade_estoque')} className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)] text-right cursor-pointer select-none hover:text-white transition-colors">
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Estoque</span>
+                    <span className="material-symbols-outlined text-[16px] transition-all">
+                      {sortKey === 'quantidade_estoque' ? (sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
+                    </span>
+                  </div>
+                </th>
+                <th onClick={() => handleSort('valor_unitario')} className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)] text-right hidden lg:table-cell cursor-pointer select-none hover:text-white transition-colors">
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Preço</span>
+                    <span className="material-symbols-outlined text-[16px] transition-all">
+                      {sortKey === 'valor_unitario' ? (sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
+                    </span>
+                  </div>
+                </th>
                 <th className="p-4 text-xs font-bold uppercase text-[var(--text-secondary)] text-center">Ações</th>
+              </tr>
+              {/* Column Filter Row */}
+              <tr className="border-b border-[var(--border-color)] bg-[var(--bg-color)]/25">
+                <td className="p-2.5">
+                  <input
+                    value={colFilterNome}
+                    onChange={(e) => setColFilterNome(e.target.value)}
+                    placeholder="Filtrar por nome/SKU..."
+                    className="w-full bg-[var(--bg-color)]/30 border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-main)] placeholder-slate-650 outline-none focus:border-primary transition-all"
+                  />
+                </td>
+                <td className="p-2.5 hidden sm:table-cell">
+                  <input
+                    value={colFilterCategoria}
+                    onChange={(e) => setColFilterCategoria(e.target.value)}
+                    placeholder="Filtrar categoria..."
+                    className="w-full bg-[var(--bg-color)]/30 border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-main)] placeholder-slate-655 outline-none focus:border-primary transition-all"
+                  />
+                </td>
+                <td className="p-2.5 hidden md:table-cell">
+                  <input
+                    value={colFilterLocalizacao}
+                    onChange={(e) => setColFilterLocalizacao(e.target.value)}
+                    placeholder="Filtrar localização..."
+                    className="w-full bg-[var(--bg-color)]/30 border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-main)] placeholder-slate-655 outline-none focus:border-primary transition-all"
+                  />
+                </td>
+                <td className="p-2.5"></td>
+                <td className="p-2.5 hidden lg:table-cell"></td>
+                <td className="p-2.5"></td>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-color)]">
@@ -287,8 +678,18 @@ const Inventory: React.FC = () => {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="p-4 border-t border-[var(--border-color)] flex justify-center gap-2 mt-auto">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button key={p} onClick={() => setCurrentPage(p)} className={`size-8 rounded font-bold text-xs ${currentPage === p ? 'bg-primary text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>{p}</button>
+            {getPageNumbers(currentPage, totalPages).map((p, idx) => (
+              p === '...' ? (
+                <span key={`dots-${idx}`} className="px-2 text-slate-500 font-bold text-xs self-center">...</span>
+              ) : (
+                <button
+                  key={`page-${p}`}
+                  onClick={() => setCurrentPage(p as number)}
+                  className={`size-8 rounded font-bold text-xs ${currentPage === p ? 'bg-primary text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                >
+                  {p}
+                </button>
+              )
             ))}
           </div>
         )}

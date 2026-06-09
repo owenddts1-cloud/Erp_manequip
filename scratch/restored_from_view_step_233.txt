@@ -1,0 +1,56 @@
+Created At: 2026-05-27T00:41:00Z
+Completed At: 2026-05-27T00:41:00Z
+File Path: `file:///c:/Users/Manuten%C3%A7%C3%A3o/MANEQUIP/pages/Login.tsx`
+Total Lines: 1154
+Total Bytes: 52258
+Showing lines 700 to 800
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+700:             <span className="material-symbols-outlined text-[#00d2ff] text-[18px] group-hover:rotate-180 transition-transform duration-700">precision_manufacturing</span>
+701:           </div>
+702:           <span className="text-lg font-bold tracking-tight text-white">Preventiva <span className="text-[#00d2ff]">360</span></span>
+703:         </div>
+704: 
+705:         <nav className="hidden md:flex items-center gap-8 text-xs uppercase tracking-wider font-bold text-slate-400">
+706:           <a href="#inicio" onClick={(e) => { e.preventDefault(); document.getElementById('inicio')?.scrollIntoView({ behavior: 'smooth' }); }} className="relative hover:text-[#00d2ff] transition-colors py-1 group">
+707:             Início
+708:             <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#00d2ff] transition-all duration-300 group-hover:w-full"></span>
+709:           </a>
+710:           <a href="#features" onClick={(e) => handleNavClick(e, 'feat-preditiva')} className="relative hover:text-[#00d2ff] transition-colors py-1 group">
+711:             Funcionalidades
+712:             <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#00d2ff] transition-all duration-300 group-hover:w-full"></span>
+713:           </a>
+714:           <a href="#tech" onClick={(e) => handleNavClick(e, 'tech-core')} className="relative hover:text-[#00d2ff] transition-colors py-1 group">
+715:             Tecnologia
+716:             <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#00d2ff] transition-all duration-300 group-hover:w-full"></span>
+717:           </a>
+718:           <
+<truncated 3587 bytes>
+   <button
+774:           onClick={(e) => handleNavClick(e, 'contact-form')}
+775:           className="text-left text-[11px] text-slate-400 hover:text-[#00d2ff] transition-colors flex items-center gap-2 group cursor-pointer"
+776:         >
+777:           <span className="material-symbols-outlined text-[14px] text-rose-400/70 group-hover:text-rose-400">mail</span>
+778:           Contato Direto
+779:         </button>
+780:       </div>
+781: 
+782:       {/* Hero Section & Login Form */}
+783:       <section className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center min-h-[calc(100vh-64px)] px-6 md:px-16 pt-24 pb-12" id="inicio">
+784:         
+785:         {/* Left Column: Branding Copy (Parallax) */}
+786:         <div 
+787:           className="lg:col-span-7 flex flex-col justify-center text-left transition-transform duration-100 ease-out"
+788:           style={{ transform: `translate3d(0, ${scrollY * 0.08}px, 0)` }}
+789:         >
+790:           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/10 text-[#00d2ff] text-xs font-semibold mb-6 shadow-sm w-fit animate-pulse">
+791:             <span className="relative flex h-2 w-2">
+792:               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+793:               <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+794:             </span>
+795:             Industrial OS v2.4.0
+796:           </div>
+797:           
+798:           <h1 className="text-4xl md:text-6xl font-black leading-[1.1] mb-6 tracking-tight text-white">
+799:             Gestão Industrial de <br/>
+800:             <span className="bg-gradient-to-r from-[#00d2ff] to-[#6366f1] bg-clip-text text-transparent">Alta Performance</span>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

@@ -2,7 +2,7 @@
 const sanitizeKey = (val: any) => typeof val === 'string' ? val.trim().replace(/[\n\r]/g, '') : val;
 const apiKey = sanitizeKey(import.meta.env.VITE_GEMINI_API_KEY);
 
-export const sendMessageToGemini = async (message: string, model: string = 'gemini-2.0-flash'): Promise<string> => {
+export const sendMessageToGemini = async (message: string, model: string = 'gemini-3.5-flash', dbContext: string = ''): Promise<string> => {
     if (!apiKey) {
         throw new Error('Chave de API do Gemini não configurada (VITE_GEMINI_API_KEY).');
     }
@@ -16,7 +16,11 @@ export const sendMessageToGemini = async (message: string, model: string = 'gemi
             body: JSON.stringify({
                 contents: [{
                     parts: [{
-                        text: `Você é um assistente especialista em manutenção industrial (Preventiva 360). Responda de forma técnica, direta e útil para engenheiros e técnicos.\n\nUsuário: ${message}`
+                        text: `Você é um assistente especialista em manutenção industrial (Manequip 360). Responda de forma técnica, direta e útil para engenheiros e técnicos.
+
+${dbContext}
+
+Usuário: ${message}`
                     }]
                 }]
             }),

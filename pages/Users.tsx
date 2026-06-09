@@ -14,6 +14,61 @@ const Users: React.FC = () => {
   const isAdmin = role === 'Administrator';
   const isGestor = role === 'Gestor';
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [editingUserAvatarId, setEditingUserAvatarId] = useState<string | null>(null);
+  const [updatingAvatarId, setUpdatingAvatarId] = useState<string | null>(null);
+
+  const canEditPhotos = isAdmin && (
+    userProfile?.email?.toLowerCase().includes('data') ||
+    userProfile?.email?.toLowerCase().includes('guilherme') ||
+    userProfile?.email?.toLowerCase().includes('admin') ||
+    userProfile?.name?.toLowerCase().includes('data') ||
+    userProfile?.name?.toLowerCase().includes('guilherme') ||
+    userProfile?.name?.toLowerCase().includes('admin')
+  );
+
+  // Sorting State
+  const [sortKey, setSortKey] = useState<'full_name' | 'email' | 'role' | 'is_approved' | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (key: 'full_name' | 'email' | 'role' | 'is_approved') => {
+    if (sortKey === key) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedUsers = React.useMemo(() => {
+    const list = [...allUsers];
+    if (sortKey) {
+      list.sort((a, b) => {
+        let valA = a[sortKey];
+        let valB = b[sortKey];
+
+        if (valA === undefined || valA === null) valA = '';
+        if (valB === undefined || valB === null) valB = '';
+
+        if (typeof valA === 'boolean') {
+          return sortOrder === 'asc'
+            ? (valA === valB ? 0 : valA ? -1 : 1)
+            : (valA === valB ? 0 : valA ? 1 : -1);
+        }
+
+        if (typeof valA === 'string') {
+          valA = valA.toLowerCase();
+          valB = (valB as string).toLowerCase();
+        }
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return list;
+  }, [allUsers, sortKey, sortOrder]);
+
   const getReadableJobTitle = (jobTitle: string, userRole: string) => {
     const rawVal = (jobTitle || userRole || '').trim().toLowerCase();
     const normalized = rawVal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -40,6 +95,85 @@ const Users: React.FC = () => {
 
     const original = jobTitle || userRole || 'Cadastro';
     return original.charAt(0).toUpperCase() + original.slice(1);
+  };
+
+  const handleUserAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingUserAvatarId) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('A imagem deve ter no máximo 2MB antes da compressão.');
+      return;
+    }
+
+    setUpdatingAvatarId(editingUserAvatarId);
+    const targetUserId = editingUserAvatarId;
+    setEditingUserAvatarId(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 256;
+          const MAX_HEIGHT = 256;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ avatar_url: compressedDataUrl })
+              .eq('id', targetUserId);
+
+            if (updateError) throw updateError;
+
+            alert('Foto do usuário atualizada com sucesso!');
+            fetchUserData();
+          } else {
+            throw new Error('Falha ao processar imagem.');
+          }
+        } catch (err: any) {
+          console.error('Erro ao atualizar foto:', err);
+          alert('Erro ao atualizar foto: ' + (err.message || 'Erro desconhecido'));
+        } finally {
+          setUpdatingAvatarId(null);
+        }
+      };
+      img.onerror = () => {
+        alert('Erro ao processar imagem.');
+        setUpdatingAvatarId(null);
+      };
+      img.src = reader.result as string;
+    };
+    reader.onerror = () => {
+      alert('Erro ao ler arquivo.');
+      setUpdatingAvatarId(null);
+    };
+    reader.readAsDataURL(file);
   };
 
   useEffect(() => {
@@ -105,6 +239,13 @@ const Users: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-10 relative bg-transparent">
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleUserAvatarUpload}
+      />
       <div className="relative z-10 mx-auto max-w-5xl flex flex-col gap-8">
         <div className="flex flex-col gap-2 text-center mb-4">
           <h2 className="text-4xl font-black tracking-tight text-white mb-2">Usuários e Permissões</h2>
@@ -180,23 +321,80 @@ const Users: React.FC = () => {
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{allUsers.length} usuários</span>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
+                  <table className="w-full text-left min-w-[600px]">
                     <thead>
                       <tr className="border-b border-border-dark/50 text-[10px] font-bold uppercase text-slate-400">
-                        <th className="px-4 py-3">Nome / Perfil</th>
-                        <th className="px-4 py-3">Email</th>
-                        <th className="px-4 py-3">Nível</th>
-                        <th className="px-4 py-3">Status</th>
+                        <th onClick={() => handleSort('full_name')} className="px-4 py-3 cursor-pointer select-none hover:text-white transition-colors">
+                          <div className="flex items-center gap-1">
+                            <span>Nome / Perfil</span>
+                            {sortKey === 'full_name' && (sortOrder === 'asc' ? '▲' : '▼')}
+                          </div>
+                        </th>
+                        <th onClick={() => handleSort('email')} className="px-4 py-3 cursor-pointer select-none hover:text-white transition-colors">
+                          <div className="flex items-center gap-1">
+                            <span>Email</span>
+                            {sortKey === 'email' && (sortOrder === 'asc' ? '▲' : '▼')}
+                          </div>
+                        </th>
+                        <th onClick={() => handleSort('role')} className="px-4 py-3 cursor-pointer select-none hover:text-white transition-colors">
+                          <div className="flex items-center gap-1">
+                            <span>Nível</span>
+                            {sortKey === 'role' && (sortOrder === 'asc' ? '▲' : '▼')}
+                          </div>
+                        </th>
+                        <th onClick={() => handleSort('is_approved')} className="px-4 py-3 cursor-pointer select-none hover:text-white transition-colors">
+                          <div className="flex items-center gap-1">
+                            <span>Status</span>
+                            {sortKey === 'is_approved' && (sortOrder === 'asc' ? '▲' : '▼')}
+                          </div>
+                        </th>
                         {isAdmin && <th className="px-4 py-3 text-right">Ações</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-dark/30">
-                      {allUsers.length === 0 ? (
+                      {sortedUsers.length === 0 ? (
                         <tr><td colSpan={5} className="p-8 text-center text-slate-500 italic">Nenhum usuário encontrado.</td></tr>
                       ) : (
-                        allUsers.map((u) => (
+                        sortedUsers.map((u) => (
                           <tr key={u.id} className="text-sm text-slate-300 hover:bg-white/5 transition-colors group">
-                            <td className="px-4 py-4 font-medium text-white">{u.full_name}</td>
+                            <td className="px-4 py-4 font-medium text-white">
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  className={`relative shrink-0 ${canEditPhotos ? 'group cursor-pointer' : ''}`}
+                                  onClick={() => {
+                                    if (canEditPhotos && updatingAvatarId !== u.id) {
+                                      setEditingUserAvatarId(u.id);
+                                      setTimeout(() => fileInputRef.current?.click(), 50);
+                                    }
+                                  }}
+                                >
+                                  {u.avatar_url ? (
+                                    <img 
+                                      src={u.avatar_url} 
+                                      alt={u.full_name} 
+                                      className="size-8 rounded-full object-cover border border-slate-700/80 shadow-md"
+                                    />
+                                  ) : (
+                                    <div className="size-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs select-none">
+                                      {u.full_name?.[0]?.toUpperCase() || 'U'}
+                                    </div>
+                                  )}
+                                  
+                                  {canEditPhotos && updatingAvatarId !== u.id && (
+                                    <div className="absolute inset-0 bg-black/55 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-primary/30">
+                                      <span className="material-symbols-outlined text-[14px] text-white">photo_camera</span>
+                                    </div>
+                                  )}
+
+                                  {updatingAvatarId === u.id && (
+                                    <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center">
+                                      <span className="material-symbols-outlined text-primary animate-spin text-[14px]">progress_activity</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <span>{u.full_name}</span>
+                              </div>
+                            </td>
                             <td className="px-4 py-4 font-mono text-xs">{u.email}</td>
                             <td className="px-4 py-4">
                               {isAdmin && u.email !== 'admin@manequip.com' ? (
@@ -271,9 +469,17 @@ const Users: React.FC = () => {
                   {pendingUsers.map((user) => (
                     <div key={user.id} className="glass-panel p-5 rounded-xl border border-border-dark bg-surface-dark flex flex-col md:flex-row items-center justify-between gap-4 group hover:border-amber-500/30 transition-all">
                       <div className="flex items-center gap-4">
-                        <div className="size-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold border border-amber-500/20">
-                          {user.full_name?.[0]?.toUpperCase() || 'U'}
-                        </div>
+                        {user.avatar_url ? (
+                          <img 
+                            src={user.avatar_url} 
+                            alt={user.full_name} 
+                            className="size-12 rounded-full object-cover border border-amber-500/20 shadow-md shrink-0"
+                          />
+                        ) : (
+                          <div className="size-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold border border-amber-500/20 shrink-0">
+                            {user.full_name?.[0]?.toUpperCase() || 'U'}
+                          </div>
+                        )}
                         <div className="flex flex-col">
                           <span className="text-white font-bold">{user.full_name || 'Usuário Novo'}</span>
                           <span className="text-xs text-slate-400 font-medium">Cargo solicitado: {getReadableJobTitle(user.job_title, user.role)}</span>

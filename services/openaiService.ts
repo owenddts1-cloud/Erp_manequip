@@ -2,7 +2,7 @@
 const sanitizeKey = (val: any) => typeof val === 'string' ? val.trim().replace(/[\n\r]/g, '') : val;
 const apiKey = sanitizeKey(import.meta.env.VITE_OPENAI_API_KEY);
 
-export const sendMessageToOpenAI = async (message: string, model: string = 'gpt-4o-mini'): Promise<string> => {
+export const sendMessageToOpenAI = async (message: string, model: string = 'gpt-4o-mini', dbContext: string = ''): Promise<string> => {
     if (!apiKey) {
         throw new Error('Chave de API da OpenAI não configurada (VITE_OPENAI_API_KEY).');
     }
@@ -17,7 +17,9 @@ export const sendMessageToOpenAI = async (message: string, model: string = 'gpt-
             body: JSON.stringify({
                 model: model,
                 messages: [
-                    { role: 'system', content: 'Você é um assistente especialista em manutenção industrial (Preventiva 360). Responda de forma técnica, direta e útil para engenheiros e técnicos.' },
+                    { role: 'system', content: `Você é um assistente especialista em manutenção industrial (Manequip 360). Responda de forma técnica, direta e útil para engenheiros e técnicos.
+
+${dbContext}` },
                     { role: 'user', content: message },
                 ],
                 temperature: 0.7,

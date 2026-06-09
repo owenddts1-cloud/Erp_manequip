@@ -1,0 +1,107 @@
+Created At: 2026-05-27T00:41:05Z
+Completed At: 2026-05-27T00:41:05Z
+File Path: `file:///c:/Users/Manuten%C3%A7%C3%A3o/MANEQUIP/pages/Login.tsx`
+Total Lines: 1154
+Total Bytes: 52258
+Showing lines 201 to 400
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+201:         entries.forEach((entry) => {
+202:           if (entry.isIntersecting) {
+203:             setIsVisible(true);
+204:           }
+205:         });
+206:       },
+207:       { threshold: 0.05 }
+208:     );
+209: 
+210:     const current = domRef.current;
+211:     if (current) {
+212:       observer.observe(current);
+213:     }
+214: 
+215:     return () => {
+216:       if (current) {
+217:         observer.unobserve(current);
+218:       }
+219:     };
+220:   }, []);
+221: 
+222:   const getTransform = () => {
+223:     if (isVisible) return 'translate3d(0, 0, 0) scale(1) rotateX(0deg)';
+224:     switch (direction) {
+225:       case 'up':
+226:         return 'translate3d(0, 50px, 0) scale(0.96) rotateX(-6deg)';
+227:       case 'down':
+228:         return 'translate3d(0, -50px, 0) scale(0.96) rotateX(6deg)';
+229:       case 'left':
+230:         return 'translate3d(40px, 0, 0) scale(0.98)';
+231:       case 'right':
+232:         return 'translate3d(-40px, 0, 0) scale(0.98)';
+233:       default:
+234:         return 'translate3d(0, 45px, 0) scale(0.96)';
+235:     }
+236:   };
+237: 
+238:   return (
+239:     <div
+240:       ref={domRef}
+241:       className="transition-all duration-1000 ease-out"
+242:       style={{
+243:         opacity: isVisible ? 1 : 0,
+244:         transform: getTransform(),
+245:         transitionDelay: `${delay}ms`,
+246:         perspective: '1000px',
+247:       }}
+248:     >
+249:       {children}
+250:     </div>
+251:   );
+252: };
+253: 
+254: // ==========================================
+255: // 2. Component for Interactive Motherboard (3D Tilt & Scroll Zoom)
+256:
+<truncated 5203 bytes>
+Name="absolute bottom-3 flex items-center gap-1.5">
+360:           <span className="size-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+361:           <span className="text-[8px] font-bold text-emerald-400">ACTIVE</span>
+362:         </div>
+363:       </div>
+364: 
+365:       {/* Floating System Tags at different Z-depths */}
+366:       <div
+367:         className="absolute top-12 left-10 p-3 rounded-lg bg-[#111827]/80 border border-slate-800/80 text-[10px] font-mono text-slate-400 transition-transform duration-100"
+368:         style={{
+369:           transform: `translate3d(0, ${(scrollY - 1200) * 0.03}px, 20px)`,
+370:         }}
+371:       >
+372:         <div className="text-white font-bold">FUTURE READY</div>
+373:         <div className="text-[9px] text-slate-500 mt-0.5">PT 254 | SEC_0</div>
+374:       </div>
+375: 
+376:       <div
+377:         className="absolute bottom-16 right-10 p-3 rounded-lg bg-[#111827]/80 border border-slate-800/80 text-[10px] font-mono text-slate-400 transition-transform duration-100"
+378:         style={{
+379:           transform: `translate3d(0, ${(scrollY - 1200) * -0.03}px, 25px)`,
+380:         }}
+381:       >
+382:         <div className="text-[#00d2ff] font-bold">Uptime 99.99%</div>
+383:         <div className="text-[9px] text-slate-500 mt-0.5">SYSTEM STABLE</div>
+384:       </div>
+385:     </div>
+386:   );
+387: };
+388: 
+389: // ==========================================
+390: // 3. Component for Animated Numerical Metrics Counters
+391: // ==========================================
+392: interface AnimatedCounterProps {
+393:   target: number;
+394:   duration?: number;
+395:   suffix?: string;
+396:   prefix?: string;
+397: }
+398: 
+399: const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ target, duration = 1800, suffix = '', prefix = '' }) => {
+400:   const [count, setCount] = useState(0);
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

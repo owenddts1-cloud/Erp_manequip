@@ -1,0 +1,292 @@
+{
+  "_metadata_e_instrucoes": {
+    "titulo": "Mini Banco de Dados - Controle de Preventivas (SGI-032 e Distribuição)",
+    "objetivo": "Fornecer uma estrutura abstrata e limpa para leitura e interpretação pelo framework Antigravity do web/app.",
+    "orientacoes_antigravity": {
+      "significado_siglas_cronograma": "As letras no cronograma atuam como flags de status. 'P' = Manutenção Preventiva Prevista (agendada no planejamento). 'R' = Manutenção Preventiva Realizada (executada e concluída com sucesso).",
+      "relacionamento_tabelas": "Utilize 'patrimonio' ou 'equipamento' como Chave Estrangeira (Foreign Key) para cruzar a coleção 'planejamento_anual' com a coleção 'distribuicao_mensal'. Isso permite ver quem está executando a preventiva no momento e cruzar com o histórico anual do ativo.",
+      "padronizacao_status_mensal": "O campo 'status' na coleção 'distribuicao_mensal' deve ser tratado como um tipo ENUM restrito exclusivamente a ['PENDENTE', 'REALIZADA', 'EM ATENDIMENTO']."
+    }
+  },
+  "colecoes": {
+    "planejamento_anual_sgi32": [
+      {
+        "equipamento": "ANÁLISE DE ÓLEO TRANSFORMADOR (UTILIDADES)",
+        "patrimonio": null,
+        "periodicidade": "ANUAL",
+        "localizacao": "GALPÃO NOVO",
+        "operacao": "SOP",
+        "cronograma_meses": {
+          "jan": null,
+          "fev": null,
+          "mar": null,
+          "abr": null,
+          "mai": null,
+          "jun": null,
+          "jul": null,
+          "ago": "P",
+          "set": null,
+          "out": null,
+          "nov": null,
+          "dez": null
+        }
+      },
+      {
+        "equipamento": "ANÁLISE DE ÓLEO TRANSFORMADOR (MET)",
+        "patrimonio": null,
+        "periodicidade": "ANUAL",
+        "localizacao": "GALPÃO NOVO",
+        "operacao": "SOP",
+        "cronograma_meses": {
+          "jan": null,
+          "fev": null,
+          "mar": null,
+          "abr": null,
+          "mai": null,
+          "jun": null,
+          "jul": null,
+          "ago": "P",
+          "set": null,
+          "out": null,
+          "nov": null,
+          "dez": null
+        }
+      },
+      {
+        "equipamento": "ANÁLISE DE ÓLEO TRANSFORMADOR (SUBESTAÇÃO FABRICA NOVA)",
+        "patrimonio": null,
+        "periodicidade": "ANUAL",
+        "localizacao": "GALPÃO NOVO",
+        "operacao": "SOP",
+        "cronograma_meses": {
+          "jan": null,
+          "fev": null,
+          "mar": null,
+          "abr": null,
+          "mai": null,
+          "jun": null,
+          "jul": null,
+          "ago": "P",
+          "set": null,
+          "out": null,
+          "nov": null,
+          "dez": null
+        }
+      },
+      {
+        "equipamento": "ANÁLISE DE ÓLEO TRANSFORMADOR (SUT)",
+        "patrimonio": null,
+        "periodicidade": "ANUAL",
+        "localizacao": "GALPÃO NOVO",
+        "operacao": "SOP",
+        "cronograma_meses": {
+          "jan": null,
+          "fev": null,
+          "mar": null,
+          "abr": null,
+          "mai": null,
+          "jun": null,
+          "jul": null,
+          "ago": "P",
+          "set": null,
+          "out": null,
+          "nov": null,
+          "dez": null
+        }
+      },
+      {
+        "equipamento": "BALANCEADORA 2 10T",
+        "patrimonio": null,
+        "periodicidade": "SEMESTRAL",
+        "localizacao": "MOTOR",
+        "operacao": "NOP",
+        "cronograma_meses": {
+          "jan": null,
+          "fev": "P",
+          "mar": "R",
+          "abr": null,
+          "mai": null,
+          "jun": null,
+          "jul": null,
+          "ago": "P",
+          "set": null,
+          "out": null,
+          "nov": null,
+          "dez": null
+        }
+      }
+    ],
+    "distribuicao_mensal_preventivas": [
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "BOBINADEIRA 19",
+        "patrimonio": "4166",
+        "periodicidade": "SEMESTRAL",
+        "localidade": "MOTOR",
+        "operacao": "SOP",
+        "tecnico_atribuido": "GENILSON"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "COMPRESSOR 7",
+        "patrimonio": null,
+        "periodicidade": "TRIMESTRAL",
+        "localidade": "CALDEIRARIA TRAFO",
+        "operacao": "SOP",
+        "tecnico_atribuido": "ALDEMAR"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "COMPRESSOR 8",
+        "patrimonio": "5069",
+        "periodicidade": "TRIMESTRAL",
+        "localidade": "CALDEIRARIA TRAFO",
+        "operacao": "SOP",
+        "tecnico_atribuido": "ALDEMAR"
+      },
+      {
+        "status": "REALIZADA",
+        "chamado_os": null,
+        "equipamento": "DESENGROSSADEIRA 1",
+        "patrimonio": "5608",
+        "periodicidade": "TRIMESTRAL",
+        "localidade": "CARPINTARIA TRAFO",
+        "operacao": "SOP",
+        "tecnico_atribuido": "LUAN"
+      },
+      {
+        "status": "EM ATENDIMENTO",
+        "chamado_os": null,
+        "equipamento": "DOBRADEIRA MANUAL 1",
+        "patrimonio": "6007",
+        "periodicidade": "SEMESTRAL",
+        "localidade": "BOBINAS TRAFO",
+        "operacao": "SOP",
+        "tecnico_atribuido": "LUAN"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "ESTUFA MT01",
+        "patrimonio": "1312",
+        "periodicidade": "MENSAL",
+        "localidade": "MOTOR",
+        "operacao": "SOP",
+        "tecnico_atribuido": "WENDEL"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "ESTUFA MT02",
+        "patrimonio": "3318",
+        "periodicidade": "MENSAL",
+        "localidade": "MOTOR",
+        "operacao": "SOP",
+        "tecnico_atribuido": "WENDEL"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "PÓRTICO 6 - 6,3T",
+        "patrimonio": "4238",
+        "periodicidade": "SEMESTRAL",
+        "localidade": "BOBINAS MAGNÉTICAS XL COILS",
+        "operacao": "SOP",
+        "tecnico_atribuido": "HUGO"
+      },
+      {
+        "status": "EM ATENDIMENTO",
+        "chamado_os": null,
+        "equipamento": "QUEIMADOR TENGE",
+        "patrimonio": null,
+        "periodicidade": "TRIMESTRAL",
+        "localidade": "GALPÃO NOVO - ÁREA EXTERNA",
+        "operacao": "NOP",
+        "tecnico_atribuido": "HUGO"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "REBAIXADORA DE MICA 1",
+        "patrimonio": null,
+        "periodicidade": "SEMESTRAL",
+        "localidade": "MOTOR",
+        "operacao": "SOP",
+        "tecnico_atribuido": "VINÍCIUS"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "ROSQUEADEIRA 1",
+        "patrimonio": null,
+        "periodicidade": "SEMESTRAL",
+        "localidade": "TRAFO",
+        "operacao": "SOP",
+        "tecnico_atribuido": "GENILSON"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "SACA POLIA 1",
+        "patrimonio": null,
+        "periodicidade": "SEMESTRAL",
+        "localidade": "MECÂNICA - MOTOR",
+        "operacao": "SOP",
+        "tecnico_atribuido": "GENILSON"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "SACA POLIA 2",
+        "patrimonio": null,
+        "periodicidade": "SEMESTRAL",
+        "localidade": "MECÂNICA - MOTOR",
+        "operacao": "SOP",
+        "tecnico_atribuido": "GENILSON"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "TALHA 1 - 4T",
+        "patrimonio": null,
+        "periodicidade": "SEMESTRAL",
+        "localidade": "GALPÃO MOTOR",
+        "operacao": "SOP",
+        "tecnico_atribuido": "SAMIR"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "TALHA 2 - 10T",
+        "patrimonio": null,
+        "periodicidade": "SEMESTRAL",
+        "localidade": "TRAFO",
+        "operacao": "SOP",
+        "tecnico_atribuido": "ALDEMAR"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "TERMOVÁCUO 5 - 10000L/H",
+        "patrimonio": "28",
+        "periodicidade": "SEMESTRAL",
+        "localidade": "TRAFO",
+        "operacao": "NOP",
+        "tecnico_atribuido": "WENDEL"
+      },
+      {
+        "status": "PENDENTE",
+        "chamado_os": null,
+        "equipamento": "TORNO 1 NARDINI AM 650 VS",
+        "patrimonio": null,
+        "periodicidade": "MENSAL",
+        "localidade": "USINAGEM",
+        "operacao": null,
+        "tecnico_atribuido": null
+      }
+    ]
+  }
+}

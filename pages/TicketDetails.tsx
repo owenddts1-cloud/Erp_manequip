@@ -19,16 +19,50 @@ const TicketDetails: React.FC = () => {
     if (!id) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: woData, error: woError } = await supabase
         .from('work_orders')
-        .select('*, ativos(nome, setor, modelo)')
+        .select('*, ativos(nome, setor, modelo, tag_id), tecnico:profiles!tecnico_responsavel(full_name, email)')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      setTicket(data);
+      if (woError) throw woError;
+
+      if (woData) {
+        setTicket({
+          ...woData,
+          tecnico_nome: woData.tecnico?.full_name || woData.tecnico?.email || '',
+          isPreventiveTable: false
+        });
+      } else {
+        const { data: prevData, error: prevError } = await supabase
+          .from('preventivas_mensais')
+          .select('*, ativos(nome, setor, modelo, tag_id), tecnico:profiles!tecnico_responsavel(full_name, email), tecnico2:profiles!tecnico_responsavel_2(full_name, email)')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (prevError) throw prevError;
+
+        if (prevData) {
+          const names = [
+            prevData.tecnico?.full_name || prevData.tecnico?.email,
+            prevData.tecnico2?.full_name || prevData.tecnico2?.email
+          ].filter(Boolean).join(' / ');
+
+          setTicket({
+            ...prevData,
+            display_id: `PM-${prevData.id.slice(0, 4).toUpperCase()}`,
+            tipo: 'Preventiva',
+            prioridade: 'Baixa',
+            tecnico_nome: names || '',
+            isPreventiveTable: true
+          });
+        } else {
+          setTicket(null);
+        }
+      }
     } catch (err) {
       console.error("Error fetching ticket:", err);
+      setTicket(null);
     } finally {
       setLoading(false);
     }
@@ -128,7 +162,7 @@ const TicketDetails: React.FC = () => {
                 <div class="header">
                   <div>
                     <h1>Ordem de Serviço #${displayId}</h1>
-                    <p><strong>Preventiva 360</strong> - Sistema de Gestão de Manutenção</p>
+                    <p><strong>Manequip 360</strong> - Sistema de Gestão de Manutenção</p>
                   </div>
                   <div style="text-align: right;">
                     <p>Data: ${new Date().toLocaleDateString('pt-BR')}</p>
@@ -148,7 +182,7 @@ const TicketDetails: React.FC = () => {
                   <div class="row"><span class="label">Descrição:</span> ${ticket.descricao || 'N/A'}</div>
                   <div class="row"><span class="label">Prioridade:</span> ${ticket.prioridade || 'N/A'}</div>
                   <div class="row"><span class="label">Status:</span> ${ticket.status || 'Aberto'}</div>
-                  <div class="row"><span class="label">Responsável:</span> ${ticket.tecnico_responsavel || 'Não atribuído'}</div>
+                  <div class="row"><span class="label">Responsável:</span> ${ticket.tecnico_nome || 'Não atribuído'}</div>
                   <div class="row"><span class="label">Prazo:</span> ${ticket.data_limite ? new Date(ticket.data_limite).toLocaleDateString('pt-BR') : 'N/A'}</div>
                 </div>
                 
@@ -159,7 +193,7 @@ const TicketDetails: React.FC = () => {
                 </div>
                 
                 <div class="footer">
-                  <p>Documento gerado automaticamente pelo sistema Preventiva 360</p>
+                  <p>Documento gerado automaticamente pelo sistema Manequip 360</p>
                   <p>Impresso em: ${new Date().toLocaleString('pt-BR')}</p>
                 </div>
               </body>
@@ -197,6 +231,12 @@ const TicketDetails: React.FC = () => {
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Descrição</p>
                     <p className="text-slate-200 text-sm leading-relaxed">{ticket.descricao}</p>
                   </div>
+                  {ticket.status === 'Aguardando Peça' && ticket.peca_solicitada && (
+                    <div className="mt-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/25 text-amber-400 text-xs flex items-center gap-2 font-bold w-fit">
+                      <span className="material-symbols-outlined text-[16px] text-amber-400">inventory</span>
+                      <span>Peça Aguardada: {ticket.peca_solicitada}</span>
+                    </div>
+                  )}
                   <div>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Prioridade</p>
                     <div className="flex items-center gap-2">
@@ -211,9 +251,9 @@ const TicketDetails: React.FC = () => {
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Responsável</p>
                     <div className="flex items-center gap-2">
                       <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/20 font-bold text-xs uppercase">
-                        {ticket.tecnico_responsavel?.[0] || 'T'}
+                        {ticket.tecnico_nome?.[0] || 'T'}
                       </div>
-                      <span className="text-sm font-medium">{ticket.tecnico_responsavel || 'Aguardando Atribuição'}</span>
+                      <span className="text-sm font-medium">{ticket.tecnico_nome || 'Aguardando Atribuição'}</span>
                     </div>
                   </div>
                   <div>

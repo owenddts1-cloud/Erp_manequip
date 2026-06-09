@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { sendMessageToAI, AIProvider, AIConfig, AVAILABLE_MODELS } from '../services/aiService';
+import { sendMessageToAI, AIProvider, AIConfig, AVAILABLE_MODELS, testModelConnection, ModelStatus } from '../services/aiService';
 import { usePreferences } from '../contexts/PreferencesContext';
 
 interface Message {
@@ -16,14 +16,29 @@ const Chat: React.FC = () => {
     {
       id: 1,
       sender: 'ai',
-      text: `Olá, ${userProfile?.name?.split(' ')[0] || 'Gestor'}! Sou o Assistente Preventiva 360.\n\nEstou conectado aos dados em tempo real da sua planta. Como posso otimizar a sua manutenção hoje?`,
+      text: `Olá, ${userProfile?.name?.split(' ')[0] || 'Gestor'}! Sou o Assistente Manequip 360.\n\nEstou conectado aos dados em tempo real da sua planta. Como posso otimizar a sua manutenção hoje?`,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [aiConfig, setAiConfig] = useState<AIConfig>({ provider: 'openai', model: 'gpt-4o-mini' });
+  const [aiConfig, setAiConfig] = useState<AIConfig>(() => {
+    const saved = localStorage.getItem('ai_config');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.provider && parsed.model) {
+          return parsed;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    return { provider: 'gemini', model: 'gemini-3.5-flash' };
+  });
   const [showSettings, setShowSettings] = useState(false);
+  const [modelStatuses, setModelStatuses] = useState<Record<string, ModelStatus>>({});
+  const [checkingStatus, setCheckingStatus] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -31,9 +46,43 @@ const Chat: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const checkAllModels = async () => {
+    setCheckingStatus(true);
+    const newStatuses: Record<string, ModelStatus> = {};
+    const promises: Promise<any>[] = [];
+
+    Object.entries(AVAILABLE_MODELS).forEach(([provider, models]) => {
+      models.forEach(model => {
+        promises.push(
+          testModelConnection(provider as any, model.id).then(res => {
+            newStatuses[model.id] = res;
+          })
+        );
+      });
+    });
+
+    await Promise.all(promises);
+    setModelStatuses(newStatuses);
+    setCheckingStatus(false);
+  };
+
+  useEffect(() => {
+    localStorage.setItem('ai_config', JSON.stringify(aiConfig));
+  }, [aiConfig]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages, isProcessing]);
+
+  useEffect(() => {
+    if (showSettings) {
+      checkAllModels();
+    }
+  }, [showSettings]);
+
+  useEffect(() => {
+    checkAllModels();
+  }, []);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -50,7 +99,15 @@ const Chat: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      const responseText = await sendMessageToAI(userMsg.text, aiConfig);
+      let responseText = await sendMessageToAI(userMsg.text, aiConfig);
+
+      if (responseText.startsWith('Erro: Failed to fetch') || responseText.includes('Failed to fetch') || responseText.includes('TypeError')) {
+        if (aiConfig.provider === 'openai') {
+          responseText = `⚠️ Falha de comunicação (CORS/Cota). O provedor OpenAI não pode ser chamado diretamente do navegador devido a restrições de segurança ou cota insuficiente.\n\nPor favor, clique no ícone de configurações (no topo direito) e selecione o provedor **Google Gemini**, que está funcional na sua chave de API do Free Tier.`;
+        } else {
+          responseText = `⚠️ Falha de conexão com o Google Gemini. O navegador não conseguiu completar a requisição de rede (Failed to fetch). Verifique sua conexão com a internet ou se a chave está configurada corretamente no seu arquivo .env.local.`;
+        }
+      }
 
       const aiMsg: Message = {
         id: Date.now() + 1,
@@ -95,10 +152,19 @@ const Chat: React.FC = () => {
         <div className="flex items-center gap-3 relative">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-300 backdrop-blur-md shadow-inner shadow-white/5"
+            className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-300 backdrop-blur-md shadow-inner shadow-white/5 animate-pulse"
           >
             <span className="material-symbols-outlined text-[18px]">tune</span>
             <span className="hidden sm:inline">Modelo: {aiConfig.provider.toUpperCase()}</span>
+            {modelStatuses[aiConfig.model] && (
+              <span className={`size-1.5 rounded-full ${
+                modelStatuses[aiConfig.model].status === 'working'
+                  ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]'
+                  : modelStatuses[aiConfig.model].status === 'quota_exceeded'
+                    ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]'
+                    : 'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+              }`}></span>
+            )}
           </button>
 
           <button 
@@ -110,7 +176,7 @@ const Chat: React.FC = () => {
           </button>
 
           {showSettings && (
-            <div className="absolute top-[52px] right-0 w-72 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] p-5 z-50 transform origin-top-right transition-all animate-fade-in-up">
+            <div className="absolute top-[52px] right-0 w-80 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)] p-5 z-50 transform origin-top-right transition-all animate-fade-in-up">
               <h3 className="text-white text-sm font-bold mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-[18px]">memory</span>
                 Motor de Inteligência
@@ -129,6 +195,7 @@ const Chat: React.FC = () => {
                   >
                     <option value="gemini">Google Gemini (Free Tier)</option>
                     <option value="openai">OpenAI (Enterprise)</option>
+                    <option value="ollama">Ollama Local (Privado/Offline)</option>
                   </select>
                 </div>
 
@@ -143,6 +210,59 @@ const Chat: React.FC = () => {
                       <option key={model.id} value={model.id}>{model.name}</option>
                     ))}
                   </select>
+                </div>
+
+                {/* Status Indicator Panel */}
+                <div className="border-t border-white/5 pt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Status das APIs</span>
+                    <button 
+                      onClick={checkAllModels} 
+                      disabled={checkingStatus}
+                      className="text-[9px] text-[#00d2ff] hover:underline disabled:opacity-50 cursor-pointer"
+                    >
+                      {checkingStatus ? 'Testando...' : 'Re-testar'}
+                    </button>
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                    {Object.entries(AVAILABLE_MODELS).flatMap(([provider, models]) => 
+                      models.map(model => {
+                        const mStatus = modelStatuses[model.id];
+                        return (
+                          <div key={model.id} className={`flex items-center justify-between p-2 rounded-xl border text-[11px] ${
+                            aiConfig.model === model.id ? 'bg-primary/5 border-primary/20' : 'bg-black/20 border-white/5'
+                          }`}>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-white font-bold truncate">{model.name}</span>
+                              <span className="text-[9px] text-slate-500 uppercase font-mono">{provider}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                              <span className={`size-2 rounded-full ${
+                                !mStatus 
+                                  ? 'bg-slate-600 animate-pulse'
+                                  : mStatus.status === 'working'
+                                    ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+                                    : mStatus.status === 'quota_exceeded'
+                                      ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
+                                      : 'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'
+                              }`}></span>
+                              <span className={`text-[9px] font-bold ${
+                                !mStatus
+                                  ? 'text-slate-500'
+                                  : mStatus.status === 'working'
+                                    ? 'text-emerald-400'
+                                    : mStatus.status === 'quota_exceeded'
+                                      ? 'text-amber-400'
+                                      : 'text-rose-400'
+                              }`}>
+                                {!mStatus ? '...' : mStatus.status === 'working' ? 'OK' : mStatus.status === 'quota_exceeded' ? 'Sem Cota' : 'Falhou'}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -170,9 +290,9 @@ const Chat: React.FC = () => {
               <div className={`flex gap-3 max-w-[85%] md:max-w-[75%] ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 
                 {msg.sender === 'ai' ? (
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 shadow-lg relative mt-1">
-                    <span className="material-symbols-outlined text-primary text-[20px]">smart_toy</span>
-                    <div className="absolute -bottom-1 -right-1 size-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 border border-sky-200/50 dark:border-white/10 shadow-lg relative mt-1">
+                    <span className="material-symbols-outlined text-sky-600 dark:text-primary text-[20px]">smart_toy</span>
+                    <div className="absolute -bottom-1 -right-1 size-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
                   </div>
                 ) : (
                   <div className="size-10 shrink-0 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border border-white/10 shadow-lg flex items-center justify-center mt-1 overflow-hidden">
@@ -204,9 +324,9 @@ const Chat: React.FC = () => {
           {isProcessing && (
             <div className="flex justify-start animate-fade-in-up w-full">
               <div className="flex gap-3 max-w-[85%]">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-800 border border-white/10 shadow-lg mt-1 relative overflow-hidden">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 dark:bg-slate-800 border border-sky-200/50 dark:border-white/10 shadow-lg mt-1 relative overflow-hidden">
                    <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent animate-pulse"></div>
-                   <span className="material-symbols-outlined text-primary text-[20px] animate-spin">sync</span>
+                   <span className="material-symbols-outlined text-sky-600 dark:text-primary text-[20px] animate-spin">sync</span>
                 </div>
                 <div className="bg-slate-800/80 rounded-2xl rounded-tl-sm border border-white/5 px-5 py-4 flex items-center gap-2 backdrop-blur-md">
                   <span className="size-2 rounded-full bg-primary animate-bounce"></span>

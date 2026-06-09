@@ -1,0 +1,73 @@
+Created At: 2026-05-27T00:41:13Z
+Completed At: 2026-05-27T00:41:13Z
+File Path: `file:///c:/Users/Manuten%C3%A7%C3%A3o/MANEQUIP/pages/Login.tsx`
+Total Lines: 1154
+Total Bytes: 52258
+Showing lines 1001 to 1154
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1001:       {/* Interactive Microchip Engine Section */}
+1002:       <section className="relative py-24 px-6 md:px-16 overflow-hidden bg-[#070b14]/40 border-t border-slate-800/40 z-10" id="tech">
+1003:         <div className="max-w-7xl mx-auto flex flex-col items-center">
+1004:           <RevealOnScroll direction="up">
+1005:             <div className="text-center mb-16">
+1006:               <h2 className="text-xs uppercase tracking-widest text-[#00d2ff] font-bold mb-2">Tecnologia</h2>
+1007:               <h3 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+1008:                 Core Engine Preventiva 360
+1009:               </h3>
+1010:               <p className="text-slate-400 text-sm mt-3 max-w-xl mx-auto">
+1011:                 O cérebro digital da operação industrial. Linhas de dados inteligentes que conectam hardware e software.
+1012:               </p>
+1013:             </div>
+1014:           </RevealOnScroll>
+1015: 
+1016:           {/* 3D Interactive Motherboard Block */}
+1017:           <RevealOnScroll direction="up">
+1018:             <div 
+1019:               id="tech-core" 
+1020:               className={`rounded-3xl ${
+1021:                 activeHighlight === 'tech-core' ? 'ring-2 ring-cyan-500 shadow-[0_0_25px_rgba(6,182,212,0.6)] border-cyan-400 scale-[1.03] duration-300' : 'transition-all duration-500'
+1022:               }`}
+1023:             >
+1024:               <InteractiveMotherboard scrollY={scrollY} />
+1025:             </div>
+1026:           </RevealOnScroll>
+1027:         </div>
+1028:       </section>
+1029: 
+1030:    
+<truncated 7013 bytes>
+er="Como podemos ajudar sua empresa?" />
+1122:               </div>
+1123:               <div className="flex justify-end pt-2">
+1124:                 <button type="submit" className="bg-[#00a3e0] hover:bg-[#008ebd] text-white text-xs uppercase tracking-wider font-bold py-3.5 px-8 rounded-xl active:scale-95 transition-all shadow-md cursor-pointer">
+1125:                   Enviar Mensagem
+1126:                 </button>
+1127:               </div>
+1128:             </form>
+1129:           </RevealOnScroll>
+1130:         </div>
+1131:       </section>
+1132: 
+1133:       {/* Footer */}
+1134:       <footer className="relative py-12 px-6 md:px-16 border-t border-slate-800/40 bg-[#060a12] z-10 mt-auto">
+1135:         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-[11px] text-slate-500 font-medium">
+1136:           <div className="flex flex-col gap-1">
+1137:             <p>© {new Date().getFullYear()} Manequip Systems. Todos os direitos reservados.</p>
+1138:             <p className="text-slate-600/70 text-[9px] font-normal font-sans">Desenvolvido de forma sutil por Guilherme Lanucci</p>
+1139:           </div>
+1140:           <div className="flex items-center gap-6">
+1141:             <a href="#inicio" onClick={(e) => { e.preventDefault(); document.getElementById('inicio')?.scrollIntoView({ behavior: 'smooth' }); }} className="hover:text-white transition-colors">Voltar ao topo</a>
+1142:             <div className="flex items-center gap-2">
+1143:               <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"></span>
+1144:               Todos os sistemas operacionais
+1145:             </div>
+1146:           </div>
+1147:         </div>
+1148:       </footer>
+1149: 
+1150:     </div>
+1151:   );
+1152: };
+1153: 
+1154: export default Login;
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

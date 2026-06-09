@@ -123,7 +123,7 @@ const Register: React.FC = () => {
                     <div className="size-8 text-primary animate-pulse">
                         <span className="material-symbols-outlined text-[32px]">hub</span>
                     </div>
-                    <h2 className="text-xl font-bold tracking-tight">Preventiva <span className="text-primary">360</span></h2>
+                    <h2 className="text-xl font-bold tracking-tight">Manequip <span className="text-[#00d2ff]">360</span></h2>
                 </div>
                 <Link to="/" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Voltar para Login</Link>
             </div>

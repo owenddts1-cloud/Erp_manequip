@@ -55,3 +55,109 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
 }
+
+/* Customize browser autofill colors to match dark theme and keep placeholders/text visible */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: #ffffff !important;
+    transition: background-color 5000s ease-in-out 0s;
+    box-shadow: inset 0 0 20px 20px #0d111c !important;
+}
+
+/* Fallback for background-clip text gradients on older browsers/TVs */
+.gradient-text-blue-purple {
+    color: #00d2ff;
+}
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+    .gradient-text-blue-purple {
+        background-image: linear-gradient(to right, #00d2ff, #6366f1);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+    }
+}
+
+.gradient-text-white {
+    color: #ffffff;
+}
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+    .gradient-text-white {
+        background-image: linear-gradient(to right, #ffffff, #e2e8f0, #94a3b8);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+    }
+}
+
+/* Landscape orientation optimization for mobile screens */
+@media (max-height: 480px) and (orientation: landscape) {
+    html, body, #root, [class*="h-screen"] {
+        height: auto !important;
+        min-height: 100% !important;
+        overflow: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    main {
+        overflow: auto !important;
+        height: auto !important;
+        min-height: calc(100vh - 84px) !important;
+        padding-bottom: 50px !important;
+    }
+
+    /* Shrink mobile top header (h-14 -> 40px) */
+    .h-14 {
+        height: 40px !important;
+    }
+
+    /* Shrink mobile bottom navigation (h-16 -> 44px) */
+    .h-16 {
+        height: 44px !important;
+        padding-bottom: 2px !important;
+    }
+    .h-16 span.material-symbols-outlined {
+        font-size: 16px !important;
+    }
+    .h-16 span.text-\[10px\] {
+        font-size: 8px !important;
+        margin-top: 2px !important;
+    }
+}
+
+/* Modal Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(8px);
+    }
+}
+
+@keyframes scaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-scale-up {
+    animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+
