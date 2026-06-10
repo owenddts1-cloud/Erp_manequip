@@ -210,20 +210,14 @@ export interface ModelStatus {
 export const testModelConnection = async (provider: AIProvider, model: string): Promise<ModelStatus> => {
     try {
         if (provider === 'openai') {
-            const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-            if (!apiKey) {
-                return { id: model, provider, status: 'error', message: 'Chave de API não configurada.' };
-            }
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            const response = await fetch('/api/openai', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${apiKey.trim().replace(/[\n\r]/g, '')}`,
                 },
                 body: JSON.stringify({
                     model: model,
-                    messages: [{ role: 'user', content: 'ping' }],
-                    max_tokens: 5
+                    message: 'ping',
                 }),
             });
 
@@ -234,19 +228,17 @@ export const testModelConnection = async (provider: AIProvider, model: string): 
                 return { id: model, provider, status: 'not_found', message: 'Modelo não encontrado (404).' };
             }
             if (!response.ok) {
-                return { id: model, provider, status: 'error', message: `Erro HTTP ${response.status}.` };
+                const data = await response.json().catch(() => ({}));
+                return { id: model, provider, status: 'error', message: data.error || `Erro HTTP ${response.status}.` };
             }
             return { id: model, provider, status: 'working', message: 'Disponível (OK)' };
         } else if (provider === 'gemini') {
-            const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-            if (!apiKey) {
-                return { id: model, provider, status: 'error', message: 'Chave de API não configurada.' };
-            }
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim().replace(/[\n\r]/g, '')}`, {
+            const response = await fetch('/api/gemini', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: 'ping' }] }]
+                    model: model,
+                    message: 'ping',
                 })
             });
 
@@ -257,7 +249,8 @@ export const testModelConnection = async (provider: AIProvider, model: string): 
                 return { id: model, provider, status: 'not_found', message: 'Modelo não encontrado (404).' };
             }
             if (!response.ok) {
-                return { id: model, provider, status: 'error', message: `Erro HTTP ${response.status}.` };
+                const data = await response.json().catch(() => ({}));
+                return { id: model, provider, status: 'error', message: data.error || `Erro HTTP ${response.status}.` };
             }
             return { id: model, provider, status: 'working', message: 'Disponível (OK)' };
         } else {

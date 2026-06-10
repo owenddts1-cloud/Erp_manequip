@@ -29,6 +29,7 @@ export default defineConfig({
     }
   },
   build: {
+    sourcemap: false, // Security: Disable source maps in production to prevent code reverse-engineering
     outDir: 'dist',
     chunkSizeWarningLimit: 1000,
     rollupOptions: {

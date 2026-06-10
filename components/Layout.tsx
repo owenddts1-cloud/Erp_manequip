@@ -153,6 +153,8 @@ const Layout: React.FC = () => {
                   // --- Security: Proper sign out with full cleanup ---
                   await supabase.auth.signOut();
                   localStorage.removeItem('manequip-auth');
+                  const isSecure = window.location.protocol === 'https:';
+                  document.cookie = `manequip-auth=; path=/; ${isSecure ? 'Secure;' : ''} SameSite=Lax; expires=Thu, 01 Jan 1970 00:00:00 UTC; max-age=0`;
                   sessionStorage.clear();
                   navigate('/');
                 }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-rose-400 hover:text-white hover:bg-rose-950/20 transition-colors group mt-2">

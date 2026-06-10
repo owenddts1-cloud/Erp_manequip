@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
 import { usePreferences } from '../contexts/PreferencesContext';
+import { sendMessageToAI, AIConfig } from '../services/aiService';
+import { supabase } from '../services/supabase';
+import { QueryEditorModal } from '../components/QueryEditorModal';
 
 // --- Types ---
 interface Milestone {
@@ -480,13 +483,7 @@ const Projects: React.FC = () => {
   const exportDropdownRef = useRef<HTMLDivElement>(null);
 
   // Projects state
-  const [projects, setProjects] = useState<Project[]>(() => {
-    try {
-      const saved = localStorage.getItem('manequip-projects-v1');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return initialProjects;
-  });
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('p1');
 
   const eapCategories = Array.from(
@@ -526,27 +523,13 @@ const Projects: React.FC = () => {
   const [matSortDirection, setMatSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Quotes and Suppliers State
-  const [requisitions, setRequisitions] = useState<Requisition[]>(() => {
-    try {
-      const saved = localStorage.getItem('manequip-requisitions-v1');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return initialRequisitions;
-  });
-  const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
-    try {
-      const saved = localStorage.getItem('manequip-suppliers-v1');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return initialSuppliers;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('manequip-suppliers-v1', JSON.stringify(suppliers));
-  }, [suppliers]);
+  const [requisitions, setRequisitions] = useState<Requisition[]>(initialRequisitions);
+  const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
 
   // Spreadsheet import states
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [queryEditorSheetsData, setQueryEditorSheetsData] = useState<Record<string, { headers: string[]; rows: string[][] }>>({});
+  const [isQueryEditorOpen, setIsQueryEditorOpen] = useState<boolean>(false);
   const [importHeaders, setImportHeaders] = useState<string[]>([]);
   const [importRows, setImportRows] = useState<any[][]>([]);
   const [importCategory, setImportCategory] = useState<'EAP' | 'Materiais' | 'Suprimentos' | 'Fornecedores'>('EAP');
@@ -554,6 +537,412 @@ const Projects: React.FC = () => {
   const [importDestinationProjId, setImportDestinationProjId] = useState<string>('p1');
   const [isAnalyzingImport, setIsAnalyzingImport] = useState<boolean>(false);
   const [pastedText, setPastedText] = useState<string>('');
+
+  // BI Query Editor additional states
+  const [importSheets, setImportSheets] = useState<string[]>([]);
+  const [selectedSheetName, setSelectedSheetName] = useState<string>('');
+  const [workbookObj, setWorkbookObj] = useState<any>(null);
+  const [activeColumns, setActiveColumns] = useState<Record<string, boolean>>({});
+  const [aiPrompt, setAiPrompt] = useState<string>('');
+  const [importSearchTerm, setImportSearchTerm] = useState<string>('');
+  const [importPage, setImportPage] = useState<number>(0);
+
+  // target columns for the query editor
+  const targetColumnsMap = {
+    EAP: [
+      { name: 'phase', type: 'string', description: 'Fase / Pacote de Trabalho' },
+      { name: 'budget', type: 'number', description: 'Orçamento Previsto (R$)' },
+      { name: 'actual', type: 'number', description: 'Gasto Realizado (R$)' },
+      { name: 'category', type: 'string', description: 'Categoria (Materiais, Mão de Obra, etc.)' },
+      { name: 'responsible', type: 'string', description: 'Responsável Técnico' }
+    ],
+    Materiais: [
+      { name: 'name', type: 'string', description: 'Nome do Insumo / Serviço' },
+      { name: 'category', type: 'string', description: 'Categoria' },
+      { name: 'qtyBudget', type: 'number', description: 'Quantidade Prevista (Meta)' },
+      { name: 'qtyUsed', type: 'number', description: 'Quantidade Utilizada' },
+      { name: 'unit', type: 'string', description: 'Unidade' },
+      { name: 'supplier', type: 'string', description: 'Fornecedor Atual' },
+      { name: 'responsible', type: 'string', description: 'Responsável' }
+    ],
+    Suprimentos: [
+      { name: 'material', type: 'string', description: 'Material / Insumo' },
+      { name: 'qty', type: 'string', description: 'Quantidade / Lote' },
+      { name: 'status', type: 'string', description: 'Status da Compra' }
+    ],
+    Fornecedores: [
+      { name: 'name', type: 'string', description: 'Razão Social / Nome' },
+      { name: 'rating', type: 'number', description: 'Avaliação (0 a 5)' },
+      { name: 'compliance', type: 'number', description: 'Compliance % (0 a 100)' },
+      { name: 'specialty', type: 'string', description: 'Especialidade / Ramo' },
+      { name: 'phone', type: 'string', description: 'Telefone' }
+    ]
+  };
+
+  const handleQueryEditorImport = async (finalMappedData: any[], sheetName: string) => {
+    if (finalMappedData.length === 0) {
+      addToast('Nenhum registro mapeado. Selecione e associe pelo menos uma coluna.', 'warning');
+      return;
+    }
+
+    addToast('Importando dados tratados...', 'info');
+
+    try {
+      if (importDestinationProjId === 'new') {
+        const tempPrevisto = importCategory === 'EAP' ? finalMappedData.reduce((s, c) => s + (c.budget || 0), 0) : 150000;
+        const tempFaturado = importCategory === 'EAP' ? finalMappedData.reduce((s, c) => s + (c.actual || 0), 0) : 0;
+
+        const { data: newProjData, error: projError } = await supabase
+          .from('projects')
+          .insert({
+            name: `Projeto Importado (${sheetName}) ${new Date().toLocaleDateString('pt-BR')}`,
+            location: 'Localização Importada',
+            previsto: tempPrevisto,
+            faturado: tempFaturado,
+            progress: 0,
+            status: 'Em Execução',
+            coordinator: userProfile?.name || 'Coordenador',
+            team: 'Frente Importada'
+          })
+          .select()
+          .single();
+
+        if (projError) {
+          addToast('Erro ao criar projeto: ' + projError.message, 'warning');
+          return;
+        }
+
+        const newProjId = newProjData.id;
+
+        await supabase.from('project_milestones').insert([
+          { project_id: newProjId, name: 'Planejamento Inicial', status: 'Concluído', date: convertToDbDate(getRelativeDate(0, 1)) },
+          { project_id: newProjId, name: 'Início Obras', status: 'Em Execução', date: convertToDbDate(getRelativeDate(0, 15)) },
+        ]);
+
+        if (importCategory === 'EAP') {
+          const insertCosts = finalMappedData.map(item => ({
+            project_id: newProjId,
+            phase: item.phase || 'Nova Fase Importada',
+            budget: item.budget || 0,
+            actual: item.actual || 0,
+            category: item.category || 'Materiais',
+            responsible: item.responsible || 'Coordenador Técnico'
+          }));
+          await supabase.from('project_costs').insert(insertCosts);
+        } else if (importCategory === 'Materiais') {
+          await supabase.from('project_costs').insert([
+            { project_id: newProjId, phase: 'Fase Inicial Civil', budget: 100000, actual: 0, category: 'Materiais', responsible: 'Daniel Silva' }
+          ]);
+
+          const insertMaterials = finalMappedData.map(item => ({
+            project_id: newProjId,
+            name: item.name || 'Insumo Importado',
+            category: item.category || 'Materiais',
+            qty_budget: item.qtyBudget || 0,
+            qty_used: item.qtyUsed || 0,
+            unit: item.unit || 'un',
+            supplier: item.supplier || 'A cotar',
+            responsible: item.responsible || 'Responsável'
+          }));
+          await supabase.from('project_materials').insert(insertMaterials);
+        }
+
+        await fetchFromSupabase();
+        setSelectedProjectId(newProjId);
+        addToast(`Novo projeto criado com ${finalMappedData.length} itens importados!`, 'success');
+      } else {
+        if (importCategory === 'EAP') {
+          const insertCosts = finalMappedData.map(item => ({
+            project_id: importDestinationProjId,
+            phase: item.phase || 'Nova Fase Importada',
+            budget: item.budget || 0,
+            actual: item.actual || 0,
+            category: item.category || 'Materiais',
+            responsible: item.responsible || 'Coordenador Técnico'
+          }));
+          const { error: costsErr } = await supabase.from('project_costs').insert(insertCosts);
+          if (costsErr) {
+            addToast('Erro ao importar custos: ' + costsErr.message, 'warning');
+            return;
+          }
+
+          // Also update project's previsto/faturado totals in the database
+          const p = projects.find(proj => proj.id === importDestinationProjId);
+          if (p) {
+            const addedBudget = finalMappedData.reduce((s, c) => s + (c.budget || 0), 0);
+            const addedActual = finalMappedData.reduce((s, c) => s + (c.actual || 0), 0);
+            const { error: updateErr } = await supabase
+              .from('projects')
+              .update({
+                previsto: (p.previsto || 0) + addedBudget,
+                faturado: (p.faturado || 0) + addedActual
+              })
+              .eq('id', importDestinationProjId);
+            if (updateErr) {
+              console.error('Erro ao atualizar totais do projeto:', updateErr);
+            }
+          }
+        } else if (importCategory === 'Materiais') {
+          const insertMaterials = finalMappedData.map(item => ({
+            project_id: importDestinationProjId,
+            name: item.name || 'Insumo Importado',
+            category: item.category || 'Materiais',
+            qty_budget: item.qtyBudget || 0,
+            qty_used: item.qtyUsed || 0,
+            unit: item.unit || 'un',
+            supplier: item.supplier || 'A cotar',
+            responsible: item.responsible || 'Responsável'
+          }));
+          const { error: matErr } = await supabase.from('project_materials').insert(insertMaterials);
+          if (matErr) {
+            addToast('Erro ao importar materiais: ' + matErr.message, 'warning');
+            return;
+          }
+        } else if (importCategory === 'Suprimentos') {
+          const insertReqs = finalMappedData.map(item => ({
+            project_id: importDestinationProjId,
+            material: item.material || 'Material Importado',
+            qty: String(item.qty || '1'),
+            date: convertToDbDate(getRelativeDate(0, 0)),
+            status: item.status || 'Em Cotação',
+            options: [
+              { supplierName: 'Depósito Central', price: 1000, deliveryDays: 2, rating: 4, isBest: true },
+              { supplierName: 'Suprimentos Vale', price: 1200, deliveryDays: 1, rating: 3 }
+            ]
+          }));
+          const { error: reqErr } = await supabase.from('project_requisitions').insert(insertReqs);
+          if (reqErr) {
+            addToast('Erro ao importar requisições: ' + reqErr.message, 'warning');
+            return;
+          }
+        } else if (importCategory === 'Fornecedores') {
+          const insertSuppliers = finalMappedData.map(item => ({
+            name: item.name || 'Fornecedor Importado',
+            rating: item.rating || 5,
+            compliance: item.compliance || 100,
+            specialty: item.specialty || 'Diversos',
+            phone: item.phone || ''
+          }));
+          const { error: supErr } = await supabase.from('project_suppliers').upsert(insertSuppliers, { onConflict: 'name' });
+          if (supErr) {
+            addToast('Erro ao importar fornecedores: ' + supErr.message, 'warning');
+            return;
+          }
+        }
+
+        await fetchFromSupabase();
+        addToast(`${finalMappedData.length} registros importados com sucesso!`, 'success');
+      }
+
+      setIsQueryEditorOpen(false);
+    } catch (e: any) {
+      console.error(e);
+      addToast('Erro ao persistir dados: ' + e.message, 'warning');
+    }
+  };
+
+  // Automated Data Diagnostics and AI Analysis states
+  const [diagnostics, setDiagnostics] = useState<{ type: string; message: string; action?: () => void; actionLabel?: string }[]>([]);
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<string>('');
+  const [isRunningAiAnalysis, setIsRunningAiAnalysis] = useState<boolean>(false);
+
+  const runDataDiagnosis = () => {
+    if (importHeaders.length === 0 || importRows.length === 0) {
+      setDiagnostics([]);
+      return;
+    }
+
+    const alerts: { type: string; message: string; action?: () => void; actionLabel?: string }[] = [];
+
+    // Find columns
+    const supplierCols: number[] = [];
+    const valueCols: number[] = [];
+    
+    importHeaders.forEach((h, idx) => {
+      const name = h.toLowerCase();
+      if (name.includes('fornecedor') || name.includes('empresa') || name.includes('prestador') || name.includes('contratad')) {
+        supplierCols.push(idx);
+      }
+      if (name.includes('valor') || name.includes('custo') || name.includes('faturado') || name.includes('budget') || name.includes('actual') || name.includes('previsto')) {
+        valueCols.push(idx);
+      }
+    });
+
+    // 1. Check spelling variations in Supplier columns
+    supplierCols.forEach(colIdx => {
+      const colName = importHeaders[colIdx];
+      const uniqueNames = Array.from(new Set(importRows.map(r => String(r[colIdx] || '').trim()).filter(Boolean))) as string[];
+      
+      const checked = new Set<string>();
+      uniqueNames.forEach((n1: string) => {
+        uniqueNames.forEach((n2: string) => {
+          if (n1 !== n2 && !checked.has(n1 + '|' + n2) && !checked.has(n2 + '|' + n1)) {
+            const clean = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, '').trim();
+            const c1 = clean(n1);
+            const c2 = clean(n2);
+            
+            // similarity criteria
+            if (c1.length > 3 && c2.length > 3 && (c1.includes(c2) || c2.includes(c1))) {
+              checked.add(n1 + '|' + n2);
+              const targetName = n1.length > n2.length ? n1 : n2;
+              const sourceName = n1.length > n2.length ? n2 : n1;
+              
+              alerts.push({
+                type: 'spelling',
+                message: `⚠️ Variação de escrita na coluna "${colName}": "${sourceName}" vs "${targetName}".`,
+                actionLabel: `Unificar em "${targetName}"`,
+                action: () => {
+                  setImportRows(prev => prev.map(row => {
+                    const copy = [...row];
+                    if (String(copy[colIdx] || '').trim() === sourceName) {
+                      copy[colIdx] = targetName;
+                    }
+                    return copy;
+                  }));
+                  addToast(`Fornecedor "${sourceName}" unificado como "${targetName}".`, 'success');
+                }
+              });
+            }
+          }
+        });
+      });
+    });
+
+    // 2. Check for summary columns (redundancy check)
+    const rightSideSummaryHeaders = importHeaders.filter((h, idx) => {
+      if (idx < 6) return false;
+      const name = h.toLowerCase();
+      return name.includes('valor faturado') || name.includes('total faturado') || name.includes('resumo') || (name.includes('fornecedor') && idx > 6);
+    });
+
+    if (rightSideSummaryHeaders.length > 0) {
+      alerts.push({
+        type: 'summary',
+        message: `⚠️ Colunas de resumo detectadas à direita: ${rightSideSummaryHeaders.map(h => `"${h}"`).join(', ')}. Importá-las pode duplicar faturamentos.`,
+        actionLabel: 'Ignorar Colunas de Resumo',
+        action: () => {
+          setActiveColumns(prev => {
+            const copy = { ...prev };
+            rightSideSummaryHeaders.forEach(h => {
+              copy[h] = false;
+            });
+            return copy;
+          });
+          addToast('Colunas de resumo desativadas.', 'info');
+        }
+      });
+    }
+
+    // 3. Check for non-numeric values in numeric columns
+    valueCols.forEach(colIdx => {
+      const colName = importHeaders[colIdx];
+      if (activeColumns[colName] !== false) {
+        let invalidCount = 0;
+        importRows.forEach(row => {
+          const val = String(row[colIdx] || '').trim();
+          if (val && val.toLowerCase() !== 'total' && val.toLowerCase() !== 'total geral') {
+            const num = parseFloat(val.replace(/[^\d.,-]/g, '').replace(',', '.'));
+            if (isNaN(num)) invalidCount++;
+          }
+        });
+
+        if (invalidCount > 0) {
+          alerts.push({
+            type: 'numeric',
+            message: `⚠️ A coluna numérica "${colName}" possui ${invalidCount} valores com caracteres inválidos.`,
+            actionLabel: 'Limpar Caracteres da Coluna',
+            action: () => {
+              setImportRows(prev => prev.map(row => {
+                const copy = [...row];
+                const val = String(copy[colIdx] || '');
+                const cleaned = val.replace(/[^\d.,-]/g, '');
+                copy[colIdx] = cleaned;
+                return copy;
+              }));
+              addToast(`Caracteres não-numéricos limpos na coluna "${colName}".`, 'success');
+            }
+          });
+        }
+      }
+    });
+
+    // 4. Check for duplicate rows
+    const serializedRows = importRows.map(r => JSON.stringify(r));
+    const duplicatesCount = serializedRows.length - new Set(serializedRows).size;
+    if (duplicatesCount > 0) {
+      alerts.push({
+        type: 'duplicates',
+        message: `⚠️ Encontramos ${duplicatesCount} linhas totalmente duplicadas nesta aba.`,
+        actionLabel: 'Remover Linhas Duplicadas',
+        action: () => {
+          setImportRows(prev => {
+            const seen = new Set<string>();
+            return prev.filter(row => {
+              const str = JSON.stringify(row);
+              if (seen.has(str)) return false;
+              seen.add(str);
+              return true;
+            });
+          });
+          addToast('Linhas duplicadas removidas.', 'success');
+        }
+      });
+    }
+
+    setDiagnostics(alerts);
+  };
+
+  useEffect(() => {
+    runDataDiagnosis();
+  }, [importRows, importHeaders, activeColumns]);
+
+  const handleAIAnalysis = async () => {
+    setIsRunningAiAnalysis(true);
+    setAiAnalysisResult('');
+    addToast('A IA está analisando a planilha...', 'info');
+
+    let aiConfig: AIConfig = { provider: 'gemini', model: 'gemini-3.5-flash' };
+    const savedConfig = localStorage.getItem('ai_config');
+    if (savedConfig) {
+      try {
+        const parsed = JSON.parse(savedConfig);
+        if (parsed.provider && parsed.model) {
+          aiConfig = parsed;
+        }
+      } catch (e) {}
+    }
+
+    const prompt = `Você é um Auditor Financeiro e de Custos Industrial do Manequip 360.
+Você deve "bater o olho" na planilha abaixo e fazer uma análise de inconsistências, erros de soma, dupla contabilidade ou omissões.
+
+Estrutura da Planilha:
+Aba Atual: ${selectedSheetName || 'Única'}
+Colunas: ${JSON.stringify(importHeaders)}
+Categoria de Importação: ${importCategory}
+
+Dados (Primeiras 150 linhas):
+${JSON.stringify(importRows.slice(0, 150))}
+
+Por favor, faça um diagnóstico rápido e aponte:
+1. Erros financeiros ou de faturamento visíveis (ex: somas que parecem não bater, faturas soltas, totalizadores que ignoram linhas).
+2. Fornecedores com escritas diferentes que deveriam ser unificados (ex: "BETMIX" vs "BETMIX CONCRETO LTDA").
+3. Linhas ou faturas duplicadas.
+4. Qualquer omissão visível (como notas fiscais que não estão somadas nos resumos ou totais).
+
+Escreva a sua resposta em português de forma clara, técnica e detalhada, usando tópicos em Markdown.`;
+
+    try {
+      const res = await sendMessageToAI(prompt, aiConfig);
+      setAiAnalysisResult(res);
+      addToast('Análise de IA concluída!', 'success');
+    } catch (err: any) {
+      setAiAnalysisResult('Falha na análise da IA: ' + (err.message || 'Erro de comunicação.'));
+      addToast('Erro ao executar análise.', 'warning');
+    } finally {
+      setIsRunningAiAnalysis(false);
+    }
+  };
+
 
   // Whiteboard State
   const [notes, setNotes] = useState<WhiteboardNote[]>(() => {
@@ -674,15 +1063,138 @@ const Projects: React.FC = () => {
   // Toast System
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // Sync to localStorage
-  useEffect(() => {
-    localStorage.setItem('manequip-projects-v1', JSON.stringify(projects));
-  }, [projects]);
+  // Helper to convert DD/MM/YYYY dates to YYYY-MM-DD for Database compatibility
+  const convertToDbDate = (ddmmyyyy: string) => {
+    if (!ddmmyyyy) return new Date().toISOString().split('T')[0];
+    const parts = ddmmyyyy.split('/');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return ddmmyyyy;
+  };
+
+  const fetchFromSupabase = async () => {
+    try {
+      // Fetch projects with their relations
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          milestones:project_milestones(*),
+          costs:project_costs(*),
+          materials:project_materials(*)
+        `)
+        .order('name', { ascending: true });
+
+      if (projectsError) throw projectsError;
+
+      // Map snake_case to camelCase for TypeScript compatibility
+      const mappedProjects: Project[] = (projectsData || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        location: p.location || '',
+        previsto: Number(p.previsto) || 0,
+        faturado: Number(p.faturado) || 0,
+        desvios: Number(p.desvios) || 0,
+        progress: p.progress || 0,
+        status: p.status,
+        coordinator: p.coordinator || '',
+        team: p.team || '',
+        milestones: (p.milestones || []).map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          status: m.status,
+          date: m.date
+        })),
+        costs: (p.costs || []).map((c: any) => ({
+          id: c.id,
+          phase: c.phase,
+          budget: Number(c.budget) || 0,
+          actual: Number(c.actual) || 0,
+          category: c.category,
+          responsible: c.responsible || ''
+        })),
+        materials: (p.materials || []).map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          category: m.category,
+          qtyBudget: Number(m.qty_budget) || 0,
+          qtyUsed: Number(m.qty_used) || 0,
+          unit: m.unit || '',
+          supplier: m.supplier || '',
+          responsible: m.responsible || ''
+        }))
+      }));
+
+      // Fetch requisitions
+      const { data: requisitionsData, error: requisitionsError } = await supabase
+        .from('project_requisitions')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (requisitionsError) throw requisitionsError;
+
+      const mappedRequisitions: Requisition[] = (requisitionsData || []).map((r: any) => ({
+        id: r.id,
+        projectId: r.project_id,
+        material: r.material,
+        qty: r.qty,
+        date: r.date,
+        status: r.status,
+        options: Array.isArray(r.options) ? r.options : [],
+        approvedSupplier: r.approved_supplier || undefined,
+        approvedPrice: r.approved_price ? Number(r.approved_price) : undefined
+      }));
+
+      // Fetch suppliers
+      const { data: suppliersData, error: suppliersError } = await supabase
+        .from('project_suppliers')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (suppliersError) throw suppliersError;
+
+      const mappedSuppliers: Supplier[] = (suppliersData || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        rating: Number(s.rating) || 0,
+        compliance: s.compliance || 100,
+        specialty: s.specialty || '',
+        phone: s.phone || ''
+      }));
+
+      setProjects(mappedProjects);
+      setRequisitions(mappedRequisitions);
+      setSuppliers(mappedSuppliers);
+
+      // If selected project is not in mapped projects, pick the first one
+      if (mappedProjects.length > 0) {
+        setSelectedProjectId((current) => {
+          if (mappedProjects.some((p) => p.id === current)) return current;
+          return mappedProjects[0].id;
+        });
+        setSelectedWbProjectId((current) => {
+          if (mappedProjects.some((p) => p.id === current)) return current;
+          return mappedProjects[0].id;
+        });
+        setImportDestinationProjId((current) => {
+          if (mappedProjects.some((p) => p.id === current)) return current;
+          return mappedProjects[0].id;
+        });
+      }
+    } catch (err: any) {
+      console.error('Error loading data from Supabase:', err);
+      addToast('Erro ao carregar dados do banco: ' + (err.message || err), 'warning');
+    }
+  };
 
   useEffect(() => {
-    localStorage.setItem('manequip-requisitions-v1', JSON.stringify(requisitions));
-  }, [requisitions]);
+    if (userProfile) {
+      fetchFromSupabase();
+    }
+  }, [userProfile]);
 
+  // Sync whiteboard to localStorage (retains local whiteboard functionality as per plan)
   useEffect(() => {
     localStorage.setItem('manequip-wb-notes-v1', JSON.stringify(notes));
   }, [notes]);
@@ -887,86 +1399,93 @@ const Projects: React.FC = () => {
   };
 
   // Quotes Action: Approve supplier
-  const handleApproveQuote = (reqId: string, supplierName: string, price: number) => {
-    let targetProjectId = '';
-    let materialName = '';
-    let qtyStr = '';
+  const handleApproveQuote = async (reqId: string, supplierName: string, price: number) => {
+    // 1. Find the requisition to get details
+    const req = requisitions.find((r) => r.id === reqId);
+    if (!req) return;
 
-    setRequisitions((prev) =>
-      prev.map((req) => {
-        if (req.id === reqId) {
-          targetProjectId = req.projectId;
-          materialName = req.material;
-          qtyStr = req.qty;
-          return {
-            ...req,
-            status: 'Aprovado',
-            approvedSupplier: supplierName,
-            approvedPrice: price,
-          };
-        }
-        return req;
+    const targetProjectId = req.projectId;
+    const materialName = req.material;
+    const qtyStr = req.qty;
+
+    // 2. Update the requisition in database
+    const { error: reqError } = await supabase
+      .from('project_requisitions')
+      .update({
+        status: 'Aprovado',
+        approved_supplier: supplierName,
+        approved_price: price
       })
-    );
+      .eq('id', reqId);
 
-    if (targetProjectId) {
-      setProjects((prevProjects) =>
-        prevProjects.map((proj) => {
-          if (proj.id === targetProjectId) {
-            // Try to find if material exists
-            const materialExists = proj.materials.some(
-              (m) => m.name.toLowerCase().includes(materialName.toLowerCase()) || materialName.toLowerCase().includes(m.name.toLowerCase())
-            );
-
-            let updatedMaterials = [...proj.materials];
-            if (materialExists) {
-              updatedMaterials = proj.materials.map((m) => {
-                if (m.name.toLowerCase().includes(materialName.toLowerCase()) || materialName.toLowerCase().includes(m.name.toLowerCase())) {
-                  const numericQty = parseFloat(qtyStr.replace(/[^\d.,]/g, '').replace(',', '.')) || 1;
-                  return {
-                    ...m,
-                    supplier: supplierName,
-                    qtyUsed: m.qtyUsed + numericQty,
-                  };
-                }
-                return m;
-              });
-            } else {
-              const numericQty = parseFloat(qtyStr.replace(/[^\d.,]/g, '').replace(',', '.')) || 1;
-              updatedMaterials.push({
-                id: `mat-${Date.now()}`,
-                name: materialName,
-                category: 'Materiais',
-                qtyBudget: numericQty,
-                qtyUsed: numericQty,
-                unit: qtyStr.replace(/[\d\s.,]/g, '') || 'un',
-                supplier: supplierName,
-                responsible: proj.coordinator || 'Coordenador',
-              });
-            }
-
-            // Also, automatically update EAP actual cost under 'Materiais' category
-            const updatedCosts = proj.costs.map((c) => {
-              if (c.category === 'Materiais') {
-                return {
-                  ...c,
-                  actual: c.actual + price,
-                };
-              }
-              return c;
-            });
-
-            return {
-              ...proj,
-              materials: updatedMaterials,
-              costs: updatedCosts,
-            };
-          }
-          return proj;
-        })
-      );
+    if (reqError) {
+      addToast('Erro ao aprovar cotação: ' + reqError.message, 'warning');
+      return;
     }
 
+    if (targetProjectId) {
+      // Find the project from state
+      const proj = projects.find((p) => p.id === targetProjectId);
+      if (proj) {
+        // Try to find if material exists in database for this project
+        const { data: existingMaterials, error: matQueryError } = await supabase
+          .from('project_materials')
+          .select('*')
+          .eq('project_id', targetProjectId);
+
+        if (!matQueryError && existingMaterials) {
+          const matchingMat = existingMaterials.find((m) =>
+            m.name.toLowerCase().includes(materialName.toLowerCase()) || 
+            materialName.toLowerCase().includes(m.name.toLowerCase())
+          );
+
+          if (matchingMat) {
+            const numericQty = parseFloat(qtyStr.replace(/[^\d.,]/g, '').replace(',', '.')) || 1;
+            await supabase
+              .from('project_materials')
+              .update({
+                supplier: supplierName,
+                qty_used: Number(matchingMat.qty_used) + numericQty
+              })
+              .eq('id', matchingMat.id);
+          } else {
+            const numericQty = parseFloat(qtyStr.replace(/[^\d.,]/g, '').replace(',', '.')) || 1;
+            await supabase
+              .from('project_materials')
+              .insert({
+                project_id: targetProjectId,
+                name: materialName,
+                category: 'Materiais',
+                qty_budget: numericQty,
+                qty_used: numericQty,
+                unit: qtyStr.replace(/[\d\s.,]/g, '') || 'un',
+                supplier: supplierName,
+                responsible: proj.coordinator || 'Coordenador'
+              });
+          }
+        }
+
+        // Also update project_costs actual cost under 'Materiais' category
+        const { data: existingCosts, error: costQueryError } = await supabase
+          .from('project_costs')
+          .select('*')
+          .eq('project_id', targetProjectId)
+          .eq('category', 'Materiais');
+
+        if (!costQueryError && existingCosts && existingCosts.length > 0) {
+          // Update the first matching cost item or increment all
+          const firstCost = existingCosts[0];
+          await supabase
+            .from('project_costs')
+            .update({
+              actual: Number(firstCost.actual) + price
+            })
+            .eq('id', firstCost.id);
+        }
+      }
+    }
+
+    await fetchFromSupabase();
     addToast(`Fornecedor ${supplierName} aprovado para compra (R$ ${price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). Insumos e custos da EAP atualizados automaticamente.`, 'success');
   };
 
@@ -1078,25 +1597,27 @@ const Projects: React.FC = () => {
     setEditProjTeam(proj.team);
   };
 
-  const handleSaveEditProject = (id: string) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === id) {
-          return {
-            ...p,
-            name: editProjName,
-            location: editProjLocation,
-            previsto: editProjPrevisto,
-            faturado: editProjFaturado,
-            progress: editProjProgress,
-            status: editProjStatus,
-            coordinator: editProjCoordinator,
-            team: editProjTeam,
-          };
-        }
-        return p;
+  const handleSaveEditProject = async (id: string) => {
+    const { error } = await supabase
+      .from('projects')
+      .update({
+        name: editProjName,
+        location: editProjLocation,
+        previsto: editProjPrevisto,
+        faturado: editProjFaturado,
+        progress: editProjProgress,
+        status: editProjStatus,
+        coordinator: editProjCoordinator,
+        team: editProjTeam
       })
-    );
+      .eq('id', id);
+
+    if (error) {
+      addToast('Erro ao atualizar projeto: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setEditingProjectId(null);
     addToast('Projeto atualizado com sucesso!', 'success');
   };
@@ -1112,28 +1633,23 @@ const Projects: React.FC = () => {
     setEditMsStatus(ms.status);
   };
 
-  const handleSaveEditMilestone = () => {
+  const handleSaveEditMilestone = async () => {
     if (!editingMilestone) return;
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === selectedProjectId) {
-          return {
-            ...p,
-            milestones: p.milestones.map((m) =>
-              m.id === editingMilestone.id
-                ? {
-                    ...m,
-                    name: editMsName,
-                    date: editMsDate,
-                    status: editMsStatus,
-                  }
-                : m
-            ),
-          };
-        }
-        return p;
+    const { error } = await supabase
+      .from('project_milestones')
+      .update({
+        name: editMsName,
+        date: convertToDbDate(editMsDate),
+        status: editMsStatus
       })
-    );
+      .eq('id', editingMilestone.id);
+
+    if (error) {
+      addToast('Erro ao atualizar marco: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setEditingMilestone(null);
     addToast('Marco cronológico atualizado!', 'success');
   };
@@ -1147,29 +1663,24 @@ const Projects: React.FC = () => {
     setEditCostCategory(cost.category);
   };
 
-  const handleSaveEditCost = (costId: string) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === selectedProjectId) {
-          return {
-            ...p,
-            costs: p.costs.map((c) =>
-              c.id === costId
-                ? {
-                    ...c,
-                    phase: editCostPhase,
-                    budget: editCostBudget,
-                    actual: editCostActual,
-                    responsible: editCostResponsible,
-                    category: editCostCategory,
-                  }
-                : c
-            ),
-          };
-        }
-        return p;
+  const handleSaveEditCost = async (costId: string) => {
+    const { error } = await supabase
+      .from('project_costs')
+      .update({
+        phase: editCostPhase,
+        budget: editCostBudget,
+        actual: editCostActual,
+        responsible: editCostResponsible,
+        category: editCostCategory
       })
-    );
+      .eq('id', costId);
+
+    if (error) {
+      addToast('Erro ao atualizar item de custo: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setEditingCostId(null);
     addToast('Fase da EAP atualizada com sucesso!', 'success');
   };
@@ -1185,60 +1696,52 @@ const Projects: React.FC = () => {
     setEditMaterialCategory(mat.category);
   };
 
-  const handleSaveEditMaterial = (matId: string) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === selectedProjectId) {
-          return {
-            ...p,
-            materials: p.materials.map((m) =>
-              m.id === matId
-                ? {
-                    ...m,
-                    name: editMaterialName,
-                    qtyBudget: editMaterialQtyBudget,
-                    qtyUsed: editMaterialQtyUsed,
-                    unit: editMaterialUnit,
-                    supplier: editMaterialSupplier,
-                    responsible: editMaterialResponsible,
-                    category: editMaterialCategory,
-                  }
-                : m
-            ),
-          };
-        }
-        return p;
+  const handleSaveEditMaterial = async (matId: string) => {
+    const { error } = await supabase
+      .from('project_materials')
+      .update({
+        name: editMaterialName,
+        category: editMaterialCategory,
+        qty_budget: editMaterialQtyBudget,
+        qty_used: editMaterialQtyUsed,
+        unit: editMaterialUnit,
+        supplier: editMaterialSupplier,
+        responsible: editMaterialResponsible
       })
-    );
+      .eq('id', matId);
+
+    if (error) {
+      addToast('Erro ao atualizar insumo: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setEditingMaterialId(null);
     addToast('Insumo atualizado com sucesso!', 'success');
   };
 
-  const handleAddNewCost = () => {
+  const handleAddNewCost = async () => {
     if (!editCostPhase.trim()) {
       addToast('O nome da fase é obrigatório.', 'warning');
       return;
     }
-    const newCostItem: CostItem = {
-      id: `c-${Date.now()}`,
-      phase: editCostPhase,
-      budget: editCostBudget,
-      actual: editCostActual,
-      category: editCostCategory,
-      responsible: editCostResponsible || 'Coordenador',
-    };
+    const { error } = await supabase
+      .from('project_costs')
+      .insert({
+        project_id: selectedProjectId,
+        phase: editCostPhase,
+        budget: editCostBudget,
+        actual: editCostActual,
+        category: editCostCategory,
+        responsible: editCostResponsible || 'Coordenador'
+      });
 
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === selectedProjectId) {
-          return {
-            ...p,
-            costs: [...p.costs, newCostItem],
-          };
-        }
-        return p;
-      })
-    );
+    if (error) {
+      addToast('Erro ao adicionar item de custo: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setIsAddingCost(false);
     setEditCostPhase('');
     setEditCostBudget(0);
@@ -1247,49 +1750,46 @@ const Projects: React.FC = () => {
     addToast('Item adicionado à EAP!', 'success');
   };
 
-  const handleDeleteCost = (costId: string) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === selectedProjectId) {
-          return {
-            ...p,
-            costs: p.costs.filter((c) => c.id !== costId),
-          };
-        }
-        return p;
-      })
-    );
+  const handleDeleteCost = async (costId: string) => {
+    const { error } = await supabase
+      .from('project_costs')
+      .delete()
+      .eq('id', costId);
+
+    if (error) {
+      addToast('Erro ao remover item de custo: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setEditingCostId(null);
     addToast('Item removido da EAP.', 'warning');
   };
 
-  const handleAddNewMaterial = () => {
+  const handleAddNewMaterial = async () => {
     if (!editMaterialName.trim()) {
       addToast('O nome do insumo é obrigatório.', 'warning');
       return;
     }
-    const newMaterialItem: MaterialItem = {
-      id: `mat-${Date.now()}`,
-      name: editMaterialName,
-      qtyBudget: editMaterialQtyBudget,
-      qtyUsed: editMaterialQtyUsed,
-      unit: editMaterialUnit || 'un',
-      supplier: editMaterialSupplier || 'A cotar',
-      responsible: editMaterialResponsible || 'Hugo (Mestre)',
-      category: editMaterialCategory,
-    };
+    const { error } = await supabase
+      .from('project_materials')
+      .insert({
+        project_id: selectedProjectId,
+        name: editMaterialName,
+        category: editMaterialCategory,
+        qty_budget: editMaterialQtyBudget,
+        qty_used: editMaterialQtyUsed,
+        unit: editMaterialUnit || 'un',
+        supplier: editMaterialSupplier || 'A cotar',
+        responsible: editMaterialResponsible || 'Hugo (Mestre)'
+      });
 
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === selectedProjectId) {
-          return {
-            ...p,
-            materials: [...p.materials, newMaterialItem],
-          };
-        }
-        return p;
-      })
-    );
+    if (error) {
+      addToast('Erro ao adicionar insumo: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setIsAddingMaterial(false);
     setEditMaterialName('');
     setEditMaterialQtyBudget(0);
@@ -1300,55 +1800,68 @@ const Projects: React.FC = () => {
     addToast('Insumo adicionado com sucesso!', 'success');
   };
 
-  const handleDeleteMaterial = (matId: string) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === selectedProjectId) {
-          return {
-            ...p,
-            materials: p.materials.filter((m) => m.id !== matId),
-          };
-        }
-        return p;
-      })
-    );
+  const handleDeleteMaterial = async (matId: string) => {
+    const { error } = await supabase
+      .from('project_materials')
+      .delete()
+      .eq('id', matId);
+
+    if (error) {
+      addToast('Erro ao remover insumo: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setEditingMaterialId(null);
     addToast('Insumo removido com sucesso.', 'warning');
   };
 
-  const handleSaveNewProject = () => {
+  const handleSaveNewProject = async () => {
     if (!newProjName.trim()) {
       addToast('O nome do projeto é obrigatório.', 'warning');
       return;
     }
-    const newProjId = `p-${Date.now()}`;
-    const newProject: Project = {
-      id: newProjId,
-      name: newProjName,
-      location: newProjLocation || 'Sem localização',
-      previsto: newProjPrevisto || 0,
-      faturado: newProjFaturado || 0,
-      desvios: 0,
-      progress: newProjProgress || 0,
-      status: newProjStatus,
-      coordinator: newProjCoordinator || 'Não designado',
-      team: newProjTeam || 'Não designada',
-      milestones: [
-        { id: `m-${Date.now()}-1`, name: 'Planejamento Inicial', status: 'Concluído', date: getRelativeDate(0, 1) },
-        { id: `m-${Date.now()}-2`, name: 'Início dos Trabalhos', status: 'Em Execução', date: getRelativeDate(0, 15) },
-        { id: `m-${Date.now()}-3`, name: 'Entrega Final', status: 'Pendente', date: getRelativeDate(1, 30) },
-      ],
-      costs: [
-        { id: `c-${Date.now()}-1`, phase: 'Mobilização e Setup', budget: Math.round(newProjPrevisto * 0.1), actual: 0, category: 'Serviços Adicionais', responsible: newProjCoordinator || 'Daniel Silva' },
-        { id: `c-${Date.now()}-2`, phase: 'Materiais Principais', budget: Math.round(newProjPrevisto * 0.6), actual: 0, category: 'Materiais', responsible: newProjCoordinator || 'Daniel Silva' },
-        { id: `c-${Date.now()}-3`, phase: 'Mão de Obra Operacional', budget: Math.round(newProjPrevisto * 0.3), actual: 0, category: 'Mão de Obra', responsible: newProjCoordinator || 'Daniel Silva' },
-      ],
-      materials: [
-        { id: `mat-${Date.now()}-1`, name: 'Insumos de Mobilização', category: 'Materiais', qtyBudget: 100, qtyUsed: 0, unit: 'un', supplier: 'A cotar', responsible: newProjCoordinator || 'Daniel Silva' },
-      ],
-    };
 
-    setProjects((prev) => [...prev, newProject]);
+    const { data: newProjData, error: projError } = await supabase
+      .from('projects')
+      .insert({
+        name: newProjName,
+        location: newProjLocation || 'Sem localização',
+        previsto: newProjPrevisto || 0,
+        faturado: newProjFaturado || 0,
+        progress: newProjProgress || 0,
+        status: newProjStatus,
+        coordinator: newProjCoordinator || 'Não designado',
+        team: newProjTeam || 'Não designada'
+      })
+      .select()
+      .single();
+
+    if (projError) {
+      addToast('Erro ao criar projeto: ' + projError.message, 'warning');
+      return;
+    }
+
+    const newProjId = newProjData.id;
+
+    // Create default milestones, costs, and materials
+    await supabase.from('project_milestones').insert([
+      { project_id: newProjId, name: 'Planejamento Inicial', status: 'Concluído', date: convertToDbDate(getRelativeDate(0, 1)) },
+      { project_id: newProjId, name: 'Início dos Trabalhos', status: 'Em Execução', date: convertToDbDate(getRelativeDate(0, 15)) },
+      { project_id: newProjId, name: 'Entrega Final', status: 'Pendente', date: convertToDbDate(getRelativeDate(1, 30)) },
+    ]);
+
+    await supabase.from('project_costs').insert([
+      { project_id: newProjId, phase: 'Mobilização e Setup', budget: Math.round((newProjPrevisto || 0) * 0.1), actual: 0, category: 'Serviços Adicionais', responsible: newProjCoordinator || 'Daniel Silva' },
+      { project_id: newProjId, phase: 'Materiais Principais', budget: Math.round((newProjPrevisto || 0) * 0.6), actual: 0, category: 'Materiais', responsible: newProjCoordinator || 'Daniel Silva' },
+      { project_id: newProjId, phase: 'Mão de Obra Operacional', budget: Math.round((newProjPrevisto || 0) * 0.3), actual: 0, category: 'Mão de Obra', responsible: newProjCoordinator || 'Daniel Silva' },
+    ]);
+
+    await supabase.from('project_materials').insert([
+      { project_id: newProjId, name: 'Insumos de Mobilização', category: 'Materiais', qty_budget: 100, qty_used: 0, unit: 'un', supplier: 'A cotar', responsible: newProjCoordinator || 'Daniel Silva' },
+    ]);
+
+    await fetchFromSupabase();
 
     const newCols: WhiteboardColumn[] = [
       { id: `briefing-${newProjId}`, name: 'FASE 1: BRIEFING / IDEIAS', projectId: newProjId, color: 'cyan' },
@@ -1362,62 +1875,66 @@ const Projects: React.FC = () => {
     addToast(`Projeto "${newProjName}" criado com sucesso!`, 'success');
   };
 
-  const handleDeleteProject = (projId: string) => {
+  const handleDeleteProject = async (projId: string) => {
     if (projects.length <= 1) {
       addToast('O portfólio precisa conter pelo menos um projeto ativo.', 'warning');
       return;
     }
-    setProjects((prev) => prev.filter((p) => p.id !== projId));
-    setEditingProjectId(null);
-    const firstRemaining = projects.find((p) => p.id !== projId);
-    if (firstRemaining) {
-      setSelectedProjectId(firstRemaining.id);
+
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', projId);
+
+    if (error) {
+      addToast('Erro ao remover projeto: ' + error.message, 'warning');
+      return;
     }
+
+    await fetchFromSupabase();
+    setEditingProjectId(null);
     addToast('Projeto removido do portfólio.', 'warning');
   };
 
-  const handleAddNewMilestone = () => {
+  const handleAddNewMilestone = async () => {
     if (!editMsName.trim()) {
       addToast('O nome do marco é obrigatório.', 'warning');
       return;
     }
-    const newMs: Milestone = {
-      id: `m-${Date.now()}`,
-      name: editMsName,
-      date: editMsDate || getRelativeDate(0, 1),
-      status: editMsStatus,
-    };
 
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === selectedProjectId) {
-          return {
-            ...p,
-            milestones: [...p.milestones, newMs],
-          };
-        }
-        return p;
-      })
-    );
+    const { error } = await supabase
+      .from('project_milestones')
+      .insert({
+        project_id: selectedProjectId,
+        name: editMsName,
+        date: convertToDbDate(editMsDate || getRelativeDate(0, 1)),
+        status: editMsStatus
+      });
+
+    if (error) {
+      addToast('Erro ao adicionar marco: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setIsAddingMilestone(false);
     setEditMsName('');
     setEditMsDate('');
     setEditMsStatus('Pendente');
     addToast('Marco cronológico adicionado!', 'success');
   };
+  const handleDeleteMilestone = async (msId: string) => {
+    const { error } = await supabase
+      .from('project_milestones')
+      .delete()
+      .eq('id', msId);
 
-  const handleDeleteMilestone = (msId: string) => {
-    setProjects((prev) =>
-      prev.map((p) => {
-        if (p.id === selectedProjectId) {
-          return {
-            ...p,
-            milestones: p.milestones.filter((m) => m.id !== msId),
-          };
-        }
-        return p;
-      })
-    );
+    if (error) {
+      addToast('Erro ao remover marco: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setEditingMilestone(null);
     addToast('Marco removido.', 'warning');
   };
@@ -1461,7 +1978,7 @@ const Projects: React.FC = () => {
     setIsAddingReq(true);
   };
 
-  const handleSaveNewRequisition = () => {
+  const handleSaveNewRequisition = async () => {
     if (!editReqMaterial.trim() || !editReqQty.trim()) {
       addToast('Preencha o nome do material e a quantidade.', 'warning');
       return;
@@ -1489,36 +2006,56 @@ const Projects: React.FC = () => {
     }
 
     if (editingReqId) {
-      setRequisitions((prev) =>
-        prev.map((req) =>
-          req.id === editingReqId
-            ? {
-                ...req,
-                material: editReqMaterial,
-                qty: editReqQty,
-                status: editReqStatus,
-                options: options.length > 0 ? options : req.options,
-                approvedSupplier: editReqStatus !== 'Em Cotação' ? (editReqStatus === 'Aprovado' || req.approvedSupplier ? req.approvedSupplier || options[0]?.supplierName : undefined) : undefined,
-                approvedPrice: editReqStatus !== 'Em Cotação' ? (editReqStatus === 'Aprovado' || req.approvedPrice ? req.approvedPrice || options[0]?.price : undefined) : undefined,
-              }
-            : req
-        )
-      );
+      const req = requisitions.find(r => r.id === editingReqId);
+      const approvedSupplierVal = editReqStatus !== 'Em Cotação' 
+        ? (editReqStatus === 'Aprovado' || (req && req.approvedSupplier) ? (req?.approvedSupplier || options[0]?.supplierName) : null) 
+        : null;
+      const approvedPriceVal = editReqStatus !== 'Em Cotação' 
+        ? (editReqStatus === 'Aprovado' || (req && req.approvedPrice) ? (req?.approvedPrice || options[0]?.price) : null) 
+        : null;
+
+      const { error } = await supabase
+        .from('project_requisitions')
+        .update({
+          material: editReqMaterial,
+          qty: editReqQty,
+          status: editReqStatus,
+          options: options.length > 0 ? options : (req ? req.options : []),
+          approved_supplier: approvedSupplierVal,
+          approved_price: approvedPriceVal
+        })
+        .eq('id', editingReqId);
+
+      if (error) {
+        addToast('Erro ao atualizar requisição: ' + error.message, 'warning');
+        return;
+      }
+
+      await fetchFromSupabase();
       addToast('Requisição de compra atualizada!', 'success');
     } else {
-      const newReq: Requisition = {
-        id: `req-${Date.now()}`,
-        projectId: selectedProjectId,
-        material: editReqMaterial,
-        qty: editReqQty,
-        date: getRelativeDate(0, 0),
-        status: editReqStatus,
-        options: options.length > 0 ? options : [
-          { supplierName: 'Depósito Central', price: 1000, deliveryDays: 2, rating: 4, isBest: true },
-          { supplierName: 'Suprimentos Vale', price: 1200, deliveryDays: 1, rating: 3 }
-        ]
-      };
-      setRequisitions((prev) => [...prev, newReq]);
+      const newReqOptions = options.length > 0 ? options : [
+        { supplierName: 'Depósito Central', price: 1000, deliveryDays: 2, rating: 4, isBest: true },
+        { supplierName: 'Suprimentos Vale', price: 1200, deliveryDays: 1, rating: 3 }
+      ];
+
+      const { error } = await supabase
+        .from('project_requisitions')
+        .insert({
+          project_id: selectedProjectId,
+          material: editReqMaterial,
+          qty: editReqQty,
+          date: convertToDbDate(getRelativeDate(0, 0)),
+          status: editReqStatus,
+          options: newReqOptions
+        });
+
+      if (error) {
+        addToast('Erro ao criar requisição: ' + error.message, 'warning');
+        return;
+      }
+
+      await fetchFromSupabase();
       addToast('Nova requisição enviada para cotação!', 'success');
     }
 
@@ -1554,6 +2091,9 @@ const Projects: React.FC = () => {
         } else if (char === ',' && !inQuotes) {
           result.push(current.trim());
           current = '';
+        } else if (char === ';' && !inQuotes) { // Support semicolon as separator too
+          result.push(current.trim());
+          current = '';
         } else {
           current += char;
         }
@@ -1581,16 +2121,16 @@ const Projects: React.FC = () => {
 
     headers.forEach(h => {
       const term = h.toLowerCase();
-      if (term.includes('fase') || term.includes('etapa') || term.includes('pacote') || term.includes('previsto') || term.includes('realizado') || term.includes('budget') || term.includes('actual') || term.includes('gasto') || term.includes('custo')) {
+      if (term.includes('fase') || term.includes('etapa') || term.includes('pacote') || term.includes('previsto') || term.includes('realizado') || term.includes('budget') || term.includes('actual') || term.includes('gasto') || term.includes('custo') || term.includes('contrato') || term.includes('faturado') || term.includes('saldo')) {
         scoreEAP += 2;
       }
-      if (term.includes('insumo') || term.includes('material') || term.includes('consumo') || term.includes('qty') || term.includes('utilizado') || term.includes('unidade') || term.includes('unit')) {
+      if (term.includes('insumo') || term.includes('material') || term.includes('consumo') || term.includes('qty') || term.includes('utilizado') || term.includes('unidade') || term.includes('unit') || term.includes('sacos') || term.includes('kg')) {
         scoreMat += 2;
       }
-      if (term.includes('requisi') || term.includes('compra') || term.includes('cota') || term.includes('lote') || term.includes('status')) {
+      if (term.includes('requisi') || term.includes('compra') || term.includes('cota') || term.includes('lote') || term.includes('status') || term.includes('nf') || term.includes('nota fiscal')) {
         scoreReq += 2;
       }
-      if (term.includes('fornece') || term.includes('cnpj') || term.includes('telefone') || term.includes('compliance') || term.includes('rating') || term.includes('nota')) {
+      if (term.includes('fornece') || term.includes('cnpj') || term.includes('telefone') || term.includes('compliance') || term.includes('rating') || term.includes('nota') || term.includes('empresa') || term.includes('prestador')) {
         scoreSup += 2;
       }
     });
@@ -1604,28 +2144,28 @@ const Projects: React.FC = () => {
     headers.forEach(h => {
       const term = h.toLowerCase();
       if (category === 'EAP') {
-        if (term.includes('fase') || term.includes('etapa') || term.includes('nome') || term.includes('descri') || term.includes('pacote') || term.includes('trabalho')) mapping[h] = 'phase';
+        if (term.includes('fase') || term.includes('etapa') || term.includes('nome') || term.includes('descri') || term.includes('pacote') || term.includes('trabalho') || term.includes('projeto') || term.includes('contrato')) mapping[h] = 'phase';
         else if (term.includes('previsto') || term.includes('budget') || term.includes('orcamento') || term.includes('valor')) mapping[h] = 'budget';
-        else if (term.includes('realizado') || term.includes('gasto') || term.includes('actual')) mapping[h] = 'actual';
-        else if (term.includes('categ') || term.includes('tipo')) mapping[h] = 'category';
-        else if (term.includes('resp') || term.includes('coord') || term.includes('aprovado')) mapping[h] = 'responsible';
+        else if (term.includes('realizado') || term.includes('gasto') || term.includes('actual') || term.includes('faturado') || term.includes('nf')) mapping[h] = 'actual';
+        else if (term.includes('categ') || term.includes('tipo') || term.includes('natureza')) mapping[h] = 'category';
+        else if (term.includes('resp') || term.includes('coord') || term.includes('aprovado') || term.includes('fornecedor') || term.includes('empresa') || term.includes('contratada')) mapping[h] = 'responsible';
       } else if (category === 'Materiais') {
         if (term.includes('insumo') || term.includes('material') || term.includes('nome') || term.includes('descri') || term.includes('serviço')) mapping[h] = 'name';
-        else if (term.includes('categ') || term.includes('tipo')) mapping[h] = 'category';
-        else if (term.includes('previsto') || term.includes('meta') || term.includes('budget') || term.includes('limite') || term.includes('quant')) mapping[h] = 'qtyBudget';
+        else if (term.includes('categ') || term.includes('tipo') || term.includes('natureza')) mapping[h] = 'category';
+        else if (term.includes('previsto') || term.includes('meta') || term.includes('budget') || term.includes('limite') || term.includes('quant') || term.includes('qtd')) mapping[h] = 'qtyBudget';
         else if (term.includes('utilizado') || term.includes('usado') || term.includes('real') || term.includes('consumo')) mapping[h] = 'qtyUsed';
         else if (term.includes('unid') || term.includes('unit') || term.includes('medida')) mapping[h] = 'unit';
-        else if (term.includes('fornece') || term.includes('supplier')) mapping[h] = 'supplier';
+        else if (term.includes('fornece') || term.includes('supplier') || term.includes('empresa')) mapping[h] = 'supplier';
         else if (term.includes('resp') || term.includes('coord') || term.includes('tecnico')) mapping[h] = 'responsible';
       } else if (category === 'Suprimentos') {
-        if (term.includes('material') || term.includes('insumo') || term.includes('nome') || term.includes('descri')) mapping[h] = 'material';
-        else if (term.includes('qtd') || term.includes('quant') || term.includes('lote') || term.includes('volume')) mapping[h] = 'qty';
-        else if (term.includes('status') || term.includes('situa') || term.includes('fase') || term.includes('logistica')) mapping[h] = 'status';
+        if (term.includes('material') || term.includes('insumo') || term.includes('nome') || term.includes('descri') || term.includes('serviço')) mapping[h] = 'material';
+        else if (term.includes('qtd') || term.includes('quant') || term.includes('lote') || term.includes('volume') || term.includes('valor')) mapping[h] = 'qty';
+        else if (term.includes('status') || term.includes('situa') || term.includes('fase') || term.includes('logistica') || term.includes('descontada')) mapping[h] = 'status';
       } else if (category === 'Fornecedores') {
-        if (term.includes('fornece') || term.includes('nome') || term.includes('raz') || term.includes('empresa') || term.includes('parceiro')) mapping[h] = 'name';
+        if (term.includes('fornece') || term.includes('nome') || term.includes('raz') || term.includes('empresa') || term.includes('parceiro') || term.includes('prestador')) mapping[h] = 'name';
         else if (term.includes('nota') || term.includes('aval') || term.includes('rating') || term.includes('estrela')) mapping[h] = 'rating';
         else if (term.includes('compl') || term.includes('atend') || term.includes('desemp')) mapping[h] = 'compliance';
-        else if (term.includes('espe') || term.includes('serv') || term.includes('ramo') || term.includes('area')) mapping[h] = 'specialty';
+        else if (term.includes('espe') || term.includes('serv') || term.includes('ramo') || term.includes('area') || term.includes('natureza')) mapping[h] = 'specialty';
         else if (term.includes('fone') || term.includes('tel') || term.includes('cel') || term.includes('contat')) mapping[h] = 'phone';
       }
     });
@@ -1633,27 +2173,115 @@ const Projects: React.FC = () => {
     return { category, mapping };
   };
 
+  const processParsedData = (parsed: string[][], sheetName: string = '') => {
+    if (!parsed || parsed.length < 2) {
+      addToast('Dados insuficientes encontrados.', 'warning');
+      return;
+    }
+
+    // Find first row that has actual values as the header row
+    let headerRowIdx = 0;
+    for (let i = 0; i < Math.min(10, parsed.length); i++) {
+      if (parsed[i] && parsed[i].some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '')) {
+        headerRowIdx = i;
+        break;
+      }
+    }
+
+    const headersRaw = parsed[headerRowIdx] || [];
+    const headers = headersRaw.map((h, idx) => {
+      const cleaned = String(h || '').trim();
+      return cleaned || `Coluna ${idx + 1}`;
+    });
+
+    // Extract all rows below header row, forcing alignment to header length
+    const rows = parsed.slice(headerRowIdx + 1)
+      .map(row => {
+        const paddedRow = [];
+        for (let colIdx = 0; colIdx < headers.length; colIdx++) {
+          const val = row[colIdx];
+          paddedRow.push(val === null || val === undefined ? '' : String(val));
+        }
+        return paddedRow;
+      })
+      .filter(row => row.some(cell => String(cell).trim() !== ''));
+
+    if (rows.length === 0) {
+      addToast('Nenhum registro com dados encontrado abaixo do cabeçalho.', 'warning');
+      return;
+    }
+
+    setImportHeaders(headers);
+    setImportRows(rows);
+
+    // Enable all columns by default
+    const colsActive: Record<string, boolean> = {};
+    headers.forEach(h => {
+      colsActive[h] = true;
+    });
+    setActiveColumns(colsActive);
+
+    // AI suggestion mapping
+    const localAi = localAISuggestCategoryAndMapping(headers);
+    setImportCategory(localAi.category);
+    setImportMappings(localAi.mapping);
+    setImportPage(0);
+
+    if (sheetName) {
+      addToast(`Aba "${sheetName}" carregada: ${rows.length} linhas encontradas.`, 'info');
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsAnalyzingImport(true);
+    addToast('Lendo planilha...', 'info');
     const reader = new FileReader();
     const fileType = file.name.split('.').pop()?.toLowerCase();
 
     reader.onload = async (event) => {
       try {
-        let parsed: string[][] = [];
+        const sheetsData: Record<string, { headers: string[]; rows: string[][] }> = {};
 
         if (fileType === 'xlsx' || fileType === 'xls') {
           const XLSX = await loadXLSX();
           const data = new Uint8Array(event.target?.result as ArrayBuffer);
           const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          parsed = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as string[][];
+          
+          workbook.SheetNames.forEach(sheetName => {
+            const sheet = workbook.Sheets[sheetName];
+            const parsed = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+            
+            if (parsed.length > 0) {
+              let headerRowIdx = 0;
+              for (let i = 0; i < Math.min(10, parsed.length); i++) {
+                if (parsed[i] && parsed[i].some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '')) {
+                  headerRowIdx = i;
+                  break;
+                }
+              }
+
+              const headersRaw = parsed[headerRowIdx] || [];
+              const headers = headersRaw.map((h, idx) => String(h || '').trim() || `Coluna ${idx + 1}`);
+              
+              const rows = parsed.slice(headerRowIdx + 1)
+                .map(row => {
+                  return headers.map((_, colIdx) => {
+                    const val = row[colIdx];
+                    return val === null || val === undefined ? '' : String(val);
+                  });
+                })
+                .filter(row => row.some(cell => cell.trim() !== ''));
+
+              sheetsData[sheetName] = { headers, rows };
+            }
+          });
         } else {
           const text = event.target?.result as string;
+          let parsed: string[][] = [];
+
           if (fileType === 'csv') {
             parsed = parseCSV(text);
           } else if (fileType === 'json') {
@@ -1669,91 +2297,30 @@ const Projects: React.FC = () => {
           } else if (fileType === 'md' || fileType === 'markdown') {
             parsed = parseMarkdownTable(text);
           }
-        }
 
-        if (!parsed || parsed.length < 2) {
-          addToast('Planilha vazia ou com dados insuficientes.', 'warning');
-          setIsAnalyzingImport(false);
-          return;
-        }
+          if (parsed.length > 0) {
+            const headersRaw = parsed[0] || [];
+            const headers = headersRaw.map((h, idx) => String(h || '').trim() || `Coluna ${idx + 1}`);
+            const rows = parsed.slice(1)
+              .map(row => headers.map((_, colIdx) => row[colIdx] === null || row[colIdx] === undefined ? '' : String(row[colIdx])))
+              .filter(row => row.some(cell => cell.trim() !== ''));
 
-        // Clean empty rows/columns
-        const headers = parsed[0].map(h => String(h || '').trim()).filter(Boolean);
-        const rows = parsed.slice(1).map(row => row.slice(0, headers.length)).filter(row => row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== ''));
-
-        if (rows.length === 0) {
-          addToast('Nenhuma linha de dados encontrada na planilha.', 'warning');
-          setIsAnalyzingImport(false);
-          return;
-        }
-
-        setImportHeaders(headers);
-        setImportRows(rows);
-
-        // Try AI mapping from Ollama local instance
-        try {
-          const sampleRows = rows.slice(0, 3);
-          const aiResponse = await fetch('http://localhost:11434/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model: 'llama3',
-              prompt: `Você é uma IA especializada em analisar e estruturar planilhas para o sistema de gestão de projetos.
-Analise os cabeçalhos de coluna e decida a qual das 4 categorias a planilha pertence:
-- 'EAP' (tabelas de etapas, fases, orçamento e despesa)
-- 'Materiais' (tabelas de levantamento de insumos e consumo técnico)
-- 'Suprimentos' (tabelas de requisições de compras e compras efetuadas)
-- 'Fornecedores' (tabelas de fornecedores homologados e compliance)
-
-Mapeie os cabeçalhos originais para as chaves correspondentes permitidas de cada categoria.
-
-Chaves permitidas:
-- EAP: phase, budget, actual, category, responsible
-- Materiais: name, category, qtyBudget, qtyUsed, unit, supplier, responsible
-- Suprimentos: material, qty, status
-- Fornecedores: name, rating, compliance, specialty, phone
-
-Cabeçalhos originais: ${JSON.stringify(headers)}
-Amostra dos dados: ${JSON.stringify(sampleRows)}
-
-Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de texto) no seguinte formato:
-{
-  "categoria": "EAP" | "Materiais" | "Suprimentos" | "Fornecedores",
-  "mapeamento": {
-    "NOME_COLUNA_ORIGINAL": "chave_mapeada"
-  }
-}`,
-              stream: false,
-              options: { temperature: 0.1 }
-            })
-          });
-
-          if (aiResponse.ok) {
-            const resJson = await aiResponse.json();
-            if (resJson && resJson.response) {
-              const cleanResponse = resJson.response.replace(/```json/g, '').replace(/```/g, '').trim();
-              const parsedAi = JSON.parse(cleanResponse);
-              if (parsedAi.categoria && parsedAi.mapeamento) {
-                setImportCategory(parsedAi.categoria);
-                setImportMappings(parsedAi.mapeamento);
-                addToast(`Análise de IA (Llama3) concluída: ${parsedAi.categoria}`, 'success');
-                setIsAnalyzingImport(false);
-                return;
-              }
-            }
+            sheetsData[file.name] = { headers, rows };
           }
-          throw new Error('Falha no formato da IA');
-        } catch (err) {
-          // Fallback to local heuristic mapper
-          const localAi = localAISuggestCategoryAndMapping(headers);
-          setImportCategory(localAi.category);
-          setImportMappings(localAi.mapping);
-          addToast(`Mapeador Inteligente Local ativado: ${localAi.category}`, 'info');
         }
 
-        setIsAnalyzingImport(false);
+        if (Object.keys(sheetsData).length > 0) {
+          setQueryEditorSheetsData(sheetsData);
+          setIsImportModalOpen(false);
+          setIsQueryEditorOpen(true);
+          addToast('Planilha carregada no Query Editor!', 'success');
+        } else {
+          addToast('Nenhum dado legível encontrado na planilha.', 'warning');
+        }
       } catch (err) {
-        addToast('Erro ao ler ou processar planilha.', 'warning');
+        addToast('Erro ao processar arquivo.', 'warning');
+        console.error(err);
+      } finally {
         setIsAnalyzingImport(false);
       }
     };
@@ -1769,172 +2336,12 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
     }
   };
 
-  const handleImportSubmit = () => {
-    if (importHeaders.length === 0 || importRows.length === 0) {
-      addToast('Nenhum dado para importar.', 'warning');
-      return;
-    }
-
-    const mappedItems = importRows.map((row, rIdx) => {
-      const obj: any = {};
-      importHeaders.forEach((h, colIdx) => {
-        const key = importMappings[h];
-        if (key) {
-          let val = row[colIdx];
-          if (key === 'budget' || key === 'actual' || key === 'qtyBudget' || key === 'qtyUsed' || key === 'rating' || key === 'compliance') {
-            val = parseFloat(String(val || '0').replace(/[^\d.-]/g, '')) || 0;
-          } else {
-            val = String(val ?? '').trim();
-          }
-          obj[key] = val;
-        }
-      });
-      obj.id = `imported-${Date.now()}-${rIdx}`;
-      return obj;
-    });
-
-    if (importDestinationProjId === 'new') {
-      const newProjId = `p-${Date.now()}`;
-      
-      let initialCosts: CostItem[] = [];
-      let initialMaterials: MaterialItem[] = [];
-      
-      if (importCategory === 'EAP') {
-        initialCosts = mappedItems.map(item => ({
-          id: item.id,
-          phase: item.phase || 'Nova Fase Importada',
-          budget: item.budget || 0,
-          actual: item.actual || 0,
-          category: item.category || 'Materiais',
-          responsible: item.responsible || 'Eng. Daniel Silva'
-        }));
-      } else {
-        initialCosts = [
-          { id: `c-${Date.now()}-1`, phase: 'Fase Inicial Civil', budget: 100000, actual: 0, category: 'Materiais', responsible: 'Daniel Silva' }
-        ];
-      }
-
-      if (importCategory === 'Materiais') {
-        initialMaterials = mappedItems.map(item => ({
-          id: item.id,
-          name: item.name || 'Insumo Importado',
-          category: item.category || 'Materiais',
-          qtyBudget: item.qtyBudget || 0,
-          qtyUsed: item.qtyUsed || 0,
-          unit: item.unit || 'un',
-          supplier: item.supplier || 'A cotar',
-          responsible: item.responsible || 'Hugo (Mestre)'
-        }));
-      } else {
-        initialMaterials = [
-          { id: `mat-${Date.now()}-1`, name: 'Insumo Setup', category: 'Materiais', qtyBudget: 100, qtyUsed: 0, unit: 'un', supplier: 'A cotar', responsible: 'Daniel Silva' }
-        ];
-      }
-
-      const totalBudget = initialCosts.reduce((s, c) => s + c.budget, 0);
-      const totalActual = initialCosts.reduce((s, c) => s + c.actual, 0);
-
-      const newProj: Project = {
-        id: newProjId,
-        name: `Projeto Importado ${new Date().toLocaleDateString('pt-BR')}`,
-        location: 'Localização Importada',
-        previsto: totalBudget || 150000,
-        faturado: totalActual || 0,
-        desvios: 0,
-        progress: 0,
-        status: 'Em Execução',
-        coordinator: userProfile?.name || 'Coordenador',
-        team: 'Frente Importada',
-        milestones: [
-          { id: `m-${Date.now()}-1`, name: 'Planejamento Inicial', status: 'Concluído', date: getRelativeDate(0, 1) },
-          { id: `m-${Date.now()}-2`, name: 'Início Obras', status: 'Em Execução', date: getRelativeDate(0, 15) },
-        ],
-        costs: initialCosts,
-        materials: initialMaterials
-      };
-
-      setProjects(prev => [...prev, newProj]);
-      setSelectedProjectId(newProjId);
-      addToast(`Novo projeto criado com ${mappedItems.length} itens importados!`, 'success');
-    } else {
-      setProjects(prev => prev.map(p => {
-        if (p.id === importDestinationProjId) {
-          if (importCategory === 'EAP') {
-            const addedCosts = mappedItems.map(item => ({
-              id: item.id,
-              phase: item.phase || 'Nova Fase Importada',
-              budget: item.budget || 0,
-              actual: item.actual || 0,
-              category: item.category || 'Materiais',
-              responsible: item.responsible || p.coordinator || 'Coordenador'
-            }));
-            const newBudget = p.previsto + addedCosts.reduce((s, c) => s + c.budget, 0);
-            const newActual = p.faturado + addedCosts.reduce((s, c) => s + c.actual, 0);
-            return {
-              ...p,
-              costs: [...p.costs, ...addedCosts],
-              previsto: newBudget,
-              faturado: newActual
-            };
-          } else if (importCategory === 'Materiais') {
-            const addedMaterials = mappedItems.map(item => ({
-              id: item.id,
-              name: item.name || 'Insumo Importado',
-              category: item.category || 'Materiais',
-              qtyBudget: item.qtyBudget || 0,
-              qtyUsed: item.qtyUsed || 0,
-              unit: item.unit || 'un',
-              supplier: item.supplier || 'A cotar',
-              responsible: item.responsible || p.coordinator || 'Hugo (Mestre)'
-            }));
-            return {
-              ...p,
-              materials: [...p.materials, ...addedMaterials]
-            };
-          }
-        }
-        return p;
-      }));
-
-      if (importCategory === 'Suprimentos') {
-        const addedReqs: Requisition[] = mappedItems.map(item => ({
-          id: item.id,
-          projectId: importDestinationProjId,
-          material: item.material || 'Material Importado',
-          qty: String(item.qty || '1 un'),
-          date: getRelativeDate(0, 0),
-          status: 'Em Cotação',
-          options: [
-            { supplierName: 'Depósito Central', price: 1000, deliveryDays: 2, rating: 4, isBest: true },
-            { supplierName: 'Suprimentos Vale', price: 1200, deliveryDays: 1, rating: 3 }
-          ]
-        }));
-        setRequisitions(prev => [...prev, ...addedReqs]);
-      } else if (importCategory === 'Fornecedores') {
-        const addedSuppliers: Supplier[] = mappedItems.map(item => ({
-          id: item.id,
-          name: item.name || 'Fornecedor Importado',
-          rating: item.rating || 4.5,
-          compliance: item.compliance || 90,
-          specialty: item.specialty || 'Serviços Gerais',
-          phone: item.phone || '(11) 99999-9999'
-        }));
-        setSuppliers(prev => [...prev, ...addedSuppliers]);
-      }
-
-      addToast(`${mappedItems.length} registros adicionados ao projeto selecionado!`, 'success');
-    }
-
-    setIsImportModalOpen(false);
-  };
-
-  const handleAnalyzePastedText = async () => {
+  const handleAnalyzePastedText = () => {
     if (!pastedText.trim()) {
       addToast('Por favor, cole algum texto (CSV, JSON ou Tabela Markdown).', 'warning');
       return;
     }
 
-    setIsAnalyzingImport(true);
     try {
       let parsed: string[][] = [];
       const text = pastedText.trim();
@@ -1952,7 +2359,6 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
           }
         } catch (e) {
           addToast('Erro ao analisar JSON. Verifique a sintaxe.', 'warning');
-          setIsAnalyzingImport(false);
           return;
         }
       } else if (text.includes('|')) {
@@ -1961,88 +2367,426 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
         parsed = parseCSV(text);
       }
 
-      if (!parsed || parsed.length < 2) {
-        addToast('Formato não reconhecido ou dados insuficientes. Certifique-se de incluir cabeçalhos.', 'warning');
-        setIsAnalyzingImport(false);
-        return;
-      }
+      if (parsed.length > 0) {
+        const headersRaw = parsed[0] || [];
+        const headers = headersRaw.map((h, idx) => String(h || '').trim() || `Coluna ${idx + 1}`);
+        const rows = parsed.slice(1)
+          .map(row => headers.map((_, colIdx) => row[colIdx] === null || row[colIdx] === undefined ? '' : String(row[colIdx])))
+          .filter(row => row.some(cell => cell.trim() !== ''));
 
-      const headers = parsed[0].map(h => String(h || '').trim()).filter(Boolean);
-      const rows = parsed.slice(1).map(row => row.slice(0, headers.length)).filter(row => row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== ''));
-
-      if (rows.length === 0) {
-        addToast('Nenhuma linha de dados encontrada no texto.', 'warning');
-        setIsAnalyzingImport(false);
-        return;
-      }
-
-      setImportHeaders(headers);
-      setImportRows(rows);
-
-      // Call Ollama local instance or local fallback
-      try {
-        const sampleRows = rows.slice(0, 3);
-        const aiResponse = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'llama3',
-            prompt: `Você é uma IA especializada em analisar e estruturar planilhas para o sistema de gestão de projetos.
-Analise os cabeçalhos de coluna e decida a qual das 4 categorias a planilha pertence:
-- 'EAP' (tabelas de etapas, fases, orçamento e despesa)
-- 'Materiais' (tabelas de levantamento de insumos e consumo técnico)
-- 'Suprimentos' (tabelas de requisições de compras e compras efetuadas)
-- 'Fornecedores' (tabelas de fornecedores homologados e compliance)
-
-Mapeie os cabeçalhos originais para as chaves correspondentes permitidas de cada categoria.
-
-Chaves permitidas:
-- EAP: phase, budget, actual, category, responsible
-- Materiais: name, category, qtyBudget, qtyUsed, unit, supplier, responsible
-- Suprimentos: material, qty, status
-- Fornecedores: name, rating, compliance, specialty, phone
-
-Cabeçalhos originais: ${JSON.stringify(headers)}
-Amostra dos dados: ${JSON.stringify(sampleRows)}
-
-Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de texto) no seguinte formato:
-{
-  "categoria": "EAP" | "Materiais" | "Suprimentos" | "Fornecedores",
-  "mapeamento": {
-    "NOME_COLUNA_ORIGINAL": "chave_mapeada"
-  }
-}`,
-            stream: false,
-            options: { temperature: 0.1 }
-          })
-        });
-
-        if (aiResponse.ok) {
-          const resJson = await aiResponse.json();
-          if (resJson && resJson.response) {
-            const cleanResponse = resJson.response.replace(/```json/g, '').replace(/```/g, '').trim();
-            const parsedAi = JSON.parse(cleanResponse);
-            if (parsedAi.categoria && parsedAi.mapeamento) {
-              setImportCategory(parsedAi.categoria);
-              setImportMappings(parsedAi.mapeamento);
-              addToast(`Análise de IA concluída: ${parsedAi.categoria}`, 'success');
-              setIsAnalyzingImport(false);
-              return;
-            }
-          }
-        }
-      } catch (err) {
-        // Fallback
-        const localAi = localAISuggestCategoryAndMapping(headers);
-        setImportCategory(localAi.category);
-        setImportMappings(localAi.mapping);
-        addToast(`Mapeador Inteligente Local ativado: ${localAi.category}`, 'info');
+        setQueryEditorSheetsData({ "Texto Colado": { headers, rows } });
+        setIsImportModalOpen(false);
+        setIsQueryEditorOpen(true);
+        addToast('Dados colados carregados no Query Editor!', 'success');
+      } else {
+        addToast('Nenhum dado legível encontrado no texto.', 'warning');
       }
     } catch (e) {
-      addToast('Erro ao analisar o texto colado.', 'warning');
+      addToast('Erro ao processar texto colado.', 'warning');
     }
-    setIsAnalyzingImport(false);
   };
+
+  // BI Query Editor Actions
+  const handleCellEdit = (rowIdx: number, colIdx: number, newValue: string) => {
+    setImportRows(prev => {
+      const copy = [...prev];
+      copy[rowIdx] = [...copy[rowIdx]];
+      copy[rowIdx][colIdx] = newValue;
+      return copy;
+    });
+  };
+
+  const handleDeleteRow = (rowIdx: number) => {
+    setImportRows(prev => prev.filter((_, idx) => idx !== rowIdx));
+    addToast('Linha excluída do editor de query.', 'info');
+  };
+
+  const applyColumnAction = (colIdx: number, actionType: 'trim' | 'upper' | 'lower' | 'clean_accents') => {
+    const colName = importHeaders[colIdx];
+    setImportRows(prev => prev.map(row => {
+      const copy = [...row];
+      let val = copy[colIdx] || '';
+      if (actionType === 'trim') val = String(val).trim().replace(/\s+/g, ' ');
+      else if (actionType === 'upper') val = String(val).toUpperCase();
+      else if (actionType === 'lower') val = String(val).toLowerCase();
+      else if (actionType === 'clean_accents') {
+        val = String(val).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      }
+      copy[colIdx] = val;
+      return copy;
+    }));
+    
+    const actionLabel = actionType === 'trim' ? 'Limpeza de Espaços' :
+                        actionType === 'upper' ? 'MAIÚSCULO' :
+                        actionType === 'lower' ? 'minúsculo' : 'Remoção de Acentos';
+    addToast(`Ação "${actionLabel}" aplicada à coluna "${colName}".`, 'success');
+  };
+
+  const runAIQueryCommand = async (cmd: string) => {
+    setIsAnalyzingImport(true);
+    addToast('Enviando consulta para o motor de IA...', 'info');
+
+    let aiConfig: AIConfig = { provider: 'gemini', model: 'gemini-3.5-flash' };
+    const savedConfig = localStorage.getItem('ai_config');
+    if (savedConfig) {
+      try {
+        const parsed = JSON.parse(savedConfig);
+        if (parsed.provider && parsed.model) {
+          aiConfig = parsed;
+        }
+      } catch (e) {}
+    }
+
+    const systemPrompt = `Você é uma IA de BI especialista em transformação de dados no Manequip 360.
+Você deve processar as colunas e as linhas da planilha de acordo com a solicitação do usuário.
+
+Estrutura Atual:
+Colunas (Headers): ${JSON.stringify(importHeaders)}
+Categoria de Importação: ${importCategory}
+
+Dados Atuais (Primeiras 150 linhas):
+${JSON.stringify(importRows.slice(0, 150))}
+
+Instrução do Usuário: "${cmd}"
+
+Por favor, faça as transformações solicitadas e responda ESTRITAMENTE com um objeto JSON no formato abaixo, sem qualquer markdown ou textos adicionais:
+{
+  "headers": ["Coluna1", "Coluna2", ...],
+  "rows": [
+    ["Valor1", "Valor2", ...],
+    ["Valor1", "Valor2", ...]
+  ],
+  "category": "EAP" | "Materiais" | "Suprimentos" | "Fornecedores",
+  "message": "Descrição curta do que a IA fez"
+}
+
+Importante:
+- Se a solicitação pedir para limpar, remover, substituir, formatar, unificar ou ordenar, faça isso.
+- Retorne apenas o JSON puro, sem usar crases de bloco de código (\`\`\`json).`;
+
+    try {
+      const responseText = await sendMessageToAI(systemPrompt, aiConfig);
+      
+      let cleanJson = responseText.trim();
+      if (cleanJson.startsWith('```')) {
+        cleanJson = cleanJson.replace(/^```[a-zA-Z]*\n/, '').replace(/\n```$/, '');
+      }
+
+      const result = JSON.parse(cleanJson);
+      if (result.headers && Array.isArray(result.rows)) {
+        setImportHeaders(result.headers);
+        setImportRows(result.rows);
+        if (result.category) {
+          setImportCategory(result.category);
+        }
+        setImportPage(0);
+        setAiPrompt('');
+        addToast(result.message || 'Transformação via IA executada com sucesso!', 'success');
+      } else {
+        addToast('A resposta da IA não é um JSON de planilha estruturada válido.', 'warning');
+      }
+    } catch (err: any) {
+      console.error(err);
+      addToast('Erro ao executar query com IA: ' + (err.message || 'Erro de rede.'), 'warning');
+    } finally {
+      setIsAnalyzingImport(false);
+    }
+  };
+
+  const executeQueryCommand = (cmd: string) => {
+    const cleanCmd = cmd.toLowerCase().trim();
+    if (!cleanCmd) return;
+
+    let rowsChanged = false;
+    let newRows = [...importRows];
+
+    const findColIdx = (colName: string) => {
+      return importHeaders.findIndex(h => h.toLowerCase().includes(colName.toLowerCase()));
+    };
+
+    // 1. Delete empty rows
+    if (cleanCmd.includes('apagar linhas vazias') || cleanCmd.includes('remover linhas vazias') || cleanCmd.includes('deletar linhas vazias')) {
+      newRows = newRows.filter(row => row.some(cell => String(cell).trim() !== ''));
+      rowsChanged = true;
+      addToast('Linhas vazias removidas.', 'success');
+    }
+    
+    // 2. Replace X with Y
+    const replaceMatch = cmd.match(/substituir\s+(.+?)\s+por\s+(.+)/i);
+    if (replaceMatch) {
+      const target = replaceMatch[1].trim();
+      const replacement = replaceMatch[2].trim();
+      newRows = newRows.map(row => 
+        row.map(cell => {
+          if (String(cell).trim().toLowerCase() === target.toLowerCase() || String(cell).includes(target)) {
+            rowsChanged = true;
+            return String(cell).replace(new RegExp(target, 'gi'), replacement);
+          }
+          return cell;
+        })
+      );
+      if (rowsChanged) {
+        addToast(`Substituído "${target}" por "${replacement}".`, 'success');
+      }
+    }
+
+    // 3. Remove rows where condition
+    const removeMatch = cmd.match(/remover\s+linhas\s+onde\s+(.+?)\s+(é|e|contem|contém|>|<|=|igual a)\s+(.+)/i);
+    if (removeMatch) {
+      const colName = removeMatch[1].trim();
+      const operator = removeMatch[2].trim().toLowerCase();
+      const value = removeMatch[3].trim().replace(/['"]/g, '');
+      const colIdx = findColIdx(colName);
+      
+      if (colIdx !== -1) {
+        newRows = newRows.filter(row => {
+          const cellVal = String(row[colIdx] || '').trim().toLowerCase();
+          const targetVal = value.toLowerCase();
+          
+          if (operator === 'é' || operator === 'e' || operator === 'igual a' || operator === '=') {
+            return cellVal !== targetVal;
+          } else if (operator === 'contem' || operator === 'contém') {
+            return !cellVal.includes(targetVal);
+          } else if (operator === '>') {
+            const numVal = parseFloat(cellVal.replace(/[^\d.-]/g, '')) || 0;
+            const targetNum = parseFloat(targetVal.replace(/[^\d.-]/g, '')) || 0;
+            return numVal <= targetNum;
+          } else if (operator === '<') {
+            const numVal = parseFloat(cellVal.replace(/[^\d.-]/g, '')) || 0;
+            const targetNum = parseFloat(targetVal.replace(/[^\d.-]/g, '')) || 0;
+            return numVal >= targetNum;
+          }
+          return true;
+        });
+        rowsChanged = true;
+        addToast(`Linhas filtradas com sucesso onde ${colName} ${operator} ${value}.`, 'success');
+      } else {
+        addToast(`Coluna "${colName}" não encontrada.`, 'warning');
+      }
+    }
+
+    // 4. Sort
+    if (cleanCmd.includes('ordenar por') || cleanCmd.includes('classificar por')) {
+      const matchSort = cmd.match(/(?:ordenar|classificar)\s+por\s+(.+)/i);
+      if (matchSort) {
+        const colName = matchSort[1].trim();
+        const colIdx = findColIdx(colName);
+        if (colIdx !== -1) {
+          const isDesc = cleanCmd.includes('decrescente') || cleanCmd.includes('desc');
+          newRows.sort((a, b) => {
+            const valA = a[colIdx] || '';
+            const valB = b[colIdx] || '';
+            const numA = parseFloat(String(valA).replace(/[^\d.-]/g, ''));
+            const numB = parseFloat(String(valB).replace(/[^\d.-]/g, ''));
+            
+            if (!isNaN(numA) && !isNaN(numB)) {
+              return isDesc ? numB - numA : numA - numB;
+            }
+            return isDesc 
+              ? String(valB).localeCompare(String(valA))
+              : String(valA).localeCompare(String(valB));
+          });
+          rowsChanged = true;
+          addToast(`Dados ordenados pela coluna "${importHeaders[colIdx]}".`, 'success');
+        }
+      }
+    }
+
+    if (rowsChanged) {
+      setImportRows(newRows);
+      setImportPage(0);
+      setAiPrompt('');
+    } else {
+      runAIQueryCommand(cmd);
+    }
+  };
+
+  const handleImportSubmit = async () => {
+    if (importHeaders.length === 0 || importRows.length === 0) {
+      addToast('Nenhum dado para importar.', 'warning');
+      return;
+    }
+
+    // Map rows using active headers and mappings
+    const mappedItems = importRows.map((row, rIdx) => {
+      const obj: any = {};
+      importHeaders.forEach((h, colIdx) => {
+        if (activeColumns[h]) {
+          const key = importMappings[h];
+          if (key) {
+            let val = row[colIdx];
+            if (key === 'budget' || key === 'actual' || key === 'qtyBudget' || key === 'qtyUsed' || key === 'rating' || key === 'compliance') {
+              val = parseFloat(String(val || '0').replace(/[^\d.-]/g, '')) || 0;
+            } else {
+              val = String(val ?? '').trim();
+            }
+            obj[key] = val;
+          }
+        }
+      });
+      return obj;
+    }).filter(obj => Object.keys(obj).length > 0); // must map at least one field
+
+    if (mappedItems.length === 0) {
+      addToast('Nenhum registro mapeado. Certifique-se de associar pelo menos uma coluna.', 'warning');
+      return;
+    }
+
+    if (importDestinationProjId === 'new') {
+      // Create new project
+      const tempPrevisto = importCategory === 'EAP' ? mappedItems.reduce((s, c) => s + (c.budget || 0), 0) : 150000;
+      const tempFaturado = importCategory === 'EAP' ? mappedItems.reduce((s, c) => s + (c.actual || 0), 0) : 0;
+
+      const { data: newProjData, error: projError } = await supabase
+        .from('projects')
+        .insert({
+          name: `Projeto Importado ${selectedSheetName ? `(${selectedSheetName}) ` : ''}${new Date().toLocaleDateString('pt-BR')}`,
+          location: 'Localização Importada',
+          previsto: tempPrevisto,
+          faturado: tempFaturado,
+          progress: 0,
+          status: 'Em Execução',
+          coordinator: userProfile?.name || 'Coordenador',
+          team: 'Frente Importada'
+        })
+        .select()
+        .single();
+
+      if (projError) {
+        addToast('Erro ao criar projeto para importação: ' + projError.message, 'warning');
+        return;
+      }
+
+      const newProjId = newProjData.id;
+
+      // Default Milestones
+      await supabase.from('project_milestones').insert([
+        { project_id: newProjId, name: 'Planejamento Inicial', status: 'Concluído', date: convertToDbDate(getRelativeDate(0, 1)) },
+        { project_id: newProjId, name: 'Início Obras', status: 'Em Execução', date: convertToDbDate(getRelativeDate(0, 15)) },
+      ]);
+
+      if (importCategory === 'EAP') {
+        const insertCosts = mappedItems.map(item => ({
+          project_id: newProjId,
+          phase: item.phase || 'Nova Fase Importada',
+          budget: item.budget || 0,
+          actual: item.actual || 0,
+          category: item.category || 'Materiais',
+          responsible: item.responsible || 'Eng. Daniel Silva'
+        }));
+        await supabase.from('project_costs').insert(insertCosts);
+
+        // Baseline Material
+        await supabase.from('project_materials').insert([
+          { project_id: newProjId, name: 'Insumo Setup', category: 'Materiais', qty_budget: 100, qty_used: 0, unit: 'un', supplier: 'A cotar', responsible: 'Daniel Silva' }
+        ]);
+      } else if (importCategory === 'Materiais') {
+        // Baseline Cost
+        await supabase.from('project_costs').insert([
+          { project_id: newProjId, phase: 'Fase Inicial Civil', budget: 100000, actual: 0, category: 'Materiais', responsible: 'Daniel Silva' }
+        ]);
+
+        const insertMaterials = mappedItems.map(item => ({
+          project_id: newProjId,
+          name: item.name || 'Insumo Importado',
+          category: item.category || 'Materiais',
+          qty_budget: item.qtyBudget || 0,
+          qty_used: item.qtyUsed || 0,
+          unit: item.unit || 'un',
+          supplier: item.supplier || 'A cotar',
+          responsible: item.responsible || 'Hugo (Mestre)'
+        }));
+        await supabase.from('project_materials').insert(insertMaterials);
+      }
+
+      await fetchFromSupabase();
+      setSelectedProjectId(newProjId);
+      addToast(`Novo projeto criado com ${mappedItems.length} itens importados!`, 'success');
+    } else {
+      // Import into existing project
+      if (importCategory === 'EAP') {
+        const insertCosts = mappedItems.map(item => ({
+          project_id: importDestinationProjId,
+          phase: item.phase || 'Nova Fase Importada',
+          budget: item.budget || 0,
+          actual: item.actual || 0,
+          category: item.category || 'Materiais',
+          responsible: 'Coordenador'
+        }));
+        const { error: costsErr } = await supabase.from('project_costs').insert(insertCosts);
+        if (costsErr) {
+          addToast('Erro ao importar itens de custo: ' + costsErr.message, 'warning');
+          return;
+        }
+
+        // Also update project's previsto/faturado totals
+        const p = projects.find(proj => proj.id === importDestinationProjId);
+        if (p) {
+          const addedBudget = mappedItems.reduce((s, c) => s + (c.budget || 0), 0);
+          const addedActual = mappedItems.reduce((s, c) => s + (c.actual || 0), 0);
+          await supabase
+            .from('projects')
+            .update({
+              previsto: (p.previsto || 0) + addedBudget,
+              faturado: (p.faturado || 0) + addedActual
+            })
+            .eq('id', importDestinationProjId);
+        }
+      } else if (importCategory === 'Materiais') {
+        const insertMaterials = mappedItems.map(item => ({
+          project_id: importDestinationProjId,
+          name: item.name || 'Insumo Importado',
+          category: item.category || 'Materiais',
+          qty_budget: item.qtyBudget || 0,
+          qty_used: item.qtyUsed || 0,
+          unit: item.unit || 'un',
+          supplier: item.supplier || 'A cotar',
+          responsible: item.responsible || 'Hugo (Mestre)'
+        }));
+        const { error: matErr } = await supabase.from('project_materials').insert(insertMaterials);
+        if (matErr) {
+          addToast('Erro ao importar insumos: ' + matErr.message, 'warning');
+          return;
+        }
+      } else if (importCategory === 'Suprimentos') {
+        const insertReqs = mappedItems.map(item => ({
+          project_id: importDestinationProjId,
+          material: item.material || 'Material Importado',
+          qty: String(item.qty || '1 un'),
+          date: convertToDbDate(getRelativeDate(0, 0)),
+          status: 'Em Cotação',
+          options: [
+            { supplierName: 'Depósito Central', price: 1000, deliveryDays: 2, rating: 4, isBest: true },
+            { supplierName: 'Suprimentos Vale', price: 1200, deliveryDays: 1, rating: 3 }
+          ]
+        }));
+        const { error: reqsErr } = await supabase.from('project_requisitions').insert(insertReqs);
+        if (reqsErr) {
+          addToast('Erro ao importar requisições: ' + reqsErr.message, 'warning');
+          return;
+        }
+      } else if (importCategory === 'Fornecedores') {
+        const insertSuppliers = mappedItems.map(item => ({
+          name: item.name || 'Fornecedor Importado',
+          rating: item.rating || 4.5,
+          compliance: item.compliance || 90,
+          specialty: item.specialty || 'Serviços Gerais',
+          phone: item.phone || '(11) 99999-9999'
+        }));
+        const { error: supErr } = await supabase.from('project_suppliers').upsert(insertSuppliers, { onConflict: 'name' });
+        if (supErr) {
+          addToast('Erro ao importar fornecedores: ' + supErr.message, 'warning');
+          return;
+        }
+      }
+
+      await fetchFromSupabase();
+      addToast(`${mappedItems.length} registros adicionados ao projeto selecionado!`, 'success');
+    }
+
+    setIsImportModalOpen(false);
+  };
+
 
   const handleExportCSV = (data: any[], headers: string[], filename: string) => {
     // Semicolon separator with BOM is best for Excel (Portuguese Windows)
@@ -2965,8 +3709,18 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
     printWindow.document.close();
   };
 
-  const handleDeleteRequisition = (reqId: string) => {
-    setRequisitions((prev) => prev.filter((r) => r.id !== reqId));
+  const handleDeleteRequisition = async (reqId: string) => {
+    const { error } = await supabase
+      .from('project_requisitions')
+      .delete()
+      .eq('id', reqId);
+
+    if (error) {
+      addToast('Erro ao remover requisição: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setIsAddingReq(false);
     setEditingReqId(null);
     addToast('Requisição removida com sucesso.', 'warning');
@@ -2982,49 +3736,71 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
     setIsAddingSupplier(false);
   };
 
-  const handleSaveEditSupplier = () => {
+  const handleSaveEditSupplier = async () => {
     if (!editSupName.trim()) {
       addToast('O nome do fornecedor é obrigatório.', 'warning');
       return;
     }
-    setSuppliers((prev) =>
-      prev.map((sup) =>
-        sup.id === editingSupplierId
-          ? {
-              ...sup,
-              name: editSupName,
-              specialty: editSupSpecialty,
-              phone: editSupPhone,
-              compliance: editSupCompliance,
-              rating: editSupRating,
-            }
-          : sup
-      )
-    );
+
+    const { error } = await supabase
+      .from('project_suppliers')
+      .update({
+        name: editSupName,
+        specialty: editSupSpecialty,
+        phone: editSupPhone,
+        compliance: editSupCompliance,
+        rating: editSupRating
+      })
+      .eq('id', editingSupplierId);
+
+    if (error) {
+      addToast('Erro ao atualizar fornecedor: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setEditingSupplierId(null);
     addToast('Fornecedor atualizado com sucesso!', 'success');
   };
 
-  const handleAddNewSupplier = () => {
+  const handleAddNewSupplier = async () => {
     if (!editSupName.trim()) {
       addToast('O nome do fornecedor é obrigatório.', 'warning');
       return;
     }
-    const newSup: Supplier = {
-      id: `sup-${Date.now()}`,
-      name: editSupName,
-      specialty: editSupSpecialty,
-      phone: editSupPhone,
-      compliance: editSupCompliance,
-      rating: editSupRating,
-    };
-    setSuppliers((prev) => [...prev, newSup]);
+
+    const { error } = await supabase
+      .from('project_suppliers')
+      .insert({
+        name: editSupName,
+        specialty: editSupSpecialty,
+        phone: editSupPhone,
+        compliance: editSupCompliance,
+        rating: editSupRating
+      });
+
+    if (error) {
+      addToast('Erro ao cadastrar fornecedor: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setIsAddingSupplier(false);
     addToast('Novo fornecedor cadastrado com sucesso!', 'success');
   };
 
-  const handleDeleteSupplier = (id: string) => {
-    setSuppliers((prev) => prev.filter((sup) => sup.id !== id));
+  const handleDeleteSupplier = async (id: string) => {
+    const { error } = await supabase
+      .from('project_suppliers')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      addToast('Erro ao remover fornecedor: ' + error.message, 'warning');
+      return;
+    }
+
+    await fetchFromSupabase();
     setEditingSupplierId(null);
     setIsAddingSupplier(false);
     addToast('Fornecedor removido com sucesso.', 'warning');
@@ -3243,6 +4019,7 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
               setImportHeaders([]);
               setImportRows([]);
               setPastedText('');
+              setImportDestinationProjId(selectedProjectId);
               setIsImportModalOpen(true);
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-bold text-xs rounded-lg shadow-md border border-teal-500/20 transition-all cursor-pointer shrink-0"
@@ -4476,11 +5253,17 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
                               <td className="py-3.5 px-4">
                                 <select
                                   value={req.status}
-                                  onChange={(e) => {
+                                  onChange={async (e) => {
                                     const nextStatus = e.target.value as any;
-                                    setRequisitions(prev =>
-                                      prev.map(r => r.id === req.id ? { ...r, status: nextStatus } : r)
-                                    );
+                                    const { error } = await supabase
+                                      .from('project_requisitions')
+                                      .update({ status: nextStatus })
+                                      .eq('id', req.id);
+                                    if (error) {
+                                      addToast('Erro ao atualizar status da entrega: ' + error.message, 'warning');
+                                      return;
+                                    }
+                                    await fetchFromSupabase();
                                     addToast(`Status da entrega para "${req.material}" atualizado para: ${nextStatus}`, 'success');
                                   }}
                                   className={`text-[10px] font-bold px-2.5 py-1 rounded bg-[#0a0f1d] border outline-none cursor-pointer ${
@@ -5776,16 +6559,16 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
               </div>
             )}
 
-          {/* Modal - Spreadsheet Import */}
           {isImportModalOpen && (
             <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 transition-all duration-300 animate-fade-in">
-              <div className="bg-slate-900/95 border border-slate-800/80 backdrop-blur-xl p-6 rounded-2xl w-full max-w-3xl shadow-2xl relative overflow-hidden animate-scale-up max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="bg-slate-900/95 border border-slate-800/80 backdrop-blur-xl p-6 rounded-2xl w-full max-w-5xl shadow-2xl relative overflow-hidden animate-scale-up max-h-[95vh] flex flex-col">
                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-500 via-cyan-400 to-blue-500"></div>
 
-                <div className="flex justify-between items-center mb-5">
+                {/* Modal Header */}
+                <div className="flex justify-between items-center mb-4 shrink-0">
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#00d2ff]">publish</span>
-                    Importador Inteligente de Planilhas (IA)
+                    <span className="material-symbols-outlined text-[#00d2ff]">query_stats</span>
+                    Editor de Query & Importador Inteligente (BI)
                   </h3>
                   <button
                     onClick={() => setIsImportModalOpen(false)}
@@ -5795,14 +6578,15 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
                   </button>
                 </div>
 
-                <div className="space-y-5">
-                  {/* Method Selector: File Upload or Paste Raw Text */}
+                {/* Main Content Area - Scrollable */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4">
+                  {/* File Upload Zone and Paste Area */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* File Selection Zone */}
-                    <div className="bg-[#0a0f1d]/90 p-4 rounded-xl border border-slate-800/95 flex flex-col justify-center items-center min-h-[140px] text-center relative group">
-                      <span className="material-symbols-outlined text-[36px] text-teal-400 mb-2 group-hover:scale-110 transition-transform">cloud_upload</span>
+                    <div className="bg-[#0a0f1d]/90 p-4 rounded-xl border border-slate-800/95 flex flex-col justify-center items-center min-h-[120px] text-center relative group">
+                      <span className="material-symbols-outlined text-[32px] text-teal-400 mb-1 group-hover:scale-110 transition-transform">cloud_upload</span>
                       <span className="text-xs font-semibold text-slate-200">Selecionar arquivo de planilha</span>
-                      <span className="text-[10px] text-slate-500 mt-1">Formatos: .xlsx, .xls, .csv, .json, .md</span>
+                      <span className="text-[10px] text-slate-500 mt-0.5">Formatos: .xlsx, .xls, .csv, .json, .md</span>
                       <input
                         type="file"
                         accept=".xlsx,.xls,.csv,.json,.md,.markdown"
@@ -5811,185 +6595,35 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
                       />
                     </div>
 
-                    {/* Paste zone */}
+                    {/* Paste Zone */}
                     <div className="bg-[#0a0f1d]/90 p-4 rounded-xl border border-slate-800/95 flex flex-col gap-2">
-                      <label className="block text-[10px] font-bold text-slate-450 uppercase tracking-wider">Copiar & Colar Texto:</label>
-                      <textarea
-                        value={pastedText}
-                        onChange={(e) => setPastedText(e.target.value)}
-                        placeholder="Cole aqui a sua tabela Markdown, CSV ou JSON..."
-                        className="w-full bg-[#111827]/80 border border-slate-800/95 text-slate-200 text-[11px] p-2 rounded-xl outline-none focus:border-[#00d2ff] placeholder-slate-650 h-[80px] resize-none font-mono"
-                      />
-                      <button
-                        onClick={handleAnalyzePastedText}
-                        className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all cursor-pointer"
-                      >
-                        Analisar Texto
-                      </button>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Copiar & Colar Tabela:</label>
+                      <div className="flex gap-2">
+                        <textarea
+                          value={pastedText}
+                          onChange={(e) => setPastedText(e.target.value)}
+                          placeholder="Cole aqui a sua tabela Markdown, CSV ou JSON..."
+                          className="flex-1 bg-[#111827]/80 border border-slate-800/95 text-slate-200 text-[11px] p-2 rounded-xl outline-none focus:border-[#00d2ff] placeholder-slate-650 h-[65px] resize-none font-mono"
+                        />
+                        <button
+                          onClick={handleAnalyzePastedText}
+                          className="px-3 bg-slate-800 hover:bg-slate-750 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all cursor-pointer shrink-0"
+                        >
+                          Analisar
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  {isAnalyzingImport && (
-                    <div className="flex items-center justify-center gap-3 py-6 bg-[#0a0f1d]/50 rounded-xl border border-slate-800/40">
-                      <span className="material-symbols-outlined text-[#00d2ff] animate-spin text-2xl">progress_activity</span>
-                      <span className="text-xs font-semibold text-slate-300">IA analisando dados da planilha...</span>
-                    </div>
-                  )}
-
-                  {importHeaders.length > 0 && !isAnalyzingImport && (
-                    <div className="space-y-4 border-t border-slate-800/40 pt-4 animate-fade-in">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Select Category */}
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Categoria da Planilha (Sugestão de IA):</label>
-                          <select
-                            value={importCategory}
-                            onChange={(e) => {
-                              const cat = e.target.value as any;
-                              setImportCategory(cat);
-                              // Reset mappings to empty as fields change
-                              setImportMappings({});
-                            }}
-                            className="w-full bg-[#0a0f1d] border border-slate-800 text-slate-200 text-xs p-2.5 rounded-xl outline-none focus:border-[#00d2ff] transition-all"
-                          >
-                            <option value="EAP">Estrutura Analítica de Projeto (EAP / Custos)</option>
-                            <option value="Materiais">Levantamento de Materiais e Consumo</option>
-                            <option value="Suprimentos">Suprimentos e Compras (Requisições)</option>
-                            <option value="Fornecedores">Portfólio de Fornecedores Homologados</option>
-                          </select>
-                        </div>
-
-                        {/* Target Project selection */}
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Projeto de Destino:</label>
-                          <select
-                            value={importDestinationProjId}
-                            onChange={(e) => setImportDestinationProjId(e.target.value)}
-                            className="w-full bg-[#0a0f1d] border border-slate-800 text-slate-200 text-xs p-2.5 rounded-xl outline-none focus:border-[#00d2ff] transition-all"
-                          >
-                            {projects.map(p => (
-                              <option key={p.id} value={p.id}>Adicionar ao projeto: {p.name}</option>
-                            ))}
-                            {(importCategory === 'EAP' || importCategory === 'Materiais') && (
-                              <option value="new">Criar Novo Projeto com estes dados</option>
-                            )}
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Column Mapping Section */}
-                      <div>
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Mapeamento de Colunas (IA):</div>
-                        <div className="bg-[#0a0f1d]/90 p-4 rounded-xl border border-slate-800/95 max-h-[160px] overflow-y-auto custom-scrollbar space-y-3">
-                          {importHeaders.map((h) => {
-                            const mappedKey = importMappings[h] || '';
-                            return (
-                              <div key={h} className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center border-b border-slate-800/30 pb-2 last:border-none last:pb-0">
-                                <div className="flex items-center gap-1.5 text-xs text-slate-300 font-mono truncate">
-                                  <span className="material-symbols-outlined text-[14px] text-teal-400 shrink-0">table_rows</span>
-                                  {h}
-                                </div>
-                                <select
-                                  value={mappedKey}
-                                  onChange={(e) => setImportMappings(prev => ({ ...prev, [h]: e.target.value }))}
-                                  className="bg-[#111827] border border-slate-800 text-slate-300 text-xs p-1.5 rounded-lg outline-none focus:border-[#00d2ff] cursor-pointer"
-                                >
-                                  <option value="">(Ignorar / Não importar)</option>
-                                  {importCategory === 'EAP' && (
-                                    <>
-                                      <option value="phase">Fase / Pacote de Trabalho</option>
-                                      <option value="budget">Orçamento Previsto (R$)</option>
-                                      <option value="actual">Gasto Realizado (R$)</option>
-                                      <option value="category">Categoria (Materiais, Mão de Obra, etc.)</option>
-                                      <option value="responsible">Responsável Técnico</option>
-                                    </>
-                                  )}
-                                  {importCategory === 'Materiais' && (
-                                    <>
-                                      <option value="name">Nome do Insumo / Serviço</option>
-                                      <option value="category">Categoria</option>
-                                      <option value="qtyBudget">Quantidade Prevista (Meta)</option>
-                                      <option value="qtyUsed">Quantidade Utilizada</option>
-                                      <option value="unit">Unidade (m³, kg, sacos, etc.)</option>
-                                      <option value="supplier">Fornecedor Atual</option>
-                                      <option value="responsible">Responsável Técnico</option>
-                                    </>
-                                  )}
-                                  {importCategory === 'Suprimentos' && (
-                                    <>
-                                      <option value="material">Material / Insumo</option>
-                                      <option value="qty">Quantidade / Lote</option>
-                                      <option value="status">Status da Compra</option>
-                                    </>
-                                  )}
-                                  {importCategory === 'Fornecedores' && (
-                                    <>
-                                      <option value="name">Razão Social / Nome</option>
-                                      <option value="rating">Avaliação / Rating (0 a 5)</option>
-                                      <option value="compliance">Compliance % (Ex: 95)</option>
-                                      <option value="specialty">Especialidade / Ramo</option>
-                                      <option value="phone">Telefone</option>
-                                    </>
-                                  )}
-                                </select>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Mapped Row Preview Grid */}
-                      <div>
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Prévia dos Dados Mapeados (3 primeiras linhas):</div>
-                        <div className="bg-[#0a0f1d] border border-slate-800 rounded-xl overflow-x-auto max-w-full">
-                          <table className="w-full text-left text-[11px] border-collapse min-w-[500px]">
-                            <thead>
-                              <tr className="bg-[#111827] border-b border-slate-800 text-slate-400">
-                                {importHeaders.map(h => (
-                                  <th key={h} className="py-2 px-3 font-semibold font-mono truncate max-w-[150px]">
-                                    {h}
-                                    {importMappings[h] ? (
-                                      <span className="block text-[8px] text-teal-400 font-bold uppercase">{importMappings[h]}</span>
-                                    ) : (
-                                      <span className="block text-[8px] text-slate-600 font-bold uppercase">IGNORADO</span>
-                                    )}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-800/40 text-slate-300">
-                              {importRows.slice(0, 3).map((row, rIdx) => (
-                                <tr key={rIdx}>
-                                  {importHeaders.map((_, colIdx) => (
-                                    <td key={colIdx} className="py-2 px-3 truncate max-w-[150px]">{String(row[colIdx] ?? '')}</td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Novo fluxo simplificado: assim que o arquivo é selecionado ou colado, as funções handleFileChange / handleAnalyzePastedText fecham este modal e abrem o QueryEditorModal avançado */}
                 </div>
 
-                <div className="flex justify-end gap-3.5 mt-6 pt-2 border-t border-slate-800/40">
+                {/* Modal Actions Footer */}
+                <div className="flex justify-end gap-3 mt-4 pt-2 border-t border-slate-800/40 shrink-0">
                   <button
                     onClick={() => setIsImportModalOpen(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors"
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/50 transition-colors cursor-pointer"
                   >
                     Cancelar
-                  </button>
-                  <button
-                    onClick={handleImportSubmit}
-                    disabled={importHeaders.length === 0}
-                    className={`px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-all ${
-                      importHeaders.length === 0
-                        ? 'bg-slate-800 text-slate-600 cursor-not-allowed shadow-none'
-                        : 'bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-slate-950 shadow-teal-500/10 hover:shadow-teal-500/20 active:scale-98 cursor-pointer'
-                    }`}
-                  >
-                    Confirmar Importação
                   </button>
                 </div>
               </div>
@@ -6104,6 +6738,20 @@ Retorne APENAS um objeto JSON válido (sem comentários ou blocos markdown de te
                 </div>
               </div>
             </div>
+          )}
+          {isQueryEditorOpen && (
+            <QueryEditorModal
+              isOpen={isQueryEditorOpen}
+              onClose={() => setIsQueryEditorOpen(false)}
+              initialSheetsData={queryEditorSheetsData}
+              targetColumns={targetColumnsMap[importCategory]}
+              importCategory={importCategory}
+              setImportCategory={setImportCategory}
+              onImportComplete={handleQueryEditorImport}
+              projects={projects}
+              importDestinationProjId={importDestinationProjId}
+              setImportDestinationProjId={setImportDestinationProjId}
+            />
           )}
 
       </div>
