@@ -17,7 +17,12 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function restoreAdmin() {
     const email = 'admin@manequip.com';
-    const password = 'AdminPassword123!';
+    let password = env.ADMIN_PASSWORD;
+
+    if (!password) {
+        console.warn('⚠️ SECURITY WARNING: ADMIN_PASSWORD not defined in .env.local. Using default password AdminPassword123!. Set ADMIN_PASSWORD for production.');
+        password = 'AdminPassword123!';
+    }
 
     console.log(`Restoring user: ${email}`);
 
