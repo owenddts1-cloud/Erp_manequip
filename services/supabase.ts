@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // NEW SUPABASE PROJECT - MANEQUIP
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = (typeof import.meta.env !== 'undefined' ? import.meta.env.VITE_SUPABASE_URL : undefined) || process.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = (typeof import.meta.env !== 'undefined' ? import.meta.env.VITE_SUPABASE_ANON_KEY : undefined) || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 const isBrowser = typeof window !== 'undefined';
 

@@ -1,0 +1,424 @@
+"""Tests for the Phase 3 backfill importer (per-run records + checked_by)."""
+
+from __future__ import annotations
+
+import json
+
+from core.coverage.importer import (
+    backfill,
+    import_checked_by,
+    import_findings,
+    import_record,
+    import_run_dir,
+    import_understand,
+)
+from core.coverage.store import CoverageStore
+
+
+def _store(tmp_path):
+    return CoverageStore(tmp_path / "coverage.json", target="zip:abc")
+
+
+_CHECKLIST = {
+    "files": [
+        {"path": "a.c", "lines": 100, "items": [
+            {"name": "f1", "line_start": 0, "line_end": 20},
+            {"name": "f2", "line_start": 30, "line_end": 60,
+             "checked_by": ["validate:stage-a"]},
+        ]},
+        {"path": "b.c", "lines": 50, "functions": [
+            {"name": "g1", "line_start": 0, "line_end": 10},
+        ]},
+    ],
+}
+
+
+def test_import_understand_marks_context_map_and_traces(tmp_path):
+    s = _store(tmp_path)
+    s.import_inventory_meta(_CHECKLIST)
+    run = tmp_path / "understand-1"
+    run.mkdir()
+    (run / "context-map.json").write_text(json.dumps({
+        "entry_points": [{"file": "a.c", "line": 5, "name": "f1"}],
+        "sink_details": [{"file": "a.c", "line_start": 35}],   # line_start fallback
+        "boundary_details": [{"file": "b.c", "line": 3}],
+    }))
+    (run / "flow-trace-001.json").write_text(json.dumps({
+        "steps": [{"file": "a.c", "line": 40}, {"file": "b.c", "line": 7}],
+    }))
+    n = import_understand(s, run, _CHECKLIST)
+    assert n == 5
+    # Marked under the `understand` tool (llm category via the registry).
+    assert s.who_checked("a.c", 5) == ["understand"]
+    assert s.who_checked("a.c", 35) == ["understand"]   # line_start used
+    # Function-level rollup: the containing function reads as llm-examined.
+    assert s.function_covered("a.c", 0, 20, category="llm") is True
+    assert s.function_covered("a.c", 30, 60, category="llm") is True
+    assert s.function_covered("b.c", 0, 10, category="llm") is True
+
+
+def test_import_understand_no_files_is_noop(tmp_path):
+    s = _store(tmp_path)
+    empty = tmp_path / "run-empty"
+    empty.mkdir()
+    assert import_understand(s, empty, _CHECKLIST) == 0
+
+
+def test_import_understand_tolerates_malformed(tmp_path):
+    s = _store(tmp_path)
+    run = tmp_path / "u"
+    run.mkdir()
+    (run / "context-map.json").write_text(json.dumps({
+        "entry_points": "not-a-list",
+        "sink_details": [{"file": "a.c"}, {"line": 5}, "junk", {"file": "a.c", "line": 9}],
+    }))
+    (run / "flow-trace-x.json").write_text(json.dumps({"steps": [{"nofile": 1}]}))
+    n = import_understand(s, run, _CHECKLIST)
+    assert n == 1                                  # only the well-formed sink
+    assert s.who_checked("a.c", 9) == ["understand"]
+
+
+def test_backfill_includes_understand(tmp_path):
+    s = _store(tmp_path)
+    run = tmp_path / "run-1"
+    run.mkdir()
+    (run / "context-map.json").write_text(json.dumps({
+        "entry_points": [{"file": "a.c", "line": 5}],
+    }))
+    backfill(s, [run], _CHECKLIST)
+    assert "understand" in s.who_checked("a.c", 5)
+
+
+def test_functions_analysed_marks_function_not_whole_file(tmp_path):
+    # An llm record as --mark now writes it: functions_analysed only (no
+    # files_examined). Only that function is marked — NOT the whole file.
+    s = _store(tmp_path)
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "coverage-llm.json").write_text(json.dumps({
+        "tool": "llm",
+        "functions_analysed": [{"file": "a.c", "function": "f1"}],
+    }))
+    # Local checklist with NO checked_by — so f2's only llm-coverage path would
+    # be functions_analysed (which doesn't include it), isolating the behaviour.
+    cl = {"files": [{"path": "a.c", "lines": 100, "items": [
+        {"name": "f1", "line_start": 0, "line_end": 20},
+        {"name": "f2", "line_start": 30, "line_end": 60}]}]}
+    backfill(s, [run], cl)
+    assert s.function_covered("a.c", 0, 20, category="llm") is True      # f1
+    assert s.function_covered("a.c", 30, 60, category="llm") is False    # f2 not
+    assert "llm" not in s.who_checked("a.c", 25)                         # gap line
+
+
+def test_files_examined_still_marks_whole_file(tmp_path):
+    # A reads-manifest-style llm record (files_examined, no functions_analysed)
+    # still marks the whole file — "the LLM read it".
+    s = _store(tmp_path)
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "coverage-llm.json").write_text(json.dumps({
+        "tool": "llm", "files_examined": ["a.c"],
+    }))
+    backfill(s, [run], _CHECKLIST)
+    assert s.function_covered("a.c", 0, 20, category="llm") is True
+    assert s.function_covered("a.c", 30, 60, category="llm") is True     # whole file
+
+
+def test_functions_analysed_resolves_abs_and_skips_unknown(tmp_path):
+    s = _store(tmp_path)
+    run = tmp_path / "run"
+    run.mkdir()
+    (run / "coverage-llm.json").write_text(json.dumps({
+        "tool": "llm",
+        "functions_analysed": [
+            {"file": "/abs/root/a.c", "function": "f1"},     # abs → resolves
+            {"file": "a.c", "function": "nonexistent"},      # skipped
+        ],
+    }))
+    cl = {"files": [{"path": "a.c", "lines": 100, "items": [
+        {"name": "f1", "line_start": 0, "line_end": 20},
+        {"name": "f2", "line_start": 30, "line_end": 60}]}]}
+    backfill(s, [run], cl)
+    assert s.function_covered("a.c", 0, 20, category="llm") is True
+    assert s.function_covered("a.c", 30, 60, category="llm") is False
+
+
+def test_import_checked_by_is_function_level_and_llm(tmp_path):
+    s = _store(tmp_path)
+    assert import_checked_by(s, _CHECKLIST) == 1     # only f2 has checked_by
+    assert s.who_checked_function("a.c", 30, 60) == {"validate:stage-a": "full"}
+    # validate:* classifies as llm, so f2 is NOT an llm gap; f1/g1 are.
+    assert s.function_covered("a.c", 30, 60, category="llm") is True
+
+
+def test_import_record_is_whole_file_and_skips_unknown(tmp_path):
+    s = _store(tmp_path)
+    tl = {"a.c": 100}
+    rec = {"tool": "semgrep", "files_examined": ["a.c", "vendor/x.c"]}
+    assert import_record(s, rec, tl) == 1            # a.c marked; vendor/x.c skipped (no extent)
+    assert s.who_checked("a.c", 50) == ["semgrep"]
+    assert s.who_checked("a.c", 99) == ["semgrep"]   # whole file [0, 99]
+    assert s.who_checked("vendor/x.c", 0) == []
+
+
+def test_load_run_findings_discovers_validation_excludes_sca(tmp_path):
+    from core.coverage.importer import load_run_findings
+
+    run = tmp_path / "agentic-1"
+    (run / "validation").mkdir(parents=True)
+    (run / "sca").mkdir()
+    # agentic's validated code findings live under validation/
+    (run / "validation" / "findings.json").write_text(json.dumps(
+        {"findings": [{"id": "SARIF-0", "file": "/tmp/clone/parse.c", "line": 5}]}))
+    # SCA (dependency-class) findings must NOT be pulled into source-function
+    # coverage — they don't map to a function range.
+    (run / "sca" / "findings.json").write_text(json.dumps(
+        [{"finding_id": "CVE-2021-1", "file_path": "requirements.txt", "line": 3}]))
+    found = load_run_findings(run)
+    ids = {f.get("id") or f.get("finding_id") for f in found}
+    assert "SARIF-0" in ids
+    assert "CVE-2021-1" not in ids        # sca excluded by design
+
+
+def test_absolute_scanner_paths_join_to_relative_inventory(tmp_path):
+    # Regression: real scanners (semgrep) emit ABSOLUTE files_examined paths,
+    # while the inventory keys on target-relative paths. Without normalisation
+    # the join misses every file -> 0 marks. Findings carry absolute paths too.
+    s = _store(tmp_path)
+    checklist = {"files": [
+        {"path": "src/auth.py", "lines": 40, "items": [
+            {"name": "f1", "line_start": 1, "line_end": 20}]},
+    ]}
+    run = tmp_path / "scan-1"
+    run.mkdir()
+    (run / "coverage-semgrep.json").write_text(json.dumps({
+        "tool": "semgrep",
+        "files_examined": ["/abs/target/src/auth.py"],     # absolute
+        "timestamp": "t"}))
+    (run / "findings.json").write_text(json.dumps(
+        [{"id": "SG1", "file": "/abs/target/src/auth.py", "line": 10}]))
+    backfill(s, [run], checklist)
+    assert s.who_checked("src/auth.py", 10) == ["semgrep"]          # joined
+    assert s.function_verdict("src/auth.py", 1, 20) == "open"        # finding joined too
+
+
+def test_file_level_coverage_uses_real_inventory_lines_field(tmp_path):
+    # Regression: file-level marks read the inventory's `lines` key — what
+    # builder.py actually emits. `total_lines` is NOT a recognised inventory
+    # key (the line-count read was standardised on `lines`, dropping the old
+    # dual-key shim); a `total_lines`-only entry has unknown extent and is
+    # skipped. Reading the wrong key silently drops ALL file-level scanner
+    # coverage, so both halves are asserted here.
+    s = _store(tmp_path)
+    checklist = {"files": [
+        {"path": "a.c", "lines": 40, "sloc": 30, "items": [
+            {"name": "f1", "line_start": 0, "line_end": 20}]},
+        {"path": "legacy.c", "total_lines": 40, "items": [
+            {"name": "g1", "line_start": 0, "line_end": 20}]},
+    ]}
+    run = tmp_path / "scan-1"
+    run.mkdir()
+    (run / "coverage-semgrep.json").write_text(json.dumps(
+        {"tool": "semgrep", "files_examined": ["a.c", "legacy.c"],
+         "timestamp": "t"}))
+    (run / "findings.json").write_text("[]")
+    backfill(s, [run], checklist)
+    assert s.who_checked("a.c", 10) == ["semgrep"]    # whole file marked
+    # 1-based: the last inventory line (tl) is covered; phantom line 0 is not.
+    assert s.who_checked("a.c", 40) == ["semgrep"]
+    assert s.who_checked("a.c", 0) == []
+    assert s.function_covered("a.c", 1, 20, category="static") is True
+    # `total_lines`-only entry: extent unknown -> no whole-file mark.
+    assert s.who_checked("legacy.c", 10) == []
+
+
+def test_import_run_dir_reads_per_tool_records(tmp_path):
+    s = _store(tmp_path)
+    run = tmp_path / "scan-1"
+    run.mkdir()
+    (run / "coverage-semgrep.json").write_text(json.dumps(
+        {"tool": "semgrep", "files_examined": ["a.c"], "timestamp": "t"}))
+    (run / "coverage-codeql.json").write_text(json.dumps(
+        {"tool": "codeql", "files_examined": ["b.c"], "timestamp": "t"}))
+    assert import_run_dir(s, run, _CHECKLIST) == 2
+    assert s.who_checked("a.c", 10) == ["semgrep"]
+    assert s.who_checked("b.c", 5) == ["codeql"]
+
+
+def test_import_findings_sets_open_verdict(tmp_path):
+    s = _store(tmp_path)
+    s.mark("a.c", 30, 60, "semgrep")         # f2 examined
+    findings = [
+        {"id": "F1", "file": "a.c", "line": 42},          # in f2
+        {"file_path": "a.c", "start_line": 5},            # variant field names
+        {"note": "no file"},                              # skipped
+    ]
+    assert import_findings(s, findings) == 2
+    assert s.function_verdict("a.c", 30, 60) == "open"    # retained by default
+
+
+def test_import_findings_retained_false_is_found_then_lost(tmp_path):
+    s = _store(tmp_path)
+    s.mark("a.c", 30, 60, "semgrep")
+    import_findings(s, [{"id": "F1", "file": "a.c", "line": 42}], retained=False)
+    assert s.function_verdict("a.c", 30, 60) == "found_then_lost"
+
+
+def test_backfill_imports_findings_for_verdict(tmp_path):
+    s = _store(tmp_path)
+    run = tmp_path / "scan-1"
+    run.mkdir()
+    (run / "coverage-semgrep.json").write_text(json.dumps(
+        {"tool": "semgrep", "files_examined": ["a.c"], "timestamp": "t"}))
+    (run / "findings.json").write_text(json.dumps(
+        [{"id": "F1", "file": "a.c", "line": 42}]))      # lands in f2 [30,60]
+    backfill(s, [run], _CHECKLIST)
+    assert s.function_verdict("a.c", 30, 60) == "open"   # f2 has a retained finding
+    assert s.function_verdict("a.c", 0, 20) == "clean"   # f1 examined, no finding
+
+
+def test_backfill_unions_checked_by_and_records_then_gap(tmp_path):
+    s = _store(tmp_path)
+    run = tmp_path / "scan-1"
+    run.mkdir()
+    (run / "coverage-semgrep.json").write_text(json.dumps(
+        {"tool": "semgrep", "files_examined": ["a.c", "b.c"], "timestamp": "t"}))
+
+    marks = backfill(s, [run], _CHECKLIST)
+    assert marks == 3        # 1 checked_by (f2) + 2 record files (a.c, b.c)
+
+    # file-level meta imported -> coverage % defined.
+    assert s.file_coverage("a.c") == 100.0    # semgrep marked whole file
+
+    # The /audit gap: f2 was LLM-reviewed (validate); f1 and g1 only have
+    # static (semgrep) coverage -> they ARE the llm gap.
+    assert s.unchecked_functions(_CHECKLIST, category="llm") == [
+        ("a.c", "f1", 0),
+        ("b.c", "g1", 0),
+    ]
+    # Nothing is a *total* gap -- semgrep touched every file.
+    assert s.unchecked_functions(_CHECKLIST) == []
+
+    # Persists.
+    s.save()
+    assert CoverageStore(tmp_path / "coverage.json").who_checked("a.c", 40) == [
+        "semgrep", "validate:stage-a",
+    ]
+
+
+# ---------------------------------------------------------------------------
+# _tool_stamp: per-tool record version fallback when manifest is bare
+# ---------------------------------------------------------------------------
+
+
+def test_tool_stamp_uses_engines_when_present():
+    from core.coverage.importer import _tool_stamp
+    prov = {
+        "engines": {"semgrep": "1.79.0"},
+        "timestamp": "2026-06-02T01:00:00Z",
+    }
+    stamp = _tool_stamp("semgrep", prov, record_version=None)
+    assert stamp["version"] == "1.79.0"
+
+
+def test_tool_stamp_falls_back_to_record_version_when_engines_bare():
+    # When raptor.py's lifecycle wrapper hasn't yet called
+    # complete_run, the manifest's ``engines`` map is bare. The
+    # per-tool coverage record's ``version`` field (populated by
+    # build_from_semgrep / build_from_cocci from the tool's own
+    # JSON output) is the fallback — without it, scanner.py's
+    # end-of-run coverage summary always shows
+    # ``(version unrecorded)``.
+    from core.coverage.importer import _tool_stamp
+    prov = {
+        "engines": {},
+        "timestamp": "2026-06-02T01:00:00Z",
+    }
+    stamp = _tool_stamp("semgrep", prov, record_version="1.79.0")
+    assert stamp["version"] == "1.79.0"
+
+
+def test_tool_stamp_engines_wins_over_record_version_when_both():
+    # Manifest engines is authoritative when present (matches
+    # post-complete_run state); record_version is the fallback for
+    # pre-complete_run renders.
+    from core.coverage.importer import _tool_stamp
+    prov = {
+        "engines": {"semgrep": "2.0.0"},
+        "timestamp": "2026-06-02T01:00:00Z",
+    }
+    stamp = _tool_stamp("semgrep", prov, record_version="1.79.0")
+    assert stamp["version"] == "2.0.0"
+
+
+def test_tool_stamp_no_version_anywhere_omits_field():
+    # Neither manifest nor record carries a version — stamp
+    # shouldn't fabricate one. Renderer will say "version
+    # unrecorded" in this case (genuinely unknown).
+    from core.coverage.importer import _tool_stamp
+    prov = {"engines": {}, "timestamp": "t"}
+    stamp = _tool_stamp("semgrep", prov, record_version=None)
+    assert "version" not in stamp
+
+
+def test_tool_stamp_non_string_record_version_rejected():
+    # Defensive: a future caller passing a dict / list / int as
+    # record_version would silently land an unhashable value in
+    # the stamp, then crash downstream in ``provenance_summary``
+    # (sets the version into a set). isinstance guard refuses.
+    from core.coverage.importer import _tool_stamp
+    prov = {"engines": {}, "timestamp": "t"}
+    for bogus in [{"v": "1.0"}, ["1.0"], 100, 1.5]:
+        stamp = _tool_stamp("semgrep", prov, record_version=bogus)
+        assert "version" not in stamp, (
+            f"version field should not be set for non-string "
+            f"record_version={bogus!r}"
+        )
+
+
+def test_tool_stamp_empty_string_record_version_omits_field():
+    # ``record.get("version")`` may return "" when the tool's
+    # JSON output had no version key (build_from_semgrep uses
+    # ``data.get("version", "")``). Empty string is no
+    # information — same treatment as None.
+    from core.coverage.importer import _tool_stamp
+    prov = {"engines": {}, "timestamp": "t"}
+    stamp = _tool_stamp("semgrep", prov, record_version="")
+    assert "version" not in stamp
+
+
+def test_tool_stamp_works_for_coccinelle():
+    # Same fallback applies to coccinelle — build_from_cocci
+    # stamps the spatch version on the record.
+    from core.coverage.importer import _tool_stamp
+    prov = {"engines": {}, "timestamp": "t"}
+    stamp = _tool_stamp(
+        "coccinelle", prov,
+        record_version="spatch version 1.3 compiled with OCaml 5.4.0",
+    )
+    assert "spatch version 1.3" in stamp["version"]
+
+
+def test_import_record_passes_version_through_to_stamp(tmp_path):
+    # End-to-end: a coverage record with ``version`` (but no
+    # ``engines`` in provenance) lands its version on the
+    # store's per-(file, tool) provenance slot. Reproduces the
+    # /scan render-time scenario where complete_run hasn't yet
+    # populated engines.
+    s = _store(tmp_path)
+    s.import_inventory_meta(_CHECKLIST)
+    record = {
+        "tool": "semgrep",
+        "files_examined": ["a.c"],
+        "version": "1.79.0",
+        "timestamp": "t",
+    }
+    prov_without_engines = {
+        "engines": {},
+        "timestamp": "t",
+        "run": "scan-1",
+    }
+    import_record(s, record, {"a.c": 100}, prov_without_engines)
+    # Verify the stamp landed via provenance_summary aggregation.
+    summary = s.provenance_summary()
+    assert "1.79.0" in summary["tools"].get("semgrep", [])

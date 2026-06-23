@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import NotificationPopover from '../components/NotificationPopover';
 import { usePreferences } from '../contexts/PreferencesContext';
+import { calculateAssetRUL } from '../services/predictionService';
 
 const calculateDelay = (dataLimiteStr: string) => {
   if (!dataLimiteStr) return '';
@@ -436,6 +437,8 @@ const Dashboard: React.FC = () => {
   const [techPeriodFilter, setTechPeriodFilter] = React.useState<number>(new Date().getMonth() + 1);
   const [generalStatusData, setGeneralStatusData] = React.useState<any[]>([]);
   const [generalStatusView, setGeneralStatusView] = React.useState<'empilhado' | 'linhas'>('empilhado');
+  const [rulAlerts, setRulAlerts] = React.useState<any[]>([]);
+  const [assetsTelemetry, setAssetsTelemetry] = React.useState<any[]>([]);
 
   // Sorting state for Chamados Recentes table
   const [sortKey, setSortKey] = React.useState<string>('created_at');
@@ -1191,6 +1194,49 @@ const Dashboard: React.FC = () => {
 
       setGeneralStatusData(Object.values(statusMap));
 
+      // 3. Telemetry and RUL computation updates in the background
+      const { data: allAssetsList } = await supabase.from('ativos').select('id, nome, setor, saude, criticidade, data_aquisicao');
+      if (allAssetsList && allAssetsList.length > 0) {
+        const mappedAssets = allAssetsList.map(a => {
+          const health = a.saude ?? 100;
+          const acqDate = a.data_aquisicao ? new Date(a.data_aquisicao) : new Date();
+          const diffMs = Date.now() - acqDate.getTime();
+          const ageYears = Math.max(0.1, diffMs / (1000 * 60 * 60 * 24 * 365.25));
+          
+          const baseLifeDays = 3650;
+          const ageDays = ageYears * 365.25;
+          let remainingLifeDays = Math.max(10, baseLifeDays - ageDays);
+          remainingLifeDays = Math.round(remainingLifeDays * (health / 100));
+          const failureProbability = Math.round(100 - health);
+
+          return {
+            ...a,
+            remainingLifeDays,
+            failureProbability,
+            healthScore: health
+          };
+        });
+
+        // Set all telemetry list sorted by health (increasing/critical first or default)
+        setAssetsTelemetry(mappedAssets.sort((a, b) => a.healthScore - b.healthScore).slice(0, 6));
+
+        // Fetch low-health assets for visual alerts immediately from the list
+        const criticalList = mappedAssets
+          .filter(a => a.healthScore < 55)
+          .sort((a, b) => a.healthScore - b.healthScore)
+          .slice(0, 5);
+        setRulAlerts(criticalList);
+
+        // Run background calculations to refresh database and trigger auto WOs if needed
+        Promise.all(allAssetsList.slice(0, 8).map(asset => calculateAssetRUL(asset.id)))
+          .then(() => {
+            console.log('Background RUL and Neuro-Fuzzy telemetry successfully updated.');
+          })
+          .catch(err => {
+            console.error('Error running background telemetry update:', err);
+          });
+      }
+
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
     }
@@ -1664,6 +1710,7 @@ const Dashboard: React.FC = () => {
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-violet-500/50"></div>
           </div>
         </div>
+
 
         {/* Chart Card (Mobile) */}
         <div className="p-5 rounded-xl bg-[#111827] border border-[#1f2937]/50 flex flex-col min-h-[420px]">
@@ -2782,6 +2829,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           </div>
+
 
           {/* Preventivas: Previstas vs Realizadas */}
           <div className="rounded-2xl p-6 flex flex-col h-[420px] border border-slate-800 bg-[#0b111e]/90 shadow-xl shadow-black/10">

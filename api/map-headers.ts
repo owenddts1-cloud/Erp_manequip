@@ -1,9 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { authenticateRequest } from './auth';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
+  }
+
+  const user = await authenticateRequest(req);
+  if (!user) {
+    return res.status(401).json({ error: 'Acesso não autorizado. Sessão inválida ou expirada.' });
   }
 
   const { sourceHeaders, targetColumns } = req.body || {};
@@ -73,7 +79,8 @@ Retorne o JSON de mapeamentos correspondente.`;
 
     if (!response.ok) {
       console.error('Gemini API error status:', response.status, data);
-      return res.status(response.status).json({ error: data.error?.message || 'Gemini API returned an error' });
+      // Security: Mask API error details to prevent information disclosure
+      return res.status(500).json({ error: 'O provedor de IA retornou uma falha de processamento segura.' });
     }
 
     const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
@@ -89,6 +96,7 @@ Retorne o JSON de mapeamentos correspondente.`;
 
   } catch (error: any) {
     console.error('Error in map-headers serverless function:', error);
-    return res.status(500).json({ error: error.message || 'Internal Server Error' });
+    // Security: Mask internal exceptions (fail-closed)
+    return res.status(500).json({ error: 'Erro de comunicação interno no servidor de IA.' });
   }
 }

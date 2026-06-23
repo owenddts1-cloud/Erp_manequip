@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+"""
+Snyk Security Pre-Commit Hook
+=============================
+
+Blocks commits that introduce NEW security vulnerabilities.
+
+Logic:
+- SAST: Block if ANY new code vulnerabilities are found in modified lines
+- SCA: Block if package changes result in MORE critical/high vulnerabilities
+       (trading a critical for a high is acceptable)
+
+Performance:
+- Uses cache from background scans (Kiro hook)
+- Only runs fresh scans for uncached files
+- Typical cached commit: <1 second
+
+When blocked, outputs a ready-to-copy /snyk-fix-batch command for remediation.
+
+Installation:
+    ./kiro_hooks/git/install.sh
+
+Usage:
+    Runs automatically on `git commit`
+    Bypass with: git commit --no-verify
+"""
+
+import os
+import sys
+import time
+from pathlib import Path
+from typing import Optional
+
+# Add lib directory to path
+# Resolve symlinks to get the actual script location
+SCRIPT_PATH = Path(__file__).resolve()
+SCRIPT_DIR = SCRIPT_PATH.parent
+LIB_DIR = SCRIPT_DIR / "lib"
+sys.path.insert(0, str(LIB_DIR))
+
+# Debug: Print paths if there's an import error
+if not LIB_DIR.exists():
+    print(f"ERROR: LIB_DIR does not exist: {LIB_DIR}")
+    print(f"SCRIPT_DIR: {SCRIPT_DIR}")
+    print(f"SCRIPT_PATH: {SCRIPT_PATH}")
+    print(f"__file__: {__file__}")
+    sys.exit(1)
+
+from analyze_diff import get_staged_changes, StagedChanges
+from run_snyk_scan import SastScanResult, ScaScanResult
+from filter_new_vulns import analyze_staged_changes, FilterResult
+from cache import SnykCache, get_cache_dir
+from scanner import get_sast_with_cache, get_sca_with_cache
+from output import (
+    colored, Colors,
+    print_header, print_success, print_error, print_warning, print_info,
+    format_code_vuln_table, format_package_table,
+    generate_detailed_fix_instructions,
+)
+
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+# Set to True for verbose output
+DEBUG = os.environ.get("SNYK_HOOK_DEBUG", "0") == "1"
+
+# Skip old version comparison for faster (but less accurate) SCA checks
+QUICK_MODE = os.environ.get("SNYK_HOOK_QUICK", "0") == "1"
+
+# Disable cache (force fresh scans)
+NO_CACHE = os.environ.get("SNYK_HOOK_NO_CACHE", "0") == "1"
+
+# =============================================================================
+# MAIN HOOK LOGIC
+# =============================================================================
+
+def run_hook() -> int:
+    """
+    Main hook execution.
+    
+    Returns:
+        0 if commit should proceed
+        1 if commit should be blocked
+    """
+    start_time = time.time()
+    
+    print_header("SNYK SECURITY PRE-COMMIT HOOK")
+    
+    # Initialize cache (uses temp directory with workspace hash)
+    workspace = os.getcwd()
+    workspace_abs = os.path.abspath(workspace)
+    cache_dir = get_cache_dir(workspace)
+    cache = SnykCache(cache_dir=cache_dir)
+    
+    if DEBUG:
+        print(f"  Workspace (cwd): {workspace}")
+        print(f"  Workspace (abs): {workspace_abs}")
+        print(f"  Cache: {cache_dir}")
+    
+    # Step 1: Analyze staged changes
+    print_info("Analyzing staged changes...")
+    staged = get_staged_changes()
+    
+    if not staged.files and not staged.packages:
+        print_success("No significant changes to scan")
+        return 0
+    
+    if DEBUG:
+        print(f"  Code files: {len(staged.changed_code_files)}")
+        print(f"  Packages: {len(staged.packages)}")
+    
+    # Step 2: Get scan results (cache-aware)
+    sast_result: Optional[SastScanResult] = None
+    sca_result: Optional[ScaScanResult] = None
+    total_cache_hits = 0
+    total_cache_misses = 0
+    
+    if staged.has_code_changes:
+        print_info("Checking SAST cache...")
+        sast_result, hits, misses = get_sast_with_cache(staged, cache, no_cache=NO_CACHE, debug=DEBUG)
+        total_cache_hits += hits
+        total_cache_misses += misses
+        if misses:
+            print_info(f"Running SAST scan on {misses} uncached file(s)...")
+        if DEBUG and sast_result:
+            print(f"  Found {len(sast_result.vulnerabilities)} total code vulnerabilities")
+
+    if staged.has_package_changes:
+        print_info("Checking SCA cache...")
+        sca_result, hits, misses = get_sca_with_cache(staged, cache, no_cache=NO_CACHE, debug=DEBUG)
+        total_cache_hits += hits
+        total_cache_misses += misses
+        if misses:
+            print_info("Running SCA scan on dependencies...")
+        if DEBUG and sca_result:
+            print(f"  Found {len(sca_result.vulnerabilities)} total dependency vulnerabilities")
+    
+    # Show cache efficiency
+    if total_cache_hits + total_cache_misses > 0:
+        hit_rate = total_cache_hits / (total_cache_hits + total_cache_misses) * 100
+        print_info(f"Cache: {total_cache_hits} hits, {total_cache_misses} misses ({hit_rate:.0f}% hit rate)")
+    
+    # Step 3: Filter to NEW vulnerabilities only
+    print_info("Filtering to vulnerabilities introduced by this commit...")
+    result = analyze_staged_changes(
+        staged,
+        sast_result,
+        sca_result,
+        quick_mode=QUICK_MODE
+    )
+    
+    # Step 4: Report findings
+    if result.new_code_vulns:
+        print_header("NEW CODE VULNERABILITIES DETECTED")
+        print(f"\n{len(result.new_code_vulns)} new vulnerabilit{'y' if len(result.new_code_vulns) == 1 else 'ies'} introduced by your changes:\n")
+        print(format_code_vuln_table(result.new_code_vulns))
+    
+    if result.package_deltas:
+        has_regressions = any(d.is_regression for d in result.package_deltas)
+        
+        if has_regressions:
+            print_header("DEPENDENCY SECURITY REGRESSIONS")
+            print(f"\nPackage changes with security impact:\n")
+        else:
+            print_info("\nPackage security status:")
+        
+        print(format_package_table(result.package_deltas))
+    
+    # Step 5: Decision
+    elapsed = time.time() - start_time
+    
+    if result.should_block_commit:
+        print_header("COMMIT BLOCKED")
+        print_error(result.block_reason)
+        print(generate_detailed_fix_instructions(result))
+        print(colored(f"\n⏱  Completed in {elapsed:.1f}s", Colors.WHITE))
+        return 1
+    
+    # All clear
+    print_header("SECURITY CHECK PASSED")
+    
+    if result.existing_code_vulns:
+        print_warning(f"Note: {len(result.existing_code_vulns)} existing code vulnerabilities were not introduced by this commit")
+    
+    print_success("No new security issues introduced. Commit proceeding.")
+    print(colored(f"⏱  Completed in {elapsed:.1f}s", Colors.WHITE))
+    return 0
+
+
+# =============================================================================
+# ENTRY POINT
+# =============================================================================
+
+if __name__ == "__main__":
+    try:
+        exit_code = run_hook()
+        sys.exit(exit_code)
+    except KeyboardInterrupt:
+        print("\nHook interrupted")
+        sys.exit(1)
+    except Exception as e:
+        print_error(f"Hook error: {e}")
+        if DEBUG:
+            import traceback
+            traceback.print_exc()
+        # Don't block commits on hook errors
+        print_warning("Allowing commit due to hook error")
+        sys.exit(0)

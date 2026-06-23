@@ -1,0 +1,209 @@
+[English](README.md) | 简体中文
+
+<table>
+  <tr>
+    <td valign="middle">
+      <h1>vibe-coding-skills</h1>
+      <p>一个面向 vibe coding agents 与工作流的可复用 skills 仓库。</p>
+    </td>
+    <td align="right" valign="middle" width="220">
+      <img src="docs/assets/vibe-coding-skills-logo.png" alt="vibe-coding-skills logo" width="180" />
+    </td>
+  </tr>
+</table>
+
+本仓库提供一组可复用 skills，通过以下能力方向提升 AI coding 产出：
+- 规划与生命周期治理
+- 面向长期迁移方向的 deferred 技术约束
+- checkpoint 验证与有限自动修复门控
+- 面向大型 dirty tree 的 checkpoint commit 策略
+- session 交接与 context offload
+- 项目记忆连续性
+- 可复用经验沉淀
+- 外部知识校验
+- 多智能体讨论引导
+
+许可证：[MIT](LICENSE)
+
+## 仓库提供什么
+
+- 以 `SKILL.md` 为核心的仓库契约（`skills/<slug>/SKILL.md` 为必需项）。
+- 位于 `.devtools/` 下的确定性校验与发布工具。
+- 面向 `codex`、`claude`、`cursor`、`gemini`、`copilot` 的跨工具分发配置。
+- 一个持续扩展的、覆盖真实 vibe coding 场景的 skill 库。
+
+## Skills 目录
+
+![vibe-coding-skills current skills overview](docs/assets/vibe-coding-skills-banner.png)
+
+当前公开的 skill 目录、典型产出、边界说明与各 `SKILL.md` 入口，见 [docs/skills/INDEX.zh-CN.md](docs/skills/INDEX.zh-CN.md)。
+每个 skill 的语义真相仍以 `skills/<slug>/SKILL.md` 为准。
+
+## 仓库契约
+
+每个 skill 都位于 `skills/<skill-slug>/`。
+
+必需项：
+- `SKILL.md`
+
+可选项（按需推荐）：
+- `references/`
+- `scripts/`
+- `agents/`（例如 `openai.yaml` 这类工具/平台适配文件）
+- `assets/`
+
+一旦发布，`skill-slug` 应尽量保持稳定，因为运行时安装目录通常直接映射这个名字。
+
+脚本路径约定：
+- 在 skill 文档里，skill 自带工具的可执行示例应写成 `<skill-root>/scripts/...`。
+- `--root` 或 `--repo-root` 只用于指向被操作的目标工作区。
+- 避免写成 `python scripts/...` 这类会被解释为当前工作目录相对路径的命令示例。
+
+示例（单个 skill 的标准结构）：
+
+```text
+skills/example-skill/
+  SKILL.md
+  references/
+  scripts/
+  agents/
+  assets/
+```
+
+## 前置依赖
+
+必需：
+- `bash`
+- `python3`
+- `rsync`
+
+Python 包：
+- `PyYAML`（用于 smoke 时校验 frontmatter）
+
+推荐使用 `uv` 管理 Python 环境：
+
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install pyyaml
+```
+
+不使用 `uv` 时的 fallback：
+
+```bash
+python3 -m pip install pyyaml
+```
+
+## 校验
+
+仓库结构检查：
+
+```bash
+./.devtools/check-structure.sh
+```
+
+校验单个 skill：
+
+```bash
+./.devtools/smoke.sh --skill-dir skills/sdd-plan-maintainer
+```
+
+Smoke 设计：
+- `.devtools/smoke.sh` 只是调度层。
+- 每个 skill 自己维护 `skills/<skill>/scripts/smoke.sh`（或 `smoke.py`）实现。
+
+当 skill 提供功能级 CLI 回归测试时，可运行：
+
+```bash
+./.devtools/test.sh --skill-dir skills/sdd-plan-maintainer
+```
+
+运行当前仓库里所有可用的 skill 回归测试：
+
+```bash
+./.devtools/test.sh --all
+```
+
+Test 设计：
+- `.devtools/test.sh` 会优先调度 `scripts/test.sh`、`scripts/test.py`，否则回退到 `scripts/tests/`。
+- `smoke` 用于契约/结构检查，`test` 用于行为回归验证。
+
+## 发布
+
+默认行为：
+- `release.sh` 和 `release-all.sh` 默认发布到 `user-level` 的 skill 目录，除非显式传入运行时目标路径。
+
+发布单个 skill：
+
+```bash
+./.devtools/release.sh --tool codex   --skill-dir skills/sdd-plan-maintainer
+./.devtools/release.sh --tool claude  --skill-dir skills/sdd-plan-maintainer
+./.devtools/release.sh --tool cursor  --skill-dir skills/sdd-plan-maintainer
+./.devtools/release.sh --tool gemini  --skill-dir skills/sdd-plan-maintainer
+./.devtools/release.sh --tool copilot --skill-dir skills/sdd-plan-maintainer
+```
+
+发布全部 skills：
+
+```bash
+./.devtools/release-all.sh --tool codex
+./.devtools/release-all.sh --tool claude
+./.devtools/release-all.sh --tool cursor
+./.devtools/release-all.sh --tool gemini
+./.devtools/release-all.sh --tool copilot
+```
+
+通过显式覆盖运行时路径发布到 `project-level`：
+
+```bash
+./.devtools/release.sh --tool copilot --skill-dir skills/experience-capture --runtime-root /path/to/project/.github/skills/experience-capture
+./.devtools/release.sh --tool cursor  --skill-dir skills/experience-capture --runtime-root /path/to/project/.cursor/skills/experience-capture
+```
+
+所有发布操作都采用白名单分发：
+- `SKILL.md`
+- `agents/**`（如果存在）
+- `references/**`（如果存在）
+- `scripts/**`（如果存在）
+- `assets/**`（如果存在）
+
+这样可以保证运行时 skill 目录干净，不会混入仓库内部文件。
+
+## 兼容性基线
+
+- 核心契约是 `SKILL-first`（`SKILL.md` 是唯一必需的事实源）。
+- 平台适配文件放在 `agents/` 下，且是可选的。
+- 更细的 profile 路径与约束见 `docs/compatibility/skills-matrix.md`。
+
+## 已验证平台
+
+已经过实际验证：
+- `Codex`
+- `Claude Code`
+- `Gemini CLI`
+- `GitHub Copilot`
+- `Cursor`
+
+已验证的安装 / 加载路径：
+- `Codex`：个人级运行时发布到 `~/.codex/skills/<skill>`
+- `Claude Code`：个人级运行时发布到 `~/.claude/skills/<skill>`
+- `Gemini CLI`：个人级运行时发布到 `~/.gemini/skills/<skill>`
+- `GitHub Copilot`：项目级 `.github/skills/<skill>`，以及个人级 `~/.copilot/skills/<skill>`
+- `Cursor`：项目级 `.cursor/skills/<skill>`、项目级 `.agents/skills/<skill>`，以及个人级 `~/.cursor/skills/<skill>`
+
+实践说明：
+- 本仓库围绕 `SKILL-first`、工具无关的契约构建。
+- 即使某个平台的发现路径不同，可复用的源资产仍然是 `skills/<skill>/SKILL.md`，以及可选的 `references/`、`scripts/`、`agents/`、`assets/`。
+
+## 里程碑与 Roadmap
+
+当前里程碑：
+- v1 基座加 phase-1 harness 扩展已完成，当前包含 11 个核心 vibe coding 场景 skills。
+
+下一阶段扩展方向：
+- 长时运行类 skill：支持可恢复执行、checkpoint/handoff 纪律，以及多会话编码中的低损耗上下文连续性。
+- CI 相关 skill：支持测试策略选择、发布门禁检查、回归问题分诊，以及更适合 CI 的质量工作流。
+- 发布 / 安装策略细化：进一步明确 `project-level` 与 `user-level` 的发布支持，并按平台补全安装指引。
+
+Roadmap 原则：
+- 新增 skill 仍然应保持 guidance-first（先验知识 + 工作流模式 + 可复用脚本），而不是演化成业务 runtime orchestration 模块。

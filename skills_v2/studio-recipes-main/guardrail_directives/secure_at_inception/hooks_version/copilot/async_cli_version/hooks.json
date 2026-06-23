@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "uv run \"$HOME/.copilot/hooks/snyk_secure_at_inception.py\" sessionStart",
+        "timeoutSec": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "uv run \"$HOME/.copilot/hooks/snyk_secure_at_inception.py\" postToolUse",
+        "timeoutSec": 10
+      }
+    ],
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": "uv run \"$HOME/.copilot/hooks/snyk_secure_at_inception.py\" agentStop",
+        "timeoutSec": 120
+      }
+    ]
+  }
+}

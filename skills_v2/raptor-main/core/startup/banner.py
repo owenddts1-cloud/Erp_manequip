@@ -1,0 +1,129 @@
+"""RAPTOR startup banner — formatting and display.
+
+Pure presentation. Takes structured data from init.py, produces
+the terminal banner. No logic, no checks, no side effects.
+"""
+
+import random
+import re
+from pathlib import Path
+from typing import List, Optional, Tuple
+
+_ASSETS = Path(__file__).resolve().parent / "assets"
+
+# The banner's version line carries a ``__VERSION__`` placeholder rather than a
+# hardcoded number, so the displayed version is always the live one injected
+# here — never a stale stamp. Matches the box layout the release uses.
+_VERSION_LINE = re.compile(r"(║\s+Based on Claude Code - )\S+[^║]*║")
+
+
+def read_logo(version: str = "") -> str:
+    """Read the ASCII logo, injecting ``version`` into the banner line.
+
+    ``version`` is the value to display (typically
+    ``RaptorConfig.effective_version()``); a leading ``v`` is added to match
+    the banner convention. The line is re-padded so the box border stays
+    aligned regardless of the version string's length. When ``version`` is
+    empty the asset is returned verbatim (placeholder left as-is)."""
+    path = _ASSETS / "raptor-offset"
+    if not path.exists():
+        return ""
+    text = path.read_text().rstrip()
+    if version:
+        label = "v" + version.lstrip("v")
+
+        def _stamp(m: "re.Match[str]") -> str:
+            content = m.group(1) + label
+            pad = max(1, 76 - len(content))
+            return content + " " * pad + "║"
+
+        text = _VERSION_LINE.sub(_stamp, text, count=1)
+    return text
+
+
+def read_random_quote() -> str:
+    """Pick a random quote from the hackers-8ball file."""
+    path = _ASSETS / "hackers-8ball"
+    if path.exists():
+        lines = [line.strip() for line in path.read_text().splitlines() if line.strip()]
+        if lines:
+            # nosemgrep: crypto.prng.random-module.python
+            # Decorative banner quote — non-cryptographic.
+            return random.choice(lines)
+    return '"Hack the planet!"'
+
+
+def format_banner(
+    logo: str,
+    quote: str,
+    tool_results: List[Tuple[str, bool]],
+    tool_warnings: List[str],
+    llm_lines: List[str],
+    llm_warnings: List[str],
+    env_parts: List[str],
+    env_warnings: List[str],
+    project_line: Optional[str] = None,
+    lang_line: Optional[str] = None,
+) -> str:
+    """Format the startup banner from gathered data.
+
+    Args:
+        logo: ASCII art string.
+        quote: Random quote string.
+        tool_results: List of (name, found) tuples.
+        tool_warnings: List of warning strings from tool checks.
+        llm_lines: List of pre-formatted LLM status lines.
+        llm_warnings: List of warning strings from LLM checks.
+        env_parts: List of short env status strings.
+        env_warnings: List of warning strings from env checks.
+        project_line: One-line project status, or None.
+        lang_line: Pre-formatted language support line, or None.
+
+    Returns:
+        Formatted banner string.
+    """
+    lines = []
+
+    if logo:
+        lines.append(logo)
+        lines.append("")
+
+    # Tools
+    tool_parts = [f"{name} {'✓' if ok else '✗'}" for name, ok in tool_results]
+    lines.append(f" tools: {'  '.join(tool_parts)}")
+
+    # Env
+    lines.append(f"   env: {'  '.join(env_parts)}")
+
+    # Language support
+    if lang_line:
+        lines.append(lang_line)
+
+    # LLM
+    lines.extend(llm_lines)
+
+    lines.append("")
+
+    # Warnings: unavailable first, then limited, then other
+    all_raw = tool_warnings + env_warnings + llm_warnings
+    ordered = (
+        [w for w in all_raw if "unavailable" in w] +
+        [w for w in all_raw if "limited" in w] +
+        [w for w in all_raw if "unavailable" not in w and "limited" not in w]
+    )
+    if ordered:
+        lines.append(f"  warn: {ordered[0]}")
+        for w in ordered[1:]:
+            lines.append(f"        {w}")
+        lines.append("")
+
+    # Active project
+    if project_line:
+        lines.append(f"   {project_line}")
+        lines.append("")
+
+    lines.append("  For defensive security research, education, and authorized penetration testing.")
+    lines.append("")
+    lines.append(f"raptor:~$ {quote}")
+
+    return "\n".join(lines)

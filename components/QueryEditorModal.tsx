@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../services/supabase';
 
 interface TargetColumn {
   name: string;
@@ -217,9 +218,15 @@ export const QueryEditorModal: React.FC<QueryEditorModalProps> = ({
 
     setLoadingSuggestions(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const response = await fetch('/api/map-headers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || ''}`
+        },
         body: JSON.stringify({
           sourceHeaders: currentSheet.originalHeaders,
           targetColumns: targetColumns
@@ -370,9 +377,15 @@ export const QueryEditorModal: React.FC<QueryEditorModalProps> = ({
     });
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const response = await fetch('/api/transform-data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || ''}`
+        },
         body: JSON.stringify({
           columns: processedHeaders,
           sampleRows: objRows.slice(0, 5),

@@ -143,7 +143,55 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
 
+-- Login Attempts Table (Security)
+CREATE TABLE IF NOT EXISTS public.login_attempts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL,
+    ip_address TEXT,
+    attempted_at TIMESTAMPTZ DEFAULT NOW(),
+    was_successful BOOLEAN DEFAULT false
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_attempts_email ON public.login_attempts(email);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_attempted_at ON public.login_attempts(attempted_at);
+
+-- Login Attempts RLS
+ALTER TABLE public.login_attempts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "login_attempts_select" ON public.login_attempts FOR SELECT TO authenticated USING (public.is_admin());
+CREATE POLICY "login_attempts_insert" ON public.login_attempts FOR INSERT TO anon, authenticated WITH CHECK (true);
+
 -- 4. HELPER FUNCTIONS FOR RLS & TRIGGERS
+CREATE OR REPLACE FUNCTION public.check_db_rate_limit(user_email text)
+RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+    attempts_count INT;
+    block_window_start TIMESTAMPTZ := NOW() - INTERVAL '15 minutes';
+BEGIN
+    -- Count failed attempts in the last 15 minutes for this email
+    SELECT COUNT(*) INTO attempts_count
+    FROM public.login_attempts
+    WHERE LOWER(TRIM(email)) = LOWER(TRIM(user_email))
+      AND attempted_at >= block_window_start
+      AND was_successful = false;
+      
+    IF attempts_count >= 5 THEN
+        RETURN FALSE; -- Blocked
+    END IF;
+    
+    RETURN TRUE; -- Allowed
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.register_login_attempt(user_email text, success boolean)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+BEGIN
+    INSERT INTO public.login_attempts (email, was_successful)
+    VALUES (LOWER(TRIM(user_email)), success);
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.is_admin() RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public AS $$
 BEGIN
@@ -368,7 +416,7 @@ SELECT
     'authenticated',
     'authenticated',
     'admin@manequip.com',
-    extensions.crypt('AdminPassword123!', extensions.gen_salt('bf')),
+    extensions.crypt(encode(extensions.gen_random_bytes(16), 'hex'), extensions.gen_salt('bf')),
     current_timestamp,
     current_timestamp,
     current_timestamp,
@@ -393,7 +441,7 @@ SELECT
     'authenticated',
     'authenticated',
     'data@manequip.com',
-    extensions.crypt('@data', extensions.gen_salt('bf')),
+    extensions.crypt(encode(extensions.gen_random_bytes(16), 'hex'), extensions.gen_salt('bf')),
     current_timestamp,
     current_timestamp,
     current_timestamp,

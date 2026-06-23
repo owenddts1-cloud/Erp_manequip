@@ -209,11 +209,15 @@ export interface ModelStatus {
 
 export const testModelConnection = async (provider: AIProvider, model: string): Promise<ModelStatus> => {
     try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
         if (provider === 'openai') {
             const response = await fetch('/api/openai', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token || ''}`
                 },
                 body: JSON.stringify({
                     model: model,
@@ -235,7 +239,10 @@ export const testModelConnection = async (provider: AIProvider, model: string): 
         } else if (provider === 'gemini') {
             const response = await fetch('/api/gemini', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token || ''}`
+                },
                 body: JSON.stringify({
                     model: model,
                     message: 'ping',

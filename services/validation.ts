@@ -221,3 +221,57 @@ export function resetLoginRateLimit(): void {
         // Silently fail
     }
 }
+
+/**
+ * Security: Constant-time string comparison to mitigate timing side-channel attacks.
+ * Prevents attackers from guessing secrets by measuring response times.
+ */
+export function safeCompareConstantTime(a: string, b: string): boolean {
+    if (typeof a !== 'string' || typeof b !== 'string') return false;
+    
+    const aLen = a.length;
+    const bLen = b.length;
+    let result = aLen ^ bLen;
+    
+    const maxLen = Math.max(aLen, bLen);
+    for (let i = 0; i < maxLen; i++) {
+        const charA = i < aLen ? a.charCodeAt(i) : 0;
+        const charB = i < bLen ? b.charCodeAt(i) : 0;
+        result |= charA ^ charB;
+    }
+    
+    return result === 0;
+}
+
+/**
+ * Security: Clears/zeroizes properties of an object containing sensitive data from memory.
+ */
+export function zeroizeObject(obj: Record<string, any> | null | undefined): void {
+    if (!obj) return;
+    Object.keys(obj).forEach(key => {
+        try {
+            if (typeof obj[key] === 'string') {
+                obj[key] = '';
+            } else if (typeof obj[key] === 'number') {
+                obj[key] = 0;
+            } else if (Array.isArray(obj[key])) {
+                obj[key].fill(null);
+            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                zeroizeObject(obj[key]);
+                obj[key] = null;
+            } else {
+                obj[key] = null;
+            }
+        } catch (e) {
+            // Ignore if property is read-only
+        }
+    });
+}
+
+/**
+ * Security: Helper to clear/zeroize a string variable reference.
+ */
+export function zeroizeString(str: string): string {
+    return '';
+}
+

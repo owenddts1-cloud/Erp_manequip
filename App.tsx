@@ -14,6 +14,7 @@ const Assets = React.lazy(() => import('./pages/Assets'));
 const Inventory = React.lazy(() => import('./pages/Inventory'));
 const WorkOrders = React.lazy(() => import('./pages/WorkOrders'));
 const Reports = React.lazy(() => import('./pages/Reports'));
+const Announcements = React.lazy(() => import('./pages/Announcements'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const Users = React.lazy(() => import('./pages/Users'));
 const TicketDetails = React.lazy(() => import('./pages/TicketDetails'));
@@ -62,6 +63,7 @@ const App: React.FC = () => {
               <Route path="map" element={<Map />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="announcements" element={<Announcements />} />
               <Route path="settings" element={<Settings />} />
               <Route path="users" element={<Users />} />
               <Route path="ticket/:id" element={<TicketDetails />} />

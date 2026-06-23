@@ -1,11 +1,17 @@
+import { supabase } from './supabase';
+
 // Fetch-based OpenAI client that calls our local serverless proxy to prevent API key leakage
 
 export const sendMessageToOpenAI = async (message: string, model: string = 'gpt-4o-mini', dbContext: string = ''): Promise<string> => {
     try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
         const response = await fetch('/api/openai', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token || ''}`
             },
             body: JSON.stringify({
                 message,

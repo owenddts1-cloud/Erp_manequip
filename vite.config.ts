@@ -19,6 +19,11 @@ export default defineConfig({
             proxyReq.removeHeader('cookie');
           });
         },
+      },
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false
       }
     }
   },

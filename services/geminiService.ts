@@ -1,11 +1,17 @@
+import { supabase } from './supabase';
+
 // Fetch-based Gemini client that calls our local serverless proxy to prevent API key leakage
 
 export const sendMessageToGemini = async (message: string, model: string = 'gemini-3.5-flash', dbContext: string = ''): Promise<string> => {
     try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
         const response = await fetch('/api/gemini', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token || ''}`
             },
             body: JSON.stringify({
                 message,

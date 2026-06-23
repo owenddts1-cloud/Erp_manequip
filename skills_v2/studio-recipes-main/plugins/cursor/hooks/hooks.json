@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "uv run ./scripts/snyk_secure_at_inception.py"
+      }
+    ],
+    "stop": [
+      {
+        "command": "uv run ./scripts/snyk_secure_at_inception.py"
+      }
+    ]
+  }
+}

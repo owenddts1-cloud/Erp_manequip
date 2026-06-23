@@ -454,13 +454,29 @@ const Login: React.FC = () => {
       return;
     }
 
-    // --- Security: Input validation ---
+    // --- Security: Input validation & sanitization ---
     const sanitizedEmail = sanitizeInput(email, 320).toLowerCase();
     const emailValidation = validateEmail(sanitizedEmail);
     if (!emailValidation.valid) {
       setError(emailValidation.error || 'Email inválido');
       setIsLoading(false);
       return;
+    }
+
+    // --- Security: Server-side rate limiting ---
+    try {
+      const { data: dbAllowed, error: dbRlError } = await supabase.rpc('check_db_rate_limit', {
+        user_email: sanitizedEmail
+      });
+      if (dbRlError) {
+        console.warn('Database rate limiting RPC error:', dbRlError);
+      } else if (dbAllowed === false) {
+        setError('Acesso bloqueado temporariamente por excesso de tentativas no servidor. Tente novamente em 15 minutos.');
+        setIsLoading(false);
+        return;
+      }
+    } catch (rlEx) {
+      console.error('Server rate limiting failure:', rlEx);
     }
 
     try {
@@ -471,10 +487,21 @@ const Login: React.FC = () => {
 
       if (error) {
         recordLoginAttempt();
+        try {
+          await supabase.rpc('register_login_attempt', { user_email: sanitizedEmail, success: false });
+        } catch (dbErr) {
+          console.error('Failed to log failed attempt in DB:', dbErr);
+        }
         throw error;
       }
 
       if (data.user) {
+        try {
+          await supabase.rpc('register_login_attempt', { user_email: sanitizedEmail, success: true });
+        } catch (dbErr) {
+          console.error('Failed to log successful attempt in DB:', dbErr);
+        }
+        
         const isSystemAdmin = sanitizedEmail === 'admin@manequip.com' || sanitizedEmail === 'data@manequip.com';
 
         if (!isSystemAdmin) {
@@ -527,6 +554,8 @@ const Login: React.FC = () => {
       }
     } finally {
       setIsLoading(false);
+      // Security: Zeroize password state immediately
+      setPassword('');
     }
   };
 

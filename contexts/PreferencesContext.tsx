@@ -62,7 +62,6 @@ export const PreferencesProvider: React.FC<{ children: ReactNode }> = ({ childre
                     .single();
 
                 if (error) {
-                    // It's okay if profile doesn't exist yet, we'll use metadata
                     if (error.code !== 'PGRST116') {
                         console.warn("Profile fetch error:", error.message);
                     }
@@ -71,8 +70,9 @@ export const PreferencesProvider: React.FC<{ children: ReactNode }> = ({ childre
                 }
 
                 // Determine Role
-                if (profileData?.role) role = profileData.role;
-                else if (user.user_metadata?.role) role = user.user_metadata.role;
+                if (profileData?.role) {
+                    role = profileData.role;
+                }
 
             } catch (err) {
                 console.error("Critical Profile Fetch Error:", err);
@@ -85,8 +85,10 @@ export const PreferencesProvider: React.FC<{ children: ReactNode }> = ({ childre
                 role = 'Administrator';
             }
 
-            // Force logout if not approved (excluding system admins)
-            if (profileData && profileData.is_approved === false && !isSystemAdmin) {
+            // Security: Fail-closed. If profile doesn't exist or is not approved, and not system admin, sign out.
+            const isApproved = profileData?.is_approved === true || isSystemAdmin;
+            if ((!profileData || !isApproved) && !isSystemAdmin) {
+                console.warn("Unauthorized access: unapproved or missing profile.");
                 await supabase.auth.signOut();
                 setUserProfile(null);
                 return;

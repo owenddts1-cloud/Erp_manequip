@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "uv run \"$HOME/.cursor/hooks/snyk_secure_at_inception.py\""
+      }
+    ],
+    "beforeMCPExecution": [
+      {
+        "command": "uv run \"$HOME/.cursor/hooks/snyk_secure_at_inception.py\""
+      }
+    ],
+    "stop": [
+      {
+        "command": "uv run \"$HOME/.cursor/hooks/snyk_secure_at_inception.py\""
+      }
+    ]
+  }
+}

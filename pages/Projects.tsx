@@ -122,144 +122,2433 @@ const getRelativeDate = (offsetMonths: number, day: number): string => {
 // --- Initial Mock Data ---
 const initialProjects: Project[] = [
   {
-    id: 'p1',
-    name: 'Reforma Galpão Trafo',
-    location: 'Galpão Sul, Setor Industrial',
-    previsto: 450000,
-    faturado: 310000,
-    desvios: 0,
-    progress: 75,
-    status: 'Em Execução',
-    coordinator: 'Eng. Daniel Silva',
-    team: 'Hugo (Mestre de Obras) + 4 Pedreiros',
-    milestones: [
-      { id: 'm1', name: 'Terraplanagem', status: 'Concluído', date: getRelativeDate(-2, 10) },
-      { id: 'm2', name: 'Fundação', status: 'Concluído', date: getRelativeDate(-2, 28) },
-      { id: 'm3', name: 'Alvenaria/Estrutura', status: 'Em Execução', date: getRelativeDate(-1, 25) },
-      { id: 'm4', name: 'Instalações Eletromecânicas', status: 'Pendente', date: getRelativeDate(0, 15) },
-      { id: 'm5', name: 'Comissionamento/Entrega', status: 'Pendente', date: getRelativeDate(0, 30) },
-    ],
-    costs: [
-      { id: 'c1', phase: 'Limpeza e Terraplanagem', budget: 50000, actual: 48000, category: 'Serviços Adicionais', responsible: 'Eng. Daniel Silva' },
-      { id: 'c2', phase: 'Fundação e Bases de Concreto', budget: 120000, actual: 120000, category: 'Materiais', responsible: 'Eng. Daniel Silva' },
-      { id: 'c3', phase: 'Estrutura de Aço e Cobertura', budget: 180000, actual: 142000, category: 'Materiais', responsible: 'Eng. Daniel Silva' },
-      { id: 'c4', phase: 'Mão de Obra de Alvenaria', budget: 100000, actual: 0, category: 'Mão de Obra', responsible: 'Hugo (Mestre)' },
-    ],
-    materials: [
-      { id: 'mat1', name: 'Concreto Usinado Fck30', category: 'Materiais', qtyBudget: 50, qtyUsed: 52, unit: 'm³', supplier: 'Concretart Ltda', responsible: 'Eng. Daniel Silva' },
-      { id: 'mat2', name: 'Estrutura de Aço CA-50 10mm', category: 'Materiais', qtyBudget: 2500, qtyUsed: 1800, unit: 'kg', supplier: 'Gerdau Comercial', responsible: 'Hugo (Mestre)' },
-      { id: 'mat3', name: 'Escavação Mecanizada', category: 'Serviços Adicionais', qtyBudget: 12, qtyUsed: 15, unit: 'dias', supplier: 'Locações Silva', responsible: 'Eng. Daniel Silva' },
-      { id: 'mat4', name: 'Tijolos Cerâmicos (Lote)', category: 'Materiais', qtyBudget: 10, qtyUsed: 0, unit: 'un', supplier: 'A cotar', responsible: 'Hugo (Mestre)' },
-    ],
+    "id": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "name": "FABRICA DE FIOS E BOBINAS",
+    "location": "",
+    "previsto": 3935664.46,
+    "faturado": 6013819.999999999,
+    "desvios": -2078155.539999999,
+    "progress": 0,
+    "status": "Em Execução",
+    "coordinator": "",
+    "team": "",
+    "milestones": [],
+    "costs": [],
+    "materials": []
   },
   {
-    id: 'p2',
-    name: 'Fundação Nova Área',
-    location: 'Galpão Novo, Área Leste',
-    previsto: 180000,
-    faturado: 195000,
-    desvios: 15000,
-    progress: 95,
-    status: 'Prazos Críticos',
-    coordinator: 'Engª. Amanda Costa',
-    team: 'Marcos (Mestre) + 6 Operários',
-    milestones: [
-      { id: 'm6', name: 'Sondagem de Solo', status: 'Concluído', date: getRelativeDate(-1, 1) },
-      { id: 'm7', name: 'Escavação', status: 'Concluído', date: getRelativeDate(-1, 12) },
-      { id: 'm8', name: 'Concretagem das Estacas', status: 'Concluído', date: getRelativeDate(-1, 20) },
-      { id: 'm9', name: 'Acabamento/Nivelamento', status: 'Atrasado', date: getRelativeDate(-1, 28) },
-    ],
-    costs: [
-      { id: 'c5', phase: 'Escavação do Solo', budget: 40000, actual: 55000, category: 'Serviços Adicionais', responsible: 'Engª. Amanda Costa' },
-      { id: 'c6', phase: 'Armação de Aço', budget: 60000, actual: 60000, category: 'Materiais', responsible: 'Marcos (Mestre)' },
-      { id: 'c7', phase: 'Lançamento de Concreto', budget: 80000, actual: 80000, category: 'Materiais', responsible: 'Engª. Amanda Costa' },
-    ],
-    materials: [
-      { id: 'mat5', name: 'Cimento CP-II', category: 'Materiais', qtyBudget: 400, qtyUsed: 450, unit: 'sacos', supplier: 'Cimento Forte', responsible: 'Marcos (Mestre)' },
-      { id: 'mat6', name: 'Concreto Usinado Fck30', category: 'Materiais', qtyBudget: 40, qtyUsed: 40, unit: 'm³', supplier: 'Concretart Ltda', responsible: 'Engª. Amanda Costa' },
-      { id: 'mat7', name: 'Escavação Solo Mecanizada', category: 'Serviços Adicionais', qtyBudget: 5, qtyUsed: 8, unit: 'dias', supplier: 'Terrafort', responsible: 'Engª. Amanda Costa' },
-    ],
+    "id": "6a5e7719-11f5-4640-8d71-19141cfdcdef",
+    "name": "REFEITÓRIO",
+    "location": "",
+    "previsto": 550000,
+    "faturado": 314678.7,
+    "desvios": 235321.3,
+    "progress": 0,
+    "status": "Em Execução",
+    "coordinator": "",
+    "team": "",
+    "milestones": [],
+    "costs": [],
+    "materials": []
   },
   {
-    id: 'p3',
-    name: 'Ampliação da Subestação',
-    location: 'Setor Norte, Acesso B',
-    previsto: 980000,
-    faturado: 450000,
-    desvios: 45000,
-    progress: 40,
-    status: 'Em Execução',
-    coordinator: 'Eng. Rafael Ramos',
-    team: 'Lucas (Mestre) + 8 Eletricistas',
-    milestones: [
-      { id: 'm10', name: 'Projeto Executivo aprovado', status: 'Concluído', date: getRelativeDate(-2, 15) },
-      { id: 'm11', name: 'Cercamento e Segurança', status: 'Concluído', date: getRelativeDate(-2, 30) },
-      { id: 'm12', name: 'Montagem Eletromecânica', status: 'Em Execução', date: getRelativeDate(-1, 15) },
-      { id: 'm13', name: 'Comissionamento Técnico', status: 'Pendente', date: getRelativeDate(0, 25) },
-    ],
-    costs: [
-      { id: 'c8', phase: 'Engenharia e Projetos', budget: 80000, actual: 80000, category: 'Serviços Adicionais', responsible: 'Eng. Rafael Ramos' },
-      { id: 'c9', phase: 'Bases Civis para Transformadores', budget: 300000, actual: 345000, category: 'Materiais', responsible: 'Eng. Rafael Ramos' },
-      { id: 'c10', phase: 'Equipamentos e Chaves', budget: 600000, actual: 25000, category: 'Materiais', responsible: 'Lucas (Mestre)' },
-    ],
-    materials: [
-      { id: 'mat8', name: 'Aço CA-50 12mm', category: 'Materiais', qtyBudget: 5000, qtyUsed: 5100, unit: 'kg', supplier: 'Gerdau Comercial', responsible: 'Lucas (Mestre)' },
-      { id: 'mat9', name: 'Concreto Autoadensável', category: 'Materiais', qtyBudget: 80, qtyUsed: 88, unit: 'm³', supplier: 'Massa Forte', responsible: 'Eng. Rafael Ramos' },
-      { id: 'mat10', name: 'Cabos de Cobre de Média Tensão', category: 'Materiais', qtyBudget: 1200, qtyUsed: 400, unit: 'm', supplier: 'Megacabos Ltda', responsible: 'Lucas (Mestre)' },
-    ],
+    "id": "4556fb29-f3bc-4fc8-8fca-ac5f555fbd79",
+    "name": "GALPÃO METIIS ALMOXARIFADO CONTAINER",
+    "location": "",
+    "previsto": 400000,
+    "faturado": 404278.33,
+    "desvios": -4278.330000000016,
+    "progress": 0,
+    "status": "Em Execução",
+    "coordinator": "",
+    "team": "",
+    "milestones": [],
+    "costs": [],
+    "materials": []
   },
+  {
+    "id": "0b2ee53b-8591-4345-bd60-0a6e4ee57337",
+    "name": "FAB. DE BOBINAS CLIMATIZAÇÃO",
+    "location": "",
+    "previsto": 1100000,
+    "faturado": 86000,
+    "desvios": 1014000,
+    "progress": 0,
+    "status": "Em Execução",
+    "coordinator": "",
+    "team": "",
+    "milestones": [],
+    "costs": [],
+    "materials": []
+  },
+  {
+    "id": "f6821544-63e6-4b66-a955-77ed4732c382",
+    "name": "TRAFO BARRACA PARTE ATIVA",
+    "location": "",
+    "previsto": 1400000,
+    "faturado": 381600,
+    "desvios": 1018400,
+    "progress": 0,
+    "status": "Em Execução",
+    "coordinator": "",
+    "team": "",
+    "milestones": [],
+    "costs": [],
+    "materials": []
+  },
+  {
+    "id": "38249e98-8afa-4e7e-9047-38bcf875c7dc",
+    "name": "TRAFO BANCO DE CAPACITORES",
+    "location": "",
+    "previsto": 0,
+    "faturado": 0,
+    "desvios": 0,
+    "progress": 0,
+    "status": "Em Execução",
+    "coordinator": "",
+    "team": "",
+    "milestones": [],
+    "costs": [],
+    "materials": []
+  },
+  {
+    "id": "942f31c3-c355-47bc-8a7d-a835a49fc471",
+    "name": "TRAFO SALA QUALIDADE",
+    "location": "",
+    "previsto": 36770,
+    "faturado": 36770,
+    "desvios": 0,
+    "progress": 0,
+    "status": "Em Execução",
+    "coordinator": "",
+    "team": "",
+    "milestones": [],
+    "costs": [],
+    "materials": []
+  },
+  {
+    "id": "2451f9a2-5014-4084-83a0-5879296d0737",
+    "name": "TRAFO MINI CARPINTARIA",
+    "location": "",
+    "previsto": 40466,
+    "faturado": 40466,
+    "desvios": 0,
+    "progress": 0,
+    "status": "Em Execução",
+    "coordinator": "",
+    "team": "",
+    "milestones": [],
+    "costs": [],
+    "materials": []
+  },
+  {
+    "id": "2a3994db-f5fd-4271-999d-508ee71f9c42",
+    "name": "TRAFO SALA SUP. PROCESSOS",
+    "location": "",
+    "previsto": 35250,
+    "faturado": 35250,
+    "desvios": 0,
+    "progress": 0,
+    "status": "Em Execução",
+    "coordinator": "",
+    "team": "",
+    "milestones": [],
+    "costs": [],
+    "materials": []
+  },
+  {
+    "id": "2f8a23d6-277b-4e2b-81d9-804c46a8a7cc",
+    "name": "TRAFO ANTESSALA DA BARRACA",
+    "location": "",
+    "previsto": 0,
+    "faturado": 0,
+    "desvios": 0,
+    "progress": 0,
+    "status": "Em Execução",
+    "coordinator": "",
+    "team": "",
+    "milestones": [],
+    "costs": [],
+    "materials": []
+  }
 ];
 
 const initialRequisitions: Requisition[] = [
   {
-    id: 'req1',
-    projectId: 'p1',
-    material: 'Tijolos Cerâmicos (Lote: 10.000 un)',
-    qty: '1 Lote',
-    date: getRelativeDate(-1, 28),
-    status: 'Em Cotação',
-    options: [
-      { supplierName: 'Cerâmica Regional', price: 12000, deliveryDays: 5, rating: 4 },
-      { supplierName: 'Depósito Central', price: 11500, deliveryDays: 2, rating: 5, isBest: true },
-      { supplierName: 'Suprimentos Vale', price: 13200, deliveryDays: 1, rating: 3 },
-    ],
+    "id": "49d10d6e-6e37-4915-9c7d-15838a7b7862",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "A.R.V INSTALACOES INDUSTRIAIS E PREDIAIS LTDA",
+    "approvedPrice": 58021.119999999995,
+    "options": [
+      {
+        "supplierName": "A.R.V INSTALACOES INDUSTRIAIS E PREDIAIS LTDA",
+        "price": 58021.119999999995,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
   },
   {
-    id: 'req2',
-    projectId: 'p1',
-    material: 'Aço CA-50 10mm (Lote: 3.000 kg)',
-    qty: '3.000 kg',
-    date: getRelativeDate(-1, 25),
-    status: 'Aprovado',
-    approvedSupplier: 'Gerdau Comercial',
-    approvedPrice: 18000,
-    options: [
-      { supplierName: 'Gerdau Comercial', price: 18000, deliveryDays: 3, rating: 5, isBest: true },
-      { supplierName: 'Ferro Forte', price: 19200, deliveryDays: 2, rating: 4 },
-    ],
+    "id": "f1f91d05-e7a3-4f8e-b665-5ce102cb8841",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ACOTEL INDUSTRIA E COMERCIO LTDA",
+    "approvedPrice": 96726.69,
+    "options": [
+      {
+        "supplierName": "ACOTEL INDUSTRIA E COMERCIO LTDA",
+        "price": 96726.69,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
   },
   {
-    id: 'req3',
-    projectId: 'p2',
-    material: 'Concreto Usinado fck 30 (Lote: 50 m³)',
-    qty: '50 m³',
-    date: getRelativeDate(-1, 20),
-    status: 'Aguardando Entrega',
-    approvedSupplier: 'Concretart Ltda',
-    approvedPrice: 22000,
-    options: [
-      { supplierName: 'Concretart Ltda', price: 22000, deliveryDays: 1, rating: 4, isBest: true },
-      { supplierName: 'Laje Rápida', price: 23500, deliveryDays: 2, rating: 4 },
-    ],
+    "id": "4edbc311-a137-4d62-a1ef-ea7f5c3175e9",
+    "projectId": "942f31c3-c355-47bc-8a7d-a835a49fc471",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "AF BOX",
+    "approvedPrice": 34970,
+    "options": [
+      {
+        "supplierName": "AF BOX",
+        "price": 34970,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
   },
+  {
+    "id": "99322cd6-7a9c-4c12-9d35-461905fefa67",
+    "projectId": "2451f9a2-5014-4084-83a0-5879296d0737",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "AF BOX",
+    "approvedPrice": 38816,
+    "options": [
+      {
+        "supplierName": "AF BOX",
+        "price": 38816,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "dc2a5a1f-2e95-47b1-bd6e-c07fba9e96e3",
+    "projectId": "2a3994db-f5fd-4271-999d-508ee71f9c42",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "AF BOX",
+    "approvedPrice": 35250,
+    "options": [
+      {
+        "supplierName": "AF BOX",
+        "price": 35250,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "a88362f5-b2e4-4375-b736-afd60b73e609",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ALEIXO E FERREIRA HIDROJATEAMENTO",
+    "approvedPrice": 3208,
+    "options": [
+      {
+        "supplierName": "ALEIXO E FERREIRA HIDROJATEAMENTO",
+        "price": 3208,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "dfc37cc5-b01b-4205-af66-0b16cb617766",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ALVA CLIMA E SOLUCOES EM CLIMATIZACAO LTDA",
+    "approvedPrice": 18220,
+    "options": [
+      {
+        "supplierName": "ALVA CLIMA E SOLUCOES EM CLIMATIZACAO LTDA",
+        "price": 18220,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "74e83717-e541-4ce6-9534-7e17180c2f40",
+    "projectId": "6a5e7719-11f5-4640-8d71-19141cfdcdef",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ALVA CLIMA E SOLUCOES EM CLIMATIZACAO LTDA",
+    "approvedPrice": 1500,
+    "options": [
+      {
+        "supplierName": "ALVA CLIMA E SOLUCOES EM CLIMATIZACAO LTDA",
+        "price": 1500,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "21009ccf-3b6c-411d-8b58-0e4593137f2c",
+    "projectId": "942f31c3-c355-47bc-8a7d-a835a49fc471",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ALVA CLIMA E SOLUCOES EM CLIMATIZACAO LTDA",
+    "approvedPrice": 1800,
+    "options": [
+      {
+        "supplierName": "ALVA CLIMA E SOLUCOES EM CLIMATIZACAO LTDA",
+        "price": 1800,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "472b0b21-6914-4c81-894b-1328d6ec51fd",
+    "projectId": "2451f9a2-5014-4084-83a0-5879296d0737",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ALVA CLIMA E SOLUCOES EM CLIMATIZACAO LTDA",
+    "approvedPrice": 1650,
+    "options": [
+      {
+        "supplierName": "ALVA CLIMA E SOLUCOES EM CLIMATIZACAO LTDA",
+        "price": 1650,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "49e36919-7639-4678-bdec-d40a45d864d5",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "AMECON INDUSTRIA E COMERCIO LTDA",
+    "approvedPrice": 4002.5,
+    "options": [
+      {
+        "supplierName": "AMECON INDUSTRIA E COMERCIO LTDA",
+        "price": 4002.5,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "37cc1ebb-fbd4-42be-9315-3c9c30fb72aa",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ARC AR COMPRIMIDO LTDA",
+    "approvedPrice": 1675,
+    "options": [
+      {
+        "supplierName": "ARC AR COMPRIMIDO LTDA",
+        "price": 1675,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "c59d6093-162e-4e9d-b488-91ad1800852f",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ARCELORMITAL",
+    "approvedPrice": 129604.98,
+    "options": [
+      {
+        "supplierName": "ARCELORMITAL",
+        "price": 129604.98,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "158ec51e-2919-4ede-b250-8d5504383d7e",
+    "projectId": "f6821544-63e6-4b66-a955-77ed4732c382",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ARPI",
+    "approvedPrice": 197600,
+    "options": [
+      {
+        "supplierName": "ARPI",
+        "price": 197600,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "129a79cb-d3f7-41c9-ba0e-a3c46ecb24ee",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ARTHUR DUARTE PEIXOTO DE ASSIS LTDA",
+    "approvedPrice": 42250,
+    "options": [
+      {
+        "supplierName": "ARTHUR DUARTE PEIXOTO DE ASSIS LTDA",
+        "price": 42250,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "a6d400eb-ee3c-4c74-8e06-97e8717bcc77",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "BETMIX CONCRETO LTDA",
+    "approvedPrice": 178245,
+    "options": [
+      {
+        "supplierName": "BETMIX CONCRETO LTDA",
+        "price": 178245,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "63750657-2022-44cd-b299-cb7586ca7a31",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "BLOJAF LTDA",
+    "approvedPrice": 18299.4,
+    "options": [
+      {
+        "supplierName": "BLOJAF LTDA",
+        "price": 18299.4,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "c480a198-8fbb-4a3b-8280-5ec6ca9ba536",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "BRASIL INDUSTRIAL CONSTRUCOES LTDA",
+    "approvedPrice": 431235,
+    "options": [
+      {
+        "supplierName": "BRASIL INDUSTRIAL CONSTRUCOES LTDA",
+        "price": 431235,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "f45c9e02-7c2a-4b61-a9ab-ba340e22617f",
+    "projectId": "6a5e7719-11f5-4640-8d71-19141cfdcdef",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "BRASIL INDUSTRIAL CONSTRUCOES LTDA",
+    "approvedPrice": 45210,
+    "options": [
+      {
+        "supplierName": "BRASIL INDUSTRIAL CONSTRUCOES LTDA",
+        "price": 45210,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "4e46e2f1-6a59-47fb-9193-8a26096064a6",
+    "projectId": "4556fb29-f3bc-4fc8-8fca-ac5f555fbd79",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "BRASIL INDUSTRIAL CONSTRUCOES LTDA",
+    "approvedPrice": 64340,
+    "options": [
+      {
+        "supplierName": "BRASIL INDUSTRIAL CONSTRUCOES LTDA",
+        "price": 64340,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "671b22e2-0600-4c7a-bc2d-c3afa2623d0f",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "CALIXTO E DIAS SERVIÇOS LTDA",
+    "approvedPrice": 47142.28,
+    "options": [
+      {
+        "supplierName": "CALIXTO E DIAS SERVIÇOS LTDA",
+        "price": 47142.28,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "416a97b4-cc62-4835-a438-0be7512507fd",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "CLAUDIO JUNIO AMARAL",
+    "approvedPrice": 33555.91,
+    "options": [
+      {
+        "supplierName": "CLAUDIO JUNIO AMARAL",
+        "price": 33555.91,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "2fd38586-a0a9-40ca-9255-d2fa448f540c",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "CM PROMOCOES E EVENTOS LTDA",
+    "approvedPrice": 18000,
+    "options": [
+      {
+        "supplierName": "CM PROMOCOES E EVENTOS LTDA",
+        "price": 18000,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "acef0053-c8f1-457d-916f-e4305aa840b3",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "COFERMETA AS",
+    "approvedPrice": 9140,
+    "options": [
+      {
+        "supplierName": "COFERMETA AS",
+        "price": 9140,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "b587c77b-bd3c-4239-a858-d7e0a2b1d873",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "CONEV ENGENHARIA LTDA",
+    "approvedPrice": 2000,
+    "options": [
+      {
+        "supplierName": "CONEV ENGENHARIA LTDA",
+        "price": 2000,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "c5d36269-38c7-4d24-9d07-4cb6a14fe291",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "CONSTRUMAIS COBERTURAS E SERVICOS LTDA",
+    "approvedPrice": 193460,
+    "options": [
+      {
+        "supplierName": "CONSTRUMAIS COBERTURAS E SERVICOS LTDA",
+        "price": 193460,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "c03ac6b9-0225-4160-92dd-ed43508b7a65",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "COOPERATIVA DE LOGISTICA E TRANSPORTE",
+    "approvedPrice": 28591.26,
+    "options": [
+      {
+        "supplierName": "COOPERATIVA DE LOGISTICA E TRANSPORTE",
+        "price": 28591.26,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "2af9c781-6674-435d-95b3-16b74bde783d",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ELETRO FERRAGENS UNIAO LTDA",
+    "approvedPrice": 25874.7,
+    "options": [
+      {
+        "supplierName": "ELETRO FERRAGENS UNIAO LTDA",
+        "price": 25874.7,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "c8493098-1fe0-453c-b3ee-722fc2d68607",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "EXPRESSO MODAL TRANSPORTES E LOGISTICA LTDA",
+    "approvedPrice": 8892.7,
+    "options": [
+      {
+        "supplierName": "EXPRESSO MODAL TRANSPORTES E LOGISTICA LTDA",
+        "price": 8892.7,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "598c355e-8ebc-48d0-b5c8-9aa667a8a899",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "FERGAL FERRO E ACO LTDA",
+    "approvedPrice": 4069.02,
+    "options": [
+      {
+        "supplierName": "FERGAL FERRO E ACO LTDA",
+        "price": 4069.02,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "4ca9da77-d0ce-479d-9660-0d4d43f8483a",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "FERRO E ACO TAKONO LTDA",
+    "approvedPrice": 116639.91,
+    "options": [
+      {
+        "supplierName": "FERRO E ACO TAKONO LTDA",
+        "price": 116639.91,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "a8071a85-6c69-43aa-a298-bffaa2b5068d",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "FERROLAGOS COMERCIO DE FERRO E ACO LTDA",
+    "approvedPrice": 52697.57000000001,
+    "options": [
+      {
+        "supplierName": "FERROLAGOS COMERCIO DE FERRO E ACO LTDA",
+        "price": 52697.57000000001,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "51573831-254c-4bd8-acbb-c4aa3e0a74ef",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "FORÇA E CONTROLE",
+    "approvedPrice": 3740,
+    "options": [
+      {
+        "supplierName": "FORÇA E CONTROLE",
+        "price": 3740,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "742329e4-0756-4332-b76e-27593b07a3ac",
+    "projectId": "6a5e7719-11f5-4640-8d71-19141cfdcdef",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "FORCA E CONTROLE PAINEIS E EQUIPAMENTOS ELETRICOS LTDA",
+    "approvedPrice": 3120,
+    "options": [
+      {
+        "supplierName": "FORCA E CONTROLE PAINEIS E EQUIPAMENTOS ELETRICOS LTDA",
+        "price": 3120,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "abff0d2c-ea93-40f3-99a6-6c2131c865d8",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "FORTE PREMOLDADOS",
+    "approvedPrice": 100685.2,
+    "options": [
+      {
+        "supplierName": "FORTE PREMOLDADOS",
+        "price": 100685.2,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "478b6f97-4f1a-41dc-97f8-b58baae69598",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "FORTMETAL METALURGICA",
+    "approvedPrice": 15730,
+    "options": [
+      {
+        "supplierName": "FORTMETAL METALURGICA",
+        "price": 15730,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "37300a99-3ead-4625-bbcd-7472bae5482c",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "GERABLOCOS LTDA",
+    "approvedPrice": 10014.6,
+    "options": [
+      {
+        "supplierName": "GERABLOCOS LTDA",
+        "price": 10014.6,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "91bf66bc-2ddb-43e7-90f0-53bba9b29c14",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "GERDAU AÇOS LONGOS S/A",
+    "approvedPrice": 314501.27999999997,
+    "options": [
+      {
+        "supplierName": "GERDAU AÇOS LONGOS S/A",
+        "price": 314501.27999999997,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "7ca59a0e-8e4b-4575-8a43-55b29773a805",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "GH DO BRASIL INDUSTRIA E COMERCIO",
+    "approvedPrice": 22831.71,
+    "options": [
+      {
+        "supplierName": "GH DO BRASIL INDUSTRIA E COMERCIO",
+        "price": 22831.71,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "257e8362-f4c8-438d-8780-7d2067a2d964",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "GM SOLOS LTDA",
+    "approvedPrice": 89601.9,
+    "options": [
+      {
+        "supplierName": "GM SOLOS LTDA",
+        "price": 89601.9,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "b63006cf-3020-45b3-93b7-e41279905a54",
+    "projectId": "6a5e7719-11f5-4640-8d71-19141cfdcdef",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "GMZ IND E COMERCIO DE GRANITOS E MARMORES LTDA",
+    "approvedPrice": 11600,
+    "options": [
+      {
+        "supplierName": "GMZ IND E COMERCIO DE GRANITOS E MARMORES LTDA",
+        "price": 11600,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "9244be9d-a5db-41cb-acbb-c3c410892832",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "GRAAL TINTAS",
+    "approvedPrice": 42251.44,
+    "options": [
+      {
+        "supplierName": "GRAAL TINTAS",
+        "price": 42251.44,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "a2189193-2efb-4109-9ae3-194e0bfaccb1",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "GROUP SMS CORPORATION LTDA",
+    "approvedPrice": 32000,
+    "options": [
+      {
+        "supplierName": "GROUP SMS CORPORATION LTDA",
+        "price": 32000,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "594ba6b6-bfc1-4d25-9d2d-4cac1789c088",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "G-SERVICE MANUTENCAO EM GERADORES LTDA - ME",
+    "approvedPrice": 26999.99,
+    "options": [
+      {
+        "supplierName": "G-SERVICE MANUTENCAO EM GERADORES LTDA - ME",
+        "price": 26999.99,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "1fe6cdea-b111-46b3-87c0-cfb0cbf03603",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "GUERRA ENGENHARIA E CONSULTORIA LTDA",
+    "approvedPrice": 15906.25,
+    "options": [
+      {
+        "supplierName": "GUERRA ENGENHARIA E CONSULTORIA LTDA",
+        "price": 15906.25,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "355db2ed-4b80-4455-8f8f-320fa357424c",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "J B SERVICOS DE PAVIMENTACAO LTDA",
+    "approvedPrice": 105685,
+    "options": [
+      {
+        "supplierName": "J B SERVICOS DE PAVIMENTACAO LTDA",
+        "price": 105685,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "d7a97979-7e96-4ebc-af02-2d5cb70b084d",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "JPREFRIGERACAO E BEBEDOUROS LTDA",
+    "approvedPrice": 1790,
+    "options": [
+      {
+        "supplierName": "JPREFRIGERACAO E BEBEDOUROS LTDA",
+        "price": 1790,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "d798beac-633c-4bac-8364-731f083def20",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "KARCHER INDUSTRIA E COMERCIO LIMITADA",
+    "approvedPrice": 26300,
+    "options": [
+      {
+        "supplierName": "KARCHER INDUSTRIA E COMERCIO LIMITADA",
+        "price": 26300,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "bd082c54-0ef0-4c08-8600-0862fed18666",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "L-BRAS FUNDACOES LTDA",
+    "approvedPrice": 18316.29,
+    "options": [
+      {
+        "supplierName": "L-BRAS FUNDACOES LTDA",
+        "price": 18316.29,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "7025ef1f-10bc-46ea-a1ee-fca24a176a0d",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "LOCACOES  ABRANTES  LTDA",
+    "approvedPrice": 25935.3,
+    "options": [
+      {
+        "supplierName": "LOCACOES  ABRANTES  LTDA",
+        "price": 25935.3,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "311354d4-0c03-4378-8bb1-04766763d61b",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "LOJA ELETRICA LTDA",
+    "approvedPrice": 305474.4399999999,
+    "options": [
+      {
+        "supplierName": "LOJA ELETRICA LTDA",
+        "price": 305474.4399999999,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "2bbdc88f-8e38-43fe-b116-c7de81127155",
+    "projectId": "6a5e7719-11f5-4640-8d71-19141cfdcdef",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "LOJA ELETRICA LTDA",
+    "approvedPrice": 21140.25,
+    "options": [
+      {
+        "supplierName": "LOJA ELETRICA LTDA",
+        "price": 21140.25,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "56169f4a-b637-4818-ad1c-d350e4fd26f2",
+    "projectId": "4556fb29-f3bc-4fc8-8fca-ac5f555fbd79",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "LOJA ELETRICA LTDA",
+    "approvedPrice": 47074.33,
+    "options": [
+      {
+        "supplierName": "LOJA ELETRICA LTDA",
+        "price": 47074.33,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "4f8c8838-069e-435c-b4c7-ec37cd4e587f",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "MADEIREIRA VARANDAO EIRELI",
+    "approvedPrice": 2000,
+    "options": [
+      {
+        "supplierName": "MADEIREIRA VARANDAO EIRELI",
+        "price": 2000,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "98de22ef-9f2e-4832-a9f5-df34f35ce864",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "MANG ACO  LTDA",
+    "approvedPrice": 6522.5,
+    "options": [
+      {
+        "supplierName": "MANG ACO  LTDA",
+        "price": 6522.5,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "993abcc3-67f8-40ba-84c8-79267b438c0a",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "MD PRESTACOES DE SERVICOS LTDA",
+    "approvedPrice": 309367.52,
+    "options": [
+      {
+        "supplierName": "MD PRESTACOES DE SERVICOS LTDA",
+        "price": 309367.52,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "24793210-2796-4c5c-88ab-e6f7ce8abd65",
+    "projectId": "4556fb29-f3bc-4fc8-8fca-ac5f555fbd79",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "MD PRESTACOES DE SERVICOS LTDA",
+    "approvedPrice": 133000,
+    "options": [
+      {
+        "supplierName": "MD PRESTACOES DE SERVICOS LTDA",
+        "price": 133000,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "6db58537-fad3-4552-8509-4f68b3e6f49a",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "MINAS METALICA LTDA",
+    "approvedPrice": 521607.35,
+    "options": [
+      {
+        "supplierName": "MINAS METALICA LTDA",
+        "price": 521607.35,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "f4e747e8-3e95-4351-a165-01c6ca2228a4",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "MINERAÇÃO MONTREAL LTDA",
+    "approvedPrice": 114689.75999999998,
+    "options": [
+      {
+        "supplierName": "MINERAÇÃO MONTREAL LTDA",
+        "price": 114689.75999999998,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "0974a1bc-6e80-4c3d-bdb2-6d88185d2c4d",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "MODELACO COMERCIO DE PRODUTOS E SERVICOS",
+    "approvedPrice": 65948.87,
+    "options": [
+      {
+        "supplierName": "MODELACO COMERCIO DE PRODUTOS E SERVICOS",
+        "price": 65948.87,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "54b49741-48c3-4bd0-9d0f-ee18444fbbce",
+    "projectId": "4556fb29-f3bc-4fc8-8fca-ac5f555fbd79",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "NBTX CONCRETO LTDA",
+    "approvedPrice": 2140,
+    "options": [
+      {
+        "supplierName": "NBTX CONCRETO LTDA",
+        "price": 2140,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "b9c8aea8-7eb3-44b6-91af-75c406f7be12",
+    "projectId": "6a5e7719-11f5-4640-8d71-19141cfdcdef",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "OLIVEIRA E VIANA MATERIAIS DE CONSTRUCAO LTDA",
+    "approvedPrice": 35351.45,
+    "options": [
+      {
+        "supplierName": "OLIVEIRA E VIANA MATERIAIS DE CONSTRUCAO LTDA",
+        "price": 35351.45,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "bd64c489-1d96-40fb-a362-e9df2acf1c74",
+    "projectId": "6a5e7719-11f5-4640-8d71-19141cfdcdef",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ORMILOC LOC E COM DE EQUIP E UTENS PARA EVENTOS EIRELI",
+    "approvedPrice": 9920,
+    "options": [
+      {
+        "supplierName": "ORMILOC LOC E COM DE EQUIP E UTENS PARA EVENTOS EIRELI",
+        "price": 9920,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "85b35579-29be-4070-822d-860b129302e2",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "OTONI ENGENHARIA E CONSULTORIA LTDA",
+    "approvedPrice": 1324755.06,
+    "options": [
+      {
+        "supplierName": "OTONI ENGENHARIA E CONSULTORIA LTDA",
+        "price": 1324755.06,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "86f5c226-082a-4827-a97a-6f3922b1a64c",
+    "projectId": "6a5e7719-11f5-4640-8d71-19141cfdcdef",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "OTONI ENGENHARIA E CONSULTORIA LTDA",
+    "approvedPrice": 163500,
+    "options": [
+      {
+        "supplierName": "OTONI ENGENHARIA E CONSULTORIA LTDA",
+        "price": 163500,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "acc46656-3e24-43d9-bc21-84d80f66ea50",
+    "projectId": "4556fb29-f3bc-4fc8-8fca-ac5f555fbd79",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "OTONI ENGENHARIA E CONSULTORIA LTDA",
+    "approvedPrice": 79000,
+    "options": [
+      {
+        "supplierName": "OTONI ENGENHARIA E CONSULTORIA LTDA",
+        "price": 79000,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "0d740a0d-2092-42da-bdd6-af99ef477567",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "PAFI USINAGEM E TORNEARIA LTDA",
+    "approvedPrice": 16500,
+    "options": [
+      {
+        "supplierName": "PAFI USINAGEM E TORNEARIA LTDA",
+        "price": 16500,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "165d2873-a42a-49df-9d5c-52f543660202",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "PCCALLADO DESIGN",
+    "approvedPrice": 1146.35,
+    "options": [
+      {
+        "supplierName": "PCCALLADO DESIGN",
+        "price": 1146.35,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "a76f6415-8b7b-4bee-9d84-6d1bc42f1a4b",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "POLIPISO DO BRASIL LTDA",
+    "approvedPrice": 52198.83,
+    "options": [
+      {
+        "supplierName": "POLIPISO DO BRASIL LTDA",
+        "price": 52198.83,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "646ba0f3-f914-444c-aada-2148339ea1de",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "PONTO DO INCENDIO LTDA",
+    "approvedPrice": 29834.379999999997,
+    "options": [
+      {
+        "supplierName": "PONTO DO INCENDIO LTDA",
+        "price": 29834.379999999997,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "a96c0a1e-d9b7-4c29-84ee-c0dad40e6dfc",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "PREVINA - SEGURANCA CONTRA INCENDIO LTDA",
+    "approvedPrice": 1750,
+    "options": [
+      {
+        "supplierName": "PREVINA - SEGURANCA CONTRA INCENDIO LTDA",
+        "price": 1750,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "6672af7a-2232-4293-b91c-c7d2bc229ed2",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "RAFAEL GONCALVES DUARTE",
+    "approvedPrice": 383802.55,
+    "options": [
+      {
+        "supplierName": "RAFAEL GONCALVES DUARTE",
+        "price": 383802.55,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "1468b74a-688b-4062-9dca-a8ca0ae95a3b",
+    "projectId": "4556fb29-f3bc-4fc8-8fca-ac5f555fbd79",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "RAFAEL GONCALVES DUARTE",
+    "approvedPrice": 78724,
+    "options": [
+      {
+        "supplierName": "RAFAEL GONCALVES DUARTE",
+        "price": 78724,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "2cc77525-0a5a-4a26-8e26-988e00a3f4d9",
+    "projectId": "0b2ee53b-8591-4345-bd60-0a6e4ee57337",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "REAL AR CONDICIONADO",
+    "approvedPrice": 86000,
+    "options": [
+      {
+        "supplierName": "REAL AR CONDICIONADO",
+        "price": 86000,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "8b7a73ab-f622-480d-93b4-f78416eaa232",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "RODAS E RODIZIOS",
+    "approvedPrice": 2120,
+    "options": [
+      {
+        "supplierName": "RODAS E RODIZIOS",
+        "price": 2120,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "f770c34d-4bbb-4e99-9ec0-c42320dca6e2",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "RT LOCAÇÕES E SERVIÇOS LTDA",
+    "approvedPrice": 550,
+    "options": [
+      {
+        "supplierName": "RT LOCAÇÕES E SERVIÇOS LTDA",
+        "price": 550,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "6a9e4024-b539-44e8-ac45-c5e1318cf451",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "SARZEDO PARAFUSOS LTDA",
+    "approvedPrice": 1988.2,
+    "options": [
+      {
+        "supplierName": "SARZEDO PARAFUSOS LTDA",
+        "price": 1988.2,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "3024f3a8-bebe-4325-acf8-85733d04d378",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "SOMAQUINAS",
+    "approvedPrice": 5400,
+    "options": [
+      {
+        "supplierName": "SOMAQUINAS",
+        "price": 5400,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "77a42723-66b5-4b76-bfe0-2be050c42946",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "SUPER - MAK SERVICOS LTDA",
+    "approvedPrice": 14300,
+    "options": [
+      {
+        "supplierName": "SUPER - MAK SERVICOS LTDA",
+        "price": 14300,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "d7ff17d0-da43-4aab-a7f2-88f7e160a409",
+    "projectId": "6a5e7719-11f5-4640-8d71-19141cfdcdef",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "SUPERINOX LTDA",
+    "approvedPrice": 23337,
+    "options": [
+      {
+        "supplierName": "SUPERINOX LTDA",
+        "price": 23337,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "9a37c6a3-1386-4a59-9468-cc126ba7dbfd",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "TECPISO LAPIDACOES, REVESTIMENTOS E SERVICOS LTDA",
+    "approvedPrice": 73253.5,
+    "options": [
+      {
+        "supplierName": "TECPISO LAPIDACOES, REVESTIMENTOS E SERVICOS LTDA",
+        "price": 73253.5,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "996217c4-c2ce-4f1d-a5f3-8430c6428742",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "TERRAMAX TERRAPLENAGEM E TRANSPORTES LTDA",
+    "approvedPrice": 8200,
+    "options": [
+      {
+        "supplierName": "TERRAMAX TERRAPLENAGEM E TRANSPORTES LTDA",
+        "price": 8200,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "f540332d-b9da-4ae5-8d7e-681c741585f2",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "TRADIMAQ LTDA",
+    "approvedPrice": 51540,
+    "options": [
+      {
+        "supplierName": "TRADIMAQ LTDA",
+        "price": 51540,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "9fca0f6a-3009-4cf3-a368-39e7c730e01a",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "VERDE DISTRIBUIDORA LTDA",
+    "approvedPrice": 75326.39,
+    "options": [
+      {
+        "supplierName": "VERDE DISTRIBUIDORA LTDA",
+        "price": 75326.39,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "6079f42b-1fc8-4711-83b5-0246e46b59fd",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "WANDERSON A M DA SILVA - LOCAÇÃO DE MUNK",
+    "approvedPrice": 315140,
+    "options": [
+      {
+        "supplierName": "WANDERSON A M DA SILVA - LOCAÇÃO DE MUNK",
+        "price": 315140,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "ae61a57b-c323-485f-a8c6-17706a0d79d1",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ZAGONEL ILUMINACAO SA",
+    "approvedPrice": 11685.419999999998,
+    "options": [
+      {
+        "supplierName": "ZAGONEL ILUMINACAO SA",
+        "price": 11685.419999999998,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "65d40de4-36fa-41b3-9a29-fcc079f62cc2",
+    "projectId": "91787382-f9de-4a22-b942-a6cf679972ab",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "ZUM PIPAS COMERCIO E TRANSPORTES LTDA",
+    "approvedPrice": 2900,
+    "options": [
+      {
+        "supplierName": "ZUM PIPAS COMERCIO E TRANSPORTES LTDA",
+        "price": 2900,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  },
+  {
+    "id": "b9681a41-213b-4277-97fc-1d638235d435",
+    "projectId": "f6821544-63e6-4b66-a955-77ed4732c382",
+    "material": "Prestação de Serviços / Insumos",
+    "qty": "1 un",
+    "date": "2026-06-16",
+    "status": "Entregue",
+    "approvedSupplier": "X-MALB SOLUCOES LTDA",
+    "approvedPrice": 184000,
+    "options": [
+      {
+        "supplierName": "X-MALB SOLUCOES LTDA",
+        "price": 184000,
+        "deliveryDays": 1,
+        "rating": 5,
+        "isBest": true
+      }
+    ]
+  }
 ];
 
 const initialSuppliers: Supplier[] = [
-  { id: 'sup1', name: 'Concretart Ltda', rating: 4.8, compliance: 98, specialty: 'Concreto e Agregados', phone: '(11) 98765-4321' },
-  { id: 'sup2', name: 'Gerdau Comercial', rating: 4.9, compliance: 99, specialty: 'Estruturas Metálicas e Aço', phone: '(11) 4004-9000' },
-  { id: 'sup3', name: 'Depósito Central', rating: 4.5, compliance: 94, specialty: 'Materiais Básicos e Acabamento', phone: '(11) 99888-7766' },
-  { id: 'sup4', name: 'Locações Silva', rating: 4.2, compliance: 90, specialty: 'Locação de Maquinários e Escavação', phone: '(11) 97766-5544' },
-  { id: 'sup5', name: 'Megacabos Ltda', rating: 4.7, compliance: 96, specialty: 'Condutores Elétricos de Média/Alta Tensão', phone: '(11) 3300-8800' },
+  {
+    "id": "afc97135-a939-4542-8b71-5a716a4b8e73",
+    "name": "A.R.V INSTALACOES INDUSTRIAIS E PREDIAIS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "d8dedfbd-7b51-4820-95c4-4239de88a29a",
+    "name": "ACOTEL INDUSTRIA E COMERCIO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "a7b16159-455b-4648-a408-381cd873f242",
+    "name": "AF BOX",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "5a2999e6-73d4-4efc-9225-2ac8fb6367bd",
+    "name": "ALEIXO E FERREIRA HIDROJATEAMENTO",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "512204b0-409b-4927-88ae-816f467e80ab",
+    "name": "ALVA CLIMA E SOLUCOES EM CLIMATIZACAO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "7fa6b597-032c-4a15-8638-914ade0ff844",
+    "name": "AMECON INDUSTRIA E COMERCIO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "581804ce-40f4-445b-87c3-bd6e20b673bf",
+    "name": "ARC AR COMPRIMIDO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "be7b68be-6a56-41e3-87e5-558d296221f2",
+    "name": "ARCELORMITAL",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "80230c1c-a5b9-434a-af47-1ba2e87f0773",
+    "name": "ARPI",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "af03aeb0-7b35-4cbc-985c-14905d73d0b3",
+    "name": "ARTHUR DUARTE PEIXOTO DE ASSIS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "866fa55c-12f0-4979-82bb-943e3ac7c167",
+    "name": "BETMIX CONCRETO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "05d4acc5-b0b4-415e-b39b-e49783770d07",
+    "name": "BLOJAF LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "d8bf54db-0db2-4f3a-b4d9-0feaa0915fc4",
+    "name": "BRASIL INDUSTRIAL CONSTRUCOES LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "526aa303-72fe-4742-b98f-69e62b3ee065",
+    "name": "CALIXTO E DIAS SERVIÇOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "eca59fa1-a967-489c-90f4-566b642739df",
+    "name": "CLAUDIO JUNIO AMARAL",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "82d9a68e-b287-457c-b5fd-17f90fced6f1",
+    "name": "CM PROMOCOES E EVENTOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "e8327286-9679-4a61-b22e-61fbae3acd06",
+    "name": "COFERMETA AS",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "bd906f0f-023a-496f-909c-5c4873e0e43a",
+    "name": "CONEV ENGENHARIA LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "cb98c740-e4b8-4934-8cc5-78d38570ee9a",
+    "name": "CONSTRUMAIS COBERTURAS E SERVICOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "495813f8-8bd1-4990-a967-d233f05aff8f",
+    "name": "COOPERATIVA DE LOGISTICA E TRANSPORTE",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "253a04b2-6dce-4199-9f10-55f36255edde",
+    "name": "ELETRO FERRAGENS UNIAO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "fe200ecb-7ff6-40e6-a8e7-957cb4ee34f2",
+    "name": "EXPRESSO MODAL TRANSPORTES E LOGISTICA LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "0f7dd8fe-881e-4d54-85d6-45296392d966",
+    "name": "FERGAL FERRO E ACO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "efa0d751-5769-4ef2-a5ae-29786ecfb43b",
+    "name": "FERRO E ACO TAKONO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "64e79df3-f864-439f-abf6-f78b41586aaf",
+    "name": "FERROLAGOS COMERCIO DE FERRO E ACO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "98f10190-0eb1-48f1-ade8-b67ae7254a7a",
+    "name": "FORÇA E CONTROLE",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "f249ce84-bc6a-41ac-86ce-2fbd85411bb1",
+    "name": "FORCA E CONTROLE PAINEIS E EQUIPAMENTOS ELETRICOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "ce0613b6-c8c7-4f54-b276-3c26d6d6e277",
+    "name": "FORTE PREMOLDADOS",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "3fa92efe-7a32-4764-a405-f450c2ec2b97",
+    "name": "FORTMETAL METALURGICA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "dace82be-9c43-4ce6-9cde-292434632792",
+    "name": "GERABLOCOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "e0c60ed0-4158-4a1e-8679-c09456a771b0",
+    "name": "GERDAU AÇOS LONGOS S/A",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "42d4d99c-6ff8-4a07-a013-b78a68aca067",
+    "name": "GH DO BRASIL INDUSTRIA E COMERCIO",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "6ecc9b8f-348f-4e18-a704-5060cf39b29d",
+    "name": "GM SOLOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "ab1c7313-0766-4751-bfae-f86bc1446cdf",
+    "name": "GMZ IND E COMERCIO DE GRANITOS E MARMORES LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "327a314d-1584-4058-81bc-880d86963ca6",
+    "name": "GRAAL TINTAS",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "3593c163-7551-4669-b82c-2d218d8faefe",
+    "name": "GROUP SMS CORPORATION LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "9107ef6c-1aaf-4c58-b3be-49304e7ef449",
+    "name": "G-SERVICE MANUTENCAO EM GERADORES LTDA - ME",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "18b612db-3ec3-417e-88eb-09f0616ccb44",
+    "name": "GUERRA ENGENHARIA E CONSULTORIA LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "2602460a-0233-464f-ae22-aa222f3c5e97",
+    "name": "J B SERVICOS DE PAVIMENTACAO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "1f76c6b3-0950-49c4-beda-7ff0d7042b32",
+    "name": "JPREFRIGERACAO E BEBEDOUROS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "8b64c04b-03ec-4bf4-8382-4e5e9732cd1c",
+    "name": "KARCHER INDUSTRIA E COMERCIO LIMITADA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "59913e27-f87c-4e83-b815-2ec3a92a8cf6",
+    "name": "L-BRAS FUNDACOES LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "9945d537-743b-4b18-9c9b-611c0458e754",
+    "name": "LOCACOES  ABRANTES  LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "54551f57-ddf4-497e-aea6-902e52f9e018",
+    "name": "LOJA ELETRICA LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "8fb57230-1e65-477f-a49e-98eab58419ca",
+    "name": "MADEIREIRA VARANDAO EIRELI",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "36b3b217-f81b-4d75-841e-887b37a0a7d6",
+    "name": "MANG ACO  LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "130312f5-9956-45d6-ab1b-19896a9a8f5c",
+    "name": "MD PRESTACOES DE SERVICOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "52c8c30c-3cb2-4aa8-b50e-dc04bc50b79e",
+    "name": "MINAS METALICA LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "842beb7f-9861-41d8-9daf-60ca1b03b2a0",
+    "name": "MINERAÇÃO MONTREAL LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "ea3849d9-6fcd-4b56-bf22-1dc4be8f3580",
+    "name": "MODELACO COMERCIO DE PRODUTOS E SERVICOS",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "f015fc68-2e8b-48fd-89a8-9aac43cd6c00",
+    "name": "NBTX CONCRETO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "87635452-061b-478c-b1fd-89c0a2feaf30",
+    "name": "OLIVEIRA E VIANA MATERIAIS DE CONSTRUCAO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "665dad41-6c9b-4873-a8d6-56060cbc813b",
+    "name": "ORMILOC LOC E COM DE EQUIP E UTENS PARA EVENTOS EIRELI",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "733f69c2-bb4c-43c5-97a4-8d69ce8c998c",
+    "name": "OTONI ENGENHARIA E CONSULTORIA LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "9531cec4-6e38-43c4-8beb-44f0d4701f89",
+    "name": "PAFI USINAGEM E TORNEARIA LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "4e3b22b4-e70b-4ddb-8261-07587b231955",
+    "name": "PCCALLADO DESIGN",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "ecb93b32-938c-443d-ad3b-901dcfdb6f41",
+    "name": "POLIPISO DO BRASIL LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "e2ff328c-55bb-4c31-bf69-45c7522d2043",
+    "name": "PONTO DO INCENDIO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "06646cf1-fde1-4f48-9fb6-b0aa90846b67",
+    "name": "PREVINA - SEGURANCA CONTRA INCENDIO LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "75662aa1-401b-4e32-8203-00a191bad49c",
+    "name": "RAFAEL GONCALVES DUARTE",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "12d867d2-fe25-4870-be66-d67b79364584",
+    "name": "REAL AR CONDICIONADO",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "3cc60f16-6a60-4cb2-a3f4-000a416ebf11",
+    "name": "RODAS E RODIZIOS",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "84170b46-6a8c-45c7-8372-96c041da74f8",
+    "name": "RT LOCAÇÕES E SERVIÇOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "478c0260-add5-4329-b058-1778ce8a329f",
+    "name": "SARZEDO PARAFUSOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "b4cfe5ce-a428-4355-bec0-db6cf88d25d5",
+    "name": "SOMAQUINAS",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "a26825a1-448c-4651-a6ca-76ebfd0b258a",
+    "name": "SUPER - MAK SERVICOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "9d53f574-2372-409a-8e85-8aecd6c79b28",
+    "name": "SUPERINOX LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "0abce00b-21c3-4e9e-bf52-c1efe4936b02",
+    "name": "TECPISO LAPIDACOES, REVESTIMENTOS E SERVICOS LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "12164026-a2b2-41aa-99a7-f347937c9112",
+    "name": "TERRAMAX TERRAPLENAGEM E TRANSPORTES LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "a3b977ce-6d2d-4b2e-94ca-6169228849b3",
+    "name": "TRADIMAQ LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "9604fd4e-3501-47a7-863b-979a545cd2d6",
+    "name": "VERDE DISTRIBUIDORA LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "24577363-4aab-49d4-bc1a-ac4c6bfb9f79",
+    "name": "WANDERSON A M DA SILVA - LOCAÇÃO DE MUNK",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "330f3a00-aa65-4912-8a31-4b3e3e2a20ac",
+    "name": "ZAGONEL ILUMINACAO SA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "4e07a2c9-1e27-4f15-a89b-45e8bbbbb539",
+    "name": "ZUM PIPAS COMERCIO E TRANSPORTES LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  },
+  {
+    "id": "dc808a87-7171-4827-b97a-33cb5f21473c",
+    "name": "X-MALB SOLUCOES LTDA",
+    "rating": 5,
+    "compliance": 100,
+    "specialty": "Diversos",
+    "phone": ""
+  }
 ];
 
 const initialWbColumns: WhiteboardColumn[] = [

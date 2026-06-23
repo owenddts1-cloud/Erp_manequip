@@ -1,0 +1,407 @@
+{
+  "version": "1.0.0",
+  "description": "Snyk Studio Recipes - Default Distribution",
+  "prerequisites": {
+    "python": "3.8",
+    "uv": "0.11.19",
+    "node": "24.11.1",
+    "snyk": "1.1304.0"
+  },
+  "recipes": {
+    "sai-hooks-async": {
+      "type": "hooks",
+      "description": "Secure At Inception hooks (async CLI version)",
+      "enabled": true,
+      "sources": {
+        "cursor": {
+          "files": [
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/cursor/async_cli_version/snyk_secure_at_inception.py", "dest": ".cursor/hooks/snyk_secure_at_inception.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/cursor/async_cli_version/lib/platform_utils.py", "dest": ".cursor/hooks/lib/platform_utils.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/cursor/async_cli_version/lib/scan_runner.py", "dest": ".cursor/hooks/lib/scan_runner.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/cursor/async_cli_version/lib/scan_worker.py", "dest": ".cursor/hooks/lib/scan_worker.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/cursor/async_cli_version/lib/sca_scan_worker.py", "dest": ".cursor/hooks/lib/sca_scan_worker.py" }
+          ],
+          "config_merge": {
+            "target": ".cursor/hooks.json",
+            "source": "guardrail_directives/secure_at_inception/hooks_version/cursor/async_cli_version/hooks.json",
+            "strategy": "merge_cursor_hooks"
+          }
+        },
+        "claude": {
+          "files": [
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/claude/async_cli_version/snyk_secure_at_inception.py", "dest": ".claude/hooks/snyk_secure_at_inception.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/claude/async_cli_version/lib/platform_utils.py", "dest": ".claude/hooks/lib/platform_utils.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/claude/async_cli_version/lib/scan_runner.py", "dest": ".claude/hooks/lib/scan_runner.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/claude/async_cli_version/lib/scan_worker.py", "dest": ".claude/hooks/lib/scan_worker.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/claude/async_cli_version/lib/sca_scan_worker.py", "dest": ".claude/hooks/lib/sca_scan_worker.py" }
+          ],
+          "config_merge": {
+            "target": ".claude/settings.json",
+            "source": "guardrail_directives/secure_at_inception/hooks_version/claude/async_cli_version/settings.json",
+            "strategy": "merge_claude_settings"
+          }
+        },
+        "gemini": {
+          "files": [
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/gemini/async_cli_version/snyk_secure_at_inception.py", "dest": ".gemini/hooks/snyk_secure_at_inception.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/gemini/async_cli_version/lib/platform_utils.py", "dest": ".gemini/hooks/lib/platform_utils.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/gemini/async_cli_version/lib/scan_runner.py", "dest": ".gemini/hooks/lib/scan_runner.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/gemini/async_cli_version/lib/scan_worker.py", "dest": ".gemini/hooks/lib/scan_worker.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/gemini/async_cli_version/lib/sca_scan_worker.py", "dest": ".gemini/hooks/lib/sca_scan_worker.py" }
+          ],
+          "config_merge": {
+            "target": ".gemini/settings.json",
+            "source": "guardrail_directives/secure_at_inception/hooks_version/gemini/async_cli_version/settings.json",
+            "strategy": "merge_gemini_settings"
+          }
+        },
+        "codex": {
+          "files": [
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/codex/async_cli_version/snyk_secure_at_inception.py", "dest": ".codex/hooks/snyk_secure_at_inception.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/codex/async_cli_version/lib/platform_utils.py", "dest": ".codex/hooks/lib/platform_utils.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/codex/async_cli_version/lib/scan_runner.py", "dest": ".codex/hooks/lib/scan_runner.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/codex/async_cli_version/lib/scan_worker.py", "dest": ".codex/hooks/lib/scan_worker.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/codex/async_cli_version/lib/sca_scan_worker.py", "dest": ".codex/hooks/lib/sca_scan_worker.py" }
+          ],
+          "config_merge": {
+            "target": ".codex/config.toml",
+            "source": "guardrail_directives/secure_at_inception/hooks_version/codex/async_cli_version/config.toml",
+            "strategy": "merge_codex_config"
+          }
+        },
+        "copilot-cli": {
+          "comment": "Installs to ~/.copilot/hooks/ — applies to BOTH GitHub Copilot CLI and GitHub Copilot in VS Code, which share this directory.",
+          "files": [
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/snyk_secure_at_inception.py", "dest": ".copilot/hooks/snyk_secure_at_inception.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/lib/platform_utils.py", "dest": ".copilot/hooks/lib/platform_utils.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/lib/scan_runner.py", "dest": ".copilot/hooks/lib/scan_runner.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/lib/scan_worker.py", "dest": ".copilot/hooks/lib/scan_worker.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/lib/sca_scan_worker.py", "dest": ".copilot/hooks/lib/sca_scan_worker.py" }
+          ],
+          "config_merge": {
+            "target": ".copilot/hooks/hooks.json",
+            "source": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/hooks.json",
+            "strategy": "merge_copilot_cli_hooks",
+            "legacy_targets": [".copilot/hooks.json"]
+          }
+        },
+        "copilot-vscode": {
+          "comment": "Mirrors the copilot-cli entry: dests target ~/.copilot/hooks/ (special-cased in resolve_ade_path) so VS Code Copilot installs the SAI hooks at the same location Copilot CLI reads them from.",
+          "files": [
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/snyk_secure_at_inception.py", "dest": ".copilot/hooks/snyk_secure_at_inception.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/lib/platform_utils.py", "dest": ".copilot/hooks/lib/platform_utils.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/lib/scan_runner.py", "dest": ".copilot/hooks/lib/scan_runner.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/lib/scan_worker.py", "dest": ".copilot/hooks/lib/scan_worker.py" },
+            { "src": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/lib/sca_scan_worker.py", "dest": ".copilot/hooks/lib/sca_scan_worker.py" }
+          ],
+          "config_merge": {
+            "target": ".copilot/hooks/hooks.json",
+            "source": "guardrail_directives/secure_at_inception/hooks_version/copilot/async_cli_version/hooks.json",
+            "strategy": "merge_copilot_cli_hooks",
+            "legacy_targets": [".copilot/hooks.json"]
+          }
+        }
+      }
+    },
+    "snyk-fix-command": {
+      "type": "command",
+      "description": "/snyk-fix slash command (all-in-one remediation)",
+      "enabled": true,
+      "sources": {
+        "cursor": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/single_all_in_one_command/snyk-fix.md", "dest": ".cursor/commands/snyk-fix.md" }
+          ]
+        },
+        "claude": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/single_all_in_one_command/snyk-fix.md", "dest": ".claude/commands/snyk-fix.md" }
+          ]
+        },
+        "gemini": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/single_all_in_one_command/snyk-fix.md", "dest": ".gemini/commands/snyk-fix.md" }
+          ]
+        },
+        "kiro": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/single_all_in_one_command/snyk-fix.md", "dest": ".kiro/steering/snyk-fix.md" }
+          ]
+        },
+        "windsurf": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/single_all_in_one_command/snyk-fix.md", "dest": ".codeium/windsurf/global_workflows/snyk-fix.md" }
+          ]
+        },
+        "copilot-vscode": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/single_all_in_one_command/snyk-fix.md", "dest": "prompts/snyk-fix.prompt.md" }
+          ]
+        }
+      },
+      "comment": "Codex CLI does not support user-defined slash commands; this recipe is intentionally not provided for codex."
+    },
+    "snyk-batch-fix-command": {
+      "type": "command",
+      "description": "/snyk-batch-fix slash command (batch remediation)",
+      "enabled": true,
+      "sources": {
+        "cursor": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/snyk-batch-fix.md", "dest": ".cursor/commands/snyk-batch-fix.md" }
+          ]
+        },
+        "claude": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/snyk-batch-fix.md", "dest": ".claude/commands/snyk-batch-fix.md" }
+          ]
+        },
+        "gemini": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/snyk-batch-fix.md", "dest": ".gemini/commands/snyk-batch-fix.md" }
+          ]
+        },
+        "kiro": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/snyk-batch-fix.md", "dest": ".kiro/steering/snyk-batch-fix.md" }
+          ]
+        },
+        "windsurf": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/snyk-batch-fix.md", "dest": ".codeium/windsurf/global_workflows/snyk-batch-fix.md" }
+          ]
+        },
+        "copilot-vscode": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/command/snyk-batch-fix.md", "dest": "prompts/snyk-batch-fix.prompt.md" }
+          ]
+        }
+      },
+      "comment": "Codex CLI does not support user-defined slash commands; this recipe is intentionally not provided for codex."
+    },
+    "snyk-fix-skill": {
+      "type": "skill",
+      "description": "Snyk Fix skill (for agents that don't support user-defined slash commands)",
+      "enabled": true,
+      "sources": {
+        "codex": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/skills/snyk-fix/SKILL.md", "dest": ".agents/skills/snyk/snyk-fix/SKILL.md" }
+          ]
+        },
+        "copilot-cli": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/skills/snyk-fix/SKILL.md", "dest": ".copilot/skills/snyk-fix/SKILL.md" }
+          ]
+        }
+      },
+      "comment": "Only platforms where snyk-fix is not available as a slash command. All other platforms receive snyk-fix via the snyk-fix-command recipe."
+    },
+    "mcp-config": {
+      "type": "mcp",
+      "description": "Snyk MCP server configuration",
+      "enabled": true,
+      "sources": {
+        "cursor": {
+          "config_merge": {
+            "target": ".cursor/.mcp.json",
+            "source": "mcp/.mcp.json",
+            "strategy": "merge_mcp_servers"
+          }
+        },
+        "claude": {
+          "config_merge": {
+            "target": ".claude/.mcp.json",
+            "source": "mcp/.mcp.json",
+            "strategy": "merge_mcp_servers"
+          }
+        },
+        "gemini": {
+          "config_merge": {
+            "target": ".gemini/settings.json",
+            "source": "mcp/.mcp.json",
+            "strategy": "merge_mcp_servers"
+          }
+        },
+        "kiro": {
+          "config_merge": {
+            "target": ".kiro/settings/mcp.json",
+            "source": "mcp/.mcp.json",
+            "strategy": "merge_mcp_servers"
+          }
+        },
+        "codex": {
+          "config_merge": {
+            "target": ".codex/config.toml",
+            "source": "mcp/.mcp-codex.toml",
+            "strategy": "merge_codex_config"
+          }
+        },
+        "windsurf": {
+          "config_merge": {
+            "target": ".codeium/windsurf/mcp_config.json",
+            "source": "mcp/.mcp.json",
+            "strategy": "merge_mcp_servers"
+          }
+        },
+        "copilot-cli": {
+          "config_merge": {
+            "target": ".copilot/mcp-config.json",
+            "source": "mcp/.mcp.json",
+            "strategy": "merge_copilot_cli_mcp"
+          }
+        },
+        "copilot-vscode": {
+          "config_merge": {
+            "target": "mcp.json",
+            "source": "mcp/.mcp.json",
+            "strategy": "merge_vscode_mcp"
+          }
+        }
+      }
+    },
+    "sac-hooks": {
+      "type": "hooks",
+      "scope": "workspace",
+      "description": "Secure At Commit pre-commit hook (CLI version)",
+      "enabled": true,
+      "conflicts_with": ["sai-hooks-async"],
+      "sources": {
+        "workspace": {
+          "files": [
+            { "src": "guardrail_directives/secure_at_commit/snyk_secure_at_commit.py", "dest": ".snyk-studio/components/scripts/snyk_secure_at_commit.py" }
+          ],
+          "legacy_files": [
+            { "dest": ".snyk/studio/components/scripts/snyk_secure_at_commit.py" }
+          ],
+          "pre_commit_integration": {
+            "tag": "snyk-secure-at-commit",
+            "command": "uv run .snyk-studio/components/scripts/snyk_secure_at_commit.py --staged"
+          }
+        }
+      }
+    },
+    "secure-dependency-health-check-skill": {
+      "type": "skill",
+      "description": "Secure dependency health check skill",
+      "enabled": true,
+      "sources": {
+        "cursor": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/SKILL.md", "dest": ".cursor/skills/snyk/secure-dependency-health-check/SKILL.md" },
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/references/package-evaluation-criteria.md", "dest": ".cursor/skills/snyk/secure-dependency-health-check/references/package-evaluation-criteria.md" }
+          ]
+        },
+        "claude": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/SKILL.md", "dest": ".claude/commands/secure-dependency-health-check.md" }
+          ],
+          "transforms": [
+            { "type": "skill_to_command", "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/SKILL.md", "dest": ".claude/commands/secure-dependency-health-check.md" }
+          ]
+        },
+        "gemini": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/SKILL.md", "dest": ".gemini/commands/secure-dependency-health-check.md" }
+          ],
+          "transforms": [
+            { "type": "skill_to_command", "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/SKILL.md", "dest": ".gemini/commands/secure-dependency-health-check.md" }
+          ]
+        },
+        "kiro": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/SKILL.md", "dest": ".kiro/skills/secure-dependency-health-check/SKILL.md" }
+          ]
+        },
+        "codex": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/SKILL.md", "dest": ".agents/skills/snyk/secure-dependency-health-check/SKILL.md" },
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/references/package-evaluation-criteria.md", "dest": ".agents/skills/snyk/secure-dependency-health-check/references/package-evaluation-criteria.md" }
+          ]
+        },
+        "windsurf": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/SKILL.md", "dest": ".agents/skills/secure-dependency-health-check/SKILL.md" },
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/references/package-evaluation-criteria.md", "dest": ".agents/skills/secure-dependency-health-check/references/package-evaluation-criteria.md" }
+          ]
+        },
+        "copilot-cli": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/SKILL.md", "dest": ".copilot/skills/secure-dependency-health-check/SKILL.md" },
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/references/package-evaluation-criteria.md", "dest": ".copilot/skills/secure-dependency-health-check/references/package-evaluation-criteria.md" }
+          ]
+        },
+        "copilot-vscode": {
+          "files": [
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/SKILL.md", "dest": "skills/secure-dependency-health-check/SKILL.md" },
+            { "src": "command_directives/synchronous_remediation/skills/secure-dependency-health-check/references/package-evaluation-criteria.md", "dest": "skills/secure-dependency-health-check/references/package-evaluation-criteria.md" }
+          ]
+        }
+      }
+    }
+  },
+  "conflicting-resources": {
+    "cursor" :{
+      "rules": [
+        {"global": false, "src":".cursor/rules/snyk_rules.mdc"}
+      ],
+      "skills": [
+        {"global": true, "src": ".cursor/skills/snyk-rules/SKILL.md"}
+      ],
+      "extension-settings": [
+        {"global": true, "src": "Cursor/User/settings.json"},
+        {"global": false, "src": ".vscode/settings.json"}
+      ]
+    },
+    "windsurf": {
+      "rules": [
+        {"global": true, "src": ".codeium/windsurf/memories/global_rules.md"},
+        {"global": false, "src": ".windsurf/rules/snyk_rules.md"}
+      ]
+    },
+    "gemini": {
+      "rules": [
+        {"global": true, "src": ".gemini/GEMINI.md"}
+      ]
+    },
+    "claude": {
+      "rules": [
+        {"global": true, "src": ".claude/CLAUDE.md"}
+      ]
+    },
+    "copilot-vscode": {
+      "rules": [
+        {"global": true, "src": "prompts/snyk_rules.instructions.md"},
+        {"global": false, "src": ".github/instructions/snyk_rules.instructions.md"}
+      ]
+    }
+  },
+  "profiles": {
+    "default": {
+      "recipes": [
+        "sai-hooks-async",
+        "snyk-fix-command",
+        "snyk-batch-fix-command",
+        "snyk-fix-skill",
+        "secure-dependency-health-check-skill",
+        "mcp-config"
+      ]
+    },
+    "minimal": {
+      "recipes": [
+        "sai-hooks-async",
+        "mcp-config"
+      ]
+    },
+    "experimental": {
+      "recipes": [
+        "sac-hooks",
+        "snyk-fix-command",
+        "snyk-batch-fix-command",
+        "snyk-fix-skill",
+        "secure-dependency-health-check-skill",
+        "mcp-config"
+      ]
+    }
+  }
+}
