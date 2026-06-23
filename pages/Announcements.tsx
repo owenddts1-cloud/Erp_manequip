@@ -801,22 +801,15 @@ const Announcements: React.FC = () => {
                     
                     <div className="border-l-4 pl-4 shrink-0 z-10" style={{ borderColor: themeAccentHex }}>
                       <h3 className={`text-2xl font-bold ${tColor}`}>Inventory Control Dashboard</h3>
-                      <p className={`text-xs mt-1 ${mColor}`}>Painel profissional de monitoramento de ativos e peças de reposição.</p>
+                      <p className={`text-[13px] font-medium mt-1 ${mColor}`}>Painel profissional de monitoramento de ativos e peças de reposição.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0 z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 shrink-0 z-10">
                       {/* Metric 1 */}
                       <div className={`p-5 rounded-2xl relative overflow-hidden group transition-all duration-300 border shadow-lg ${bgCardClass}`}>
                         <span className={`text-[11px] font-bold uppercase tracking-wider block ${mColor}`}>Ativos Cadastrados</span>
                         <div className={`text-4xl font-extrabold mt-2 tracking-tight ${tColor}`}>{totalAssets}</div>
-                        <p className={`text-[10px] mt-2 ${mColor}`}>Máquinas e equipamentos monitorados.</p>
-                      </div>
-
-                      {/* Metric 2 */}
-                      <div className={`p-5 rounded-2xl relative overflow-hidden group transition-all duration-300 border shadow-lg ${bgCardClass}`}>
-                        <span className={`text-[11px] font-bold uppercase tracking-wider block ${mColor}`}>Aguardando Início</span>
-                        <div className={`text-4xl font-extrabold mt-2 tracking-tight ${tColor}`}>{preventivesOpen}</div>
-                        <p className={`text-[10px] mt-2 ${mColor}`}>Preventivas em aberto neste mês.</p>
+                        <p className={`text-xs font-semibold mt-2 ${mColor}`}>Máquinas e equipamentos monitorados.</p>
                       </div>
 
                       {/* Metric 3 */}
@@ -824,7 +817,7 @@ const Announcements: React.FC = () => {
                         <div>
                           <span className={`text-[11px] font-bold uppercase tracking-wider block ${mColor}`}>Estoque Crítico</span>
                           <div className="text-4xl font-extrabold mt-2 text-rose-500 tracking-tight">{criticalItems.length}</div>
-                          <p className={`text-[10px] mt-2 ${mColor}`}>Peças abaixo do estoque mínimo.</p>
+                          <p className={`text-xs font-semibold mt-2 ${mColor}`}>Peças abaixo do estoque mínimo.</p>
                         </div>
                         <span className="material-symbols-outlined text-amber-500 text-5xl shrink-0 animate-pulse">warning</span>
                       </div>
@@ -854,7 +847,7 @@ const Announcements: React.FC = () => {
                                   : 'bg-[#0f172a]/60 border-slate-800/70 hover:bg-[#0f172a]/90 text-slate-200'
                               }`}>
                                 <span className={`font-extrabold w-32 md:w-44 truncate ${tColor}`}>{item.nome_peca}</span>
-                                <span className={`text-[11px] font-mono w-40 truncate ${mColor}`}>
+                                <span className={`text-[13px] font-bold font-mono w-44 truncate ${tColor}`}>
                                   SN-{item.id.slice(0, 5).toUpperCase()}
                                 </span>
                                 
@@ -868,8 +861,8 @@ const Announcements: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center gap-4 shrink-0 font-semibold text-[11px]">
-                                  <span className={mColor}>Mínimo: <strong className={tColor}>{item.estoque_minimo}</strong></span>
-                                  <span className={`px-3 py-1 rounded-md font-extrabold ${
+                                  <span className={`text-[12px] ${mColor}`}>Mínimo: <strong className={`text-[13px] ${tColor}`}>{item.estoque_minimo}</strong></span>
+                                  <span className={`px-3 py-1 rounded-md font-extrabold text-[12px] ${
                                     isCritical 
                                       ? 'bg-red-500/10 border border-red-500/30 text-red-400' 
                                       : 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
