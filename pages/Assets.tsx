@@ -1089,40 +1089,105 @@ const SelectGroup: React.FC<{
 // Sector Manager Modal Component
 const SectorManagerModal: React.FC<{ isOpen: boolean; initialSectors: string[]; onClose: () => void }> = ({ isOpen, initialSectors, onClose }) => {
   const [sectorName, setSectorName] = useState('');
-  const [sectors, setSectors] = useState(initialSectors);
+  const [sectors, setSectors] = useState<{ id: string; name: string }[]>([]);
+  const [editingSector, setEditingSector] = useState<{ id: string; name: string } | null>(null);
+  const [editName, setEditName] = useState('');
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase.from('sectors').select('name, id').order('name');
-      if (data) setSectors(data.map(d => d.name));
-    };
-    fetch();
+    fetchSectors();
   }, []);
+
+  const fetchSectors = async () => {
+    const { data } = await supabase.from('sectors').select('id, name').order('name');
+    if (data) setSectors(data);
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sectorName.trim()) return;
+    const trimmedName = sectorName.trim();
+    if (!trimmedName) return;
 
-    setSectors([...sectors, sectorName]);
-
-    const { error } = await supabase.from('sectors').insert([{ name: sectorName }]);
+    const { error } = await supabase.from('sectors').insert([{ name: trimmedName }]);
     if (error) {
       alert('Erro ao salvar setor: ' + error.message);
     } else {
       setSectorName('');
-      const { data } = await supabase.from('sectors').select('name').order('name');
-      if (data) setSectors(data.map(d => d.name));
+      fetchSectors();
+    }
+  };
+
+  const handleUpdate = async (id: string, oldName: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    if (trimmed === oldName) {
+      setEditingSector(null);
+      return;
+    }
+
+    try {
+      // 1. Update sectors table
+      const { error: sectorErr } = await supabase
+        .from('sectors')
+        .update({ name: trimmed })
+        .eq('id', id);
+
+      if (sectorErr) throw sectorErr;
+
+      // 2. Update ativos table (propagate sector change)
+      const { error: assetsErr } = await supabase
+        .from('ativos')
+        .update({ setor: trimmed })
+        .eq('setor', oldName);
+
+      if (assetsErr) throw assetsErr;
+
+      // 3. Update map_hotspots table (propagate sector change)
+      const { error: hotspotsErr } = await supabase
+        .from('map_hotspots')
+        .update({ db_sector: trimmed })
+        .eq('db_sector', oldName);
+
+      if (hotspotsErr) throw hotspotsErr;
+
+      setEditingSector(null);
+      setEditName('');
+      fetchSectors();
+    } catch (err: any) {
+      alert('Erro ao atualizar setor: ' + err.message);
     }
   };
 
   const handleDelete = async (name: string) => {
-    if (!confirm(`Excluir o setor "${name}"?`)) return;
+    if (!confirm(`Excluir o setor "${name}"? Os ativos deste setor ficarão sem setor definido.`)) return;
 
-    const { error } = await supabase.from('sectors').delete().eq('name', name);
-    if (error) {
-      alert('Erro ao excluir: ' + error.message);
-    } else {
-      setSectors(sectors.filter(s => s !== name));
+    try {
+      // 1. Delete from sectors table
+      const { error: sectorErr } = await supabase
+        .from('sectors')
+        .delete()
+        .eq('name', name);
+
+      if (sectorErr) throw sectorErr;
+
+      // 2. Propagate to ativos table by clearing the sector
+      const { error: assetsErr } = await supabase
+        .from('ativos')
+        .update({ setor: '' })
+        .eq('setor', name);
+
+      if (assetsErr) throw assetsErr;
+
+      // 3. Propagate to map_hotspots by clearing db_sector
+      const { error: hotspotsErr } = await supabase
+        .from('map_hotspots')
+        .update({ db_sector: '' })
+        .eq('db_sector', name);
+
+      if (hotspotsErr) throw hotspotsErr;
+
+      fetchSectors();
+    } catch (err: any) {
+      alert('Erro ao excluir: ' + err.message);
     }
   };
 
@@ -1157,14 +1222,66 @@ const SectorManagerModal: React.FC<{ isOpen: boolean; initialSectors: string[]; 
 
         <div className="max-h-60 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
           {sectors.length === 0 && <p className="text-xs text-slate-500 text-center italic">Nenhum setor cadastrado.</p>}
-          {sectors.map(s => (
-            <div key={s} className="flex justify-between items-center p-3 rounded-xl bg-slate-900 border border-slate-850">
-              <span className="text-sm font-semibold text-slate-200">{s}</span>
-              <button onClick={() => handleDelete(s)} className="text-slate-500 hover:text-rose-500 p-1 rounded-lg hover:bg-rose-500/10 transition-all cursor-pointer">
-                <span className="material-symbols-outlined text-[16px] block">delete</span>
-              </button>
-            </div>
-          ))}
+          {sectors.map(s => {
+            const isEditing = editingSector && editingSector.id === s.id;
+            return (
+              <div key={s.id} className="flex justify-between items-center p-3 rounded-xl bg-slate-900 border border-slate-850">
+                {isEditing ? (
+                  <input
+                    className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-primary mr-2"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    autoFocus
+                  />
+                ) : (
+                  <span className="text-sm font-semibold text-slate-200">{s.name}</span>
+                )}
+                <div className="flex items-center gap-1">
+                  {isEditing ? (
+                    <>
+                      <button
+                        onClick={() => handleUpdate(s.id, s.name, editName)}
+                        className="text-emerald-500 hover:text-emerald-400 p-1 rounded-lg hover:bg-emerald-500/10 transition-all cursor-pointer"
+                        title="Salvar"
+                      >
+                        <span className="material-symbols-outlined text-[18px] block">check</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingSector(null);
+                          setEditName('');
+                        }}
+                        className="text-slate-500 hover:text-white p-1 rounded-lg hover:bg-slate-700/10 transition-all cursor-pointer"
+                        title="Cancelar"
+                      >
+                        <span className="material-symbols-outlined text-[18px] block">close</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          setEditingSector(s);
+                          setEditName(s.name);
+                        }}
+                        className="text-slate-500 hover:text-primary p-1 rounded-lg hover:bg-sky-500/10 transition-all cursor-pointer mr-1"
+                        title="Editar"
+                      >
+                        <span className="material-symbols-outlined text-[16px] block">edit</span>
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(s.name)} 
+                        className="text-slate-500 hover:text-rose-500 p-1 rounded-lg hover:bg-rose-500/10 transition-all cursor-pointer"
+                        title="Excluir"
+                      >
+                        <span className="material-symbols-outlined text-[16px] block">delete</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
