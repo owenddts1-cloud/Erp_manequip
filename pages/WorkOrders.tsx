@@ -283,7 +283,7 @@ const WorkOrders: React.FC = () => {
       // Fetch normal work orders
       const { data: woData, error: woError } = await supabase
         .from('work_orders')
-        .select(`*, ativos(nome, tag_id, setor)`)
+        .select(`*, ativos(nome, tag_id, setor), tecnico_responsavel_profile:tecnico_responsavel(full_name, avatar_url, role)`)
         .order('created_at', { ascending: false });
 
       if (woError) throw woError;
@@ -291,7 +291,7 @@ const WorkOrders: React.FC = () => {
       // Fetch monthly preventives (active and completed)
       const { data: prevData, error: prevError } = await supabase
         .from('preventivas_mensais')
-        .select(`*, ativos(nome, tag_id, setor)`)
+        .select(`*, ativos(nome, tag_id, setor), tecnico_responsavel_profile:tecnico_responsavel(full_name, avatar_url, role), tecnico_responsavel_2_profile:tecnico_responsavel_2(full_name, avatar_url, role)`)
         .in('status', ['Em atendimento', 'Concluído'])
         .order('created_at', { ascending: false });
 
@@ -655,7 +655,7 @@ const WorkOrders: React.FC = () => {
               </th>
               <th onClick={() => handleSort('ativo')} className="py-2.5 px-4 text-xs font-bold text-slate-200 uppercase tracking-wider cursor-pointer select-none hover:text-white transition-colors">
                 <div className="flex items-center gap-1">
-                  <span>Ativo</span>
+                  <span>Ativos / Descrição</span>
                   {sortKey === 'ativo' && (sortOrder === 'asc' ? '▲' : '▼')}
                 </div>
               </th>
@@ -664,6 +664,9 @@ const WorkOrders: React.FC = () => {
                   <span>Tipo</span>
                   {sortKey === 'tipo' && (sortOrder === 'asc' ? '▲' : '▼')}
                 </div>
+              </th>
+              <th className="py-2.5 px-4 text-xs font-bold text-slate-200 uppercase tracking-wider select-none">
+                <span>Técnico Atribuído</span>
               </th>
               <th onClick={() => handleSort('status')} className="py-2.5 px-4 text-xs font-bold text-slate-200 uppercase tracking-wider text-center cursor-pointer select-none hover:text-white transition-colors">
                 <div className="flex items-center justify-center gap-1">
@@ -712,8 +715,11 @@ const WorkOrders: React.FC = () => {
                     </div>
                     <div className="flex flex-col">
                       <span className="text-slate-100 font-bold text-sm tracking-wide group-hover:text-primary transition-colors">{ticket.ativos?.nome || 'Ativo Desconhecido'}</span>
+                      <span className="text-xs text-slate-300 font-semibold mt-1 max-w-lg leading-snug">
+                        {ticket.isPreventiveTable ? ticket.titulo : ticket.title}
+                      </span>
                       {ticket.ativos?.tag_id && (
-                        <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                        <span className="text-[10px] text-slate-400 font-mono mt-1">
                           TAG: <span className="text-slate-300 font-bold">{ticket.ativos.tag_id}</span> {ticket.ativos.setor ? `• ${ticket.ativos.setor}` : ''}
                         </span>
                       )}
@@ -737,6 +743,39 @@ const WorkOrders: React.FC = () => {
                         {ticket.isPreventiveTable || ticket.tipo === 'Preventiva' ? 'calendar_month' : 'warning'}
                       </span>
                       {ticket.isPreventiveTable ? `Preventiva (${getMonthName(ticket.mes)})` : ticket.tipo}
+                    </span>
+                  </div>
+                </td>
+                <td className="py-2.5 px-4 align-middle">
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-1.5 overflow-hidden">
+                      {ticket.tecnico_responsavel_profile && (
+                        <div className="inline-block size-7 rounded-full ring-2 ring-slate-950 overflow-hidden border border-slate-700 bg-slate-900" title={ticket.tecnico_responsavel_profile.full_name}>
+                          {ticket.tecnico_responsavel_profile.avatar_url ? (
+                            <img src={ticket.tecnico_responsavel_profile.avatar_url} alt={ticket.tecnico_responsavel_profile.full_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="material-symbols-outlined text-slate-400 text-[16px] flex items-center justify-center h-full">person</span>
+                          )}
+                        </div>
+                      )}
+                      {ticket.tecnico_responsavel_2_profile && (
+                        <div className="inline-block size-7 rounded-full ring-2 ring-slate-950 overflow-hidden border border-slate-700 bg-slate-900" title={ticket.tecnico_responsavel_2_profile.full_name}>
+                          {ticket.tecnico_responsavel_2_profile.avatar_url ? (
+                            <img src={ticket.tecnico_responsavel_2_profile.avatar_url} alt={ticket.tecnico_responsavel_2_profile.full_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="material-symbols-outlined text-slate-400 text-[16px] flex items-center justify-center h-full">person</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs text-slate-300 font-medium">
+                      {(() => {
+                        const names = [
+                          ticket.tecnico_responsavel_profile?.full_name,
+                          ticket.tecnico_responsavel_2_profile?.full_name
+                        ].filter(Boolean);
+                        return names.join(' & ') || 'Não atribuído';
+                      })()}
                     </span>
                   </div>
                 </td>
