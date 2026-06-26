@@ -364,6 +364,16 @@ const Map: React.FC = () => {
 
   const globalStats = getGlobalStats();
 
+  const getSectorWorkOrdersCount = (sectorName: string) => {
+    const osCount = workOrders.filter(
+      (wo) => wo.ativos?.setor === sectorName && wo.status !== 'Concluída' && wo.status !== 'Finalizada'
+    ).length;
+    const pmCount = preventives.filter(
+      (pm) => pm.ativos?.setor === sectorName && pm.status !== 'Concluído'
+    ).length;
+    return osCount + pmCount;
+  };
+
   /* ── Stats Calculator ─────────────────────────────────────────────────── */
   const getStats = (dbSector: string) => {
     const now = new Date();
@@ -781,20 +791,26 @@ const Map: React.FC = () => {
                           />
                           {sectors
                             .filter(s => s.toLowerCase().includes(sectorSearch.toLowerCase()))
-                            .map(s => (
-                              <button
-                                key={s}
-                                type="button"
-                                onClick={() => {
-                                  setEditingHotspot(prev => prev ? { ...prev, dbSector: s } : null);
-                                  setShowSectorDropdown(false);
-                                  setSectorSearch('');
-                                }}
-                                className="w-full text-left px-2 py-1 text-[9px] hover:bg-slate-900 rounded text-slate-300 hover:text-white transition-colors"
-                              >
-                                {s}
-                              </button>
-                            ))
+                            .map(s => {
+                              const count = getSectorWorkOrdersCount(s);
+                              return (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingHotspot(prev => prev ? { ...prev, dbSector: s } : null);
+                                    setShowSectorDropdown(false);
+                                    setSectorSearch('');
+                                  }}
+                                  className="w-full text-left px-2 py-1 text-[9px] hover:bg-slate-900 rounded text-slate-300 hover:text-white transition-colors flex justify-between items-center"
+                                >
+                                  <span>{s}</span>
+                                  <span className="text-[8px] font-bold text-slate-500 bg-slate-950/60 px-1.5 py-0.5 rounded-full font-mono border border-slate-800">
+                                    {count} chamado{count !== 1 ? 's' : ''}
+                                  </span>
+                                </button>
+                              );
+                            })
                           }
                         </div>
                       )}
@@ -915,20 +931,26 @@ const Map: React.FC = () => {
                             />
                             {sectors
                               .filter(s => s.toLowerCase().includes(sectorSearch.toLowerCase()))
-                              .map(s => (
-                                <button
-                                  key={s}
-                                  type="button"
-                                  onClick={() => {
-                                    setNewHotspotSector(s);
-                                    setShowAddSectorDropdown(false);
-                                    setSectorSearch('');
-                                  }}
-                                  className="w-full text-left px-2 py-1 text-[9px] hover:bg-slate-900 rounded text-slate-300 hover:text-white transition-colors"
-                                >
-                                  {s}
-                                </button>
-                              ))
+                              .map(s => {
+                                const count = getSectorWorkOrdersCount(s);
+                                return (
+                                  <button
+                                    key={s}
+                                    type="button"
+                                    onClick={() => {
+                                      setNewHotspotSector(s);
+                                      setShowAddSectorDropdown(false);
+                                      setSectorSearch('');
+                                    }}
+                                    className="w-full text-left px-2 py-1 text-[9px] hover:bg-slate-900 rounded text-slate-300 hover:text-white transition-colors flex justify-between items-center"
+                                  >
+                                    <span>{s}</span>
+                                    <span className="text-[8px] font-bold text-slate-500 bg-slate-950/60 px-1.5 py-0.5 rounded-full font-mono border border-slate-800">
+                                      {count} chamado{count !== 1 ? 's' : ''}
+                                    </span>
+                                  </button>
+                                );
+                              })
                             }
                           </div>
                         )}
