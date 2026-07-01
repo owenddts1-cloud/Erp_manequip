@@ -155,10 +155,14 @@ const Preventives: React.FC = () => {
     status: 'Em atendimento',
     data_limite: '',
     icone: 'settings',
+    chamado: '',
   });
 
   // Unified Importer Modal State
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isDistributeModalOpen, setIsDistributeModalOpen] = useState(false);
+  const [distributeEligibleTechs, setDistributeEligibleTechs] = useState<Record<string, string[]>>({});
   const [importMode, setImportMode] = useState<'planning' | 'distribution'>('distribution');
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
@@ -236,13 +240,14 @@ const Preventives: React.FC = () => {
       .eq('is_approved', true)
       .order('full_name');
     if (data) {
+      const excludedNames = ['danielle', 'diego', 'guilherme', 'wellington'];
       setTechnicians(
         data
-          .filter((tech: any) => tech.role === 'Técnico' || tech.full_name === 'Guilherme')
-          .map((tech: any) => ({
-            ...tech,
-            role: tech.full_name === 'Guilherme' ? 'Analista' : tech.role
-          }))
+          .filter((tech: any) => {
+            const name = tech.full_name?.toLowerCase() || '';
+            const isExcluded = excludedNames.some(ex => name.includes(ex));
+            return tech.role === 'Técnico' && !isExcluded;
+          })
       );
     }
     if (error) console.error('Erro ao buscar técnicos:', error);
@@ -252,7 +257,7 @@ const Preventives: React.FC = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('preventivas_planejamento')
-      .select('*, ativos(nome, tag_id, setor)')
+      .select('*, ativos(nome, tag_id, setor, url)')
       .order('created_at', { ascending: false });
     if (data) setPlans(data);
     if (error) console.error('Erro ao buscar templates:', error);
@@ -263,7 +268,7 @@ const Preventives: React.FC = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('preventivas_mensais')
-      .select('*, ativos(nome, tag_id, setor), tecnico_responsavel_profile:tecnico_responsavel(full_name, email), tecnico_responsavel_2_profile:tecnico_responsavel_2(full_name, email)')
+      .select('*, ativos(nome, tag_id, setor, url), preventivas_planejamento(periodicidade), tecnico_responsavel_profile:tecnico_responsavel(full_name, email), tecnico_responsavel_2_profile:tecnico_responsavel_2(full_name, email)')
       .eq('mes', selectedMonth)
       .eq('ano', selectedYear)
       .order('created_at', { ascending: false });
@@ -368,63 +373,144 @@ const Preventives: React.FC = () => {
     setLoading(false);
   };
 
+  const handleOpenDistributionModal = () => {
+    if (!isAuthorized) return alert('Sem permissão');
+    const targets = monthlyTasks.filter(t => t.status !== 'Concluído');
+    if (targets.length === 0) {
+      alert('Nenhuma preventiva pendente para distribuir neste mês!');
+      return;
+    }
+    
+    // Initialize eligible techs for each task, defaulting Vinícius and Maike to disabled (unselected)
+    const initialMap: Record<string, string[]> = {};
+    targets.forEach(task => {
+      initialMap[task.id] = technicians
+        .filter(t => {
+          const name = t.full_name?.toLowerCase() || '';
+          const isVinicius = name.includes('vinicius') || name.includes('vinícius');
+          const isMaike = name.includes('maike');
+          return !isVinicius && !isMaike;
+        })
+        .map(t => t.id);
+    });
+    
+    setDistributeEligibleTechs(initialMap);
+    setIsDistributeModalOpen(true);
+  };
+
+  const getWeekdaysInMonth = (year: number, month: number) => {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const weekdays = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month - 1, d);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        weekdays.push(d);
+      }
+    }
+    return weekdays;
+  };
+
   // Smart workload-balanced technician distribution
   const handleSmartDistribution = async () => {
     if (!isAuthorized) return alert('Sem permissão');
-    if (monthlyTasks.length === 0) return alert('Gere ou cadastre preventivas antes de distribuir.');
-    if (technicians.length === 0) return alert('Nenhum técnico aprovado disponível para atribuição.');
+    const targets = monthlyTasks.filter(t => t.status !== 'Concluído');
+    if (targets.length === 0) {
+      alert('Nenhuma preventiva pendente para distribuir neste mês!');
+      return;
+    }
 
     setLoading(true);
     try {
-      const unassigned = monthlyTasks.filter(t => !t.tecnico_responsavel);
-      if (unassigned.length === 0) {
-        alert('Todas as preventivas deste mês já possuem técnicos atribuídos!');
-        setLoading(false);
-        return;
-      }
-
+      // 1. Get current workloads of all technicians (counting only completed tasks as base workload)
       const workloads: Record<string, number> = {};
       technicians.forEach(tech => {
         workloads[tech.id] = 0;
       });
 
       monthlyTasks.forEach(task => {
-        if (task.tecnico_responsavel && workloads[task.tecnico_responsavel] !== undefined) {
+        if (task.status === 'Concluído' && task.tecnico_responsavel && workloads[task.tecnico_responsavel] !== undefined) {
           workloads[task.tecnico_responsavel]++;
         }
       });
 
-      const updates = [];
-      for (const task of unassigned) {
-        let bestTechId = technicians[0].id;
+      // 2. Perform the balanced assignment of technicians to tasks
+      // Group tasks by their assigned technician
+      const techAssignments: Record<string, typeof targets> = {};
+      technicians.forEach(tech => {
+        techAssignments[tech.id] = [];
+      });
+
+      for (const task of targets) {
+        const eligibleIds = distributeEligibleTechs[task.id] || [];
+        if (eligibleIds.length === 0) {
+          continue;
+        }
+
+        let bestTechId = eligibleIds[0];
         let minWorkload = Infinity;
 
-        for (const tech of technicians) {
-          if (workloads[tech.id] < minWorkload) {
-            minWorkload = workloads[tech.id];
-            bestTechId = tech.id;
+        for (const techId of eligibleIds) {
+          if (workloads[techId] < minWorkload) {
+            minWorkload = workloads[techId];
+            bestTechId = techId;
           }
         }
 
-        updates.push({
-          id: task.id,
-          tecnico_responsavel: bestTechId,
-          updated_at: new Date().toISOString()
-        });
-
+        techAssignments[bestTechId].push(task);
         workloads[bestTechId]++;
       }
 
+      // 3. Spatially distribute the days of the week for each technician
+      const weekdays = getWeekdaysInMonth(selectedYear, selectedMonth);
+      const W = weekdays.length;
+      const updates = [];
+
+      const pad = (n: number) => String(n).padStart(2, '0');
+
+      for (const techId in techAssignments) {
+        const assignedTasks = techAssignments[techId];
+        const M = assignedTasks.length;
+        if (M === 0) continue;
+
+        // Distribute the M tasks across the W weekdays
+        assignedTasks.forEach((task, index) => {
+          // Calculate day index with spread
+          const dayIndex = Math.floor((index * W) / M) % W;
+          const dayValue = weekdays[dayIndex];
+          const dataLimite = `${selectedYear}-${pad(selectedMonth)}-${pad(dayValue)}`;
+
+          updates.push({
+            id: task.id,
+            tecnico_responsavel: techId,
+            data_limite: dataLimite,
+            updated_at: new Date().toISOString()
+          });
+        });
+      }
+
+      if (updates.length === 0) {
+        alert('Nenhuma preventiva foi atribuída pois não há técnicos habilitados selecionados.');
+        setLoading(false);
+        return;
+      }
+
+      // 4. Update the database
       const promises = updates.map(update =>
         supabase
           .from('preventivas_mensais')
-          .update({ tecnico_responsavel: update.tecnico_responsavel, updated_at: update.updated_at })
+          .update({ 
+            tecnico_responsavel: update.tecnico_responsavel, 
+            data_limite: update.data_limite, 
+            updated_at: update.updated_at 
+          })
           .eq('id', update.id)
       );
 
       await Promise.all(promises);
 
-      alert(`Distribuição concluída! ${updates.length} preventivas foram atribuídas de maneira equilibrada.`);
+      alert(`Distribuição concluída! ${updates.length} preventivas foram atribuídas e distribuídas de maneira equilibrada ao longo das semanas.`);
+      setIsDistributeModalOpen(false);
       fetchMonthlyTasks();
     } catch (err: any) {
       console.error(err);
@@ -446,6 +532,22 @@ const Preventives: React.FC = () => {
       fetchMonthlyTasks();
     } catch (err: any) {
       alert('Erro ao atribuir técnico: ' + err.message);
+    }
+  };
+
+  const handleUpdateChamado = async (taskId: string, chamado: string) => {
+    try {
+      const { error } = await supabase
+        .from('preventivas_mensais')
+        .update({
+          chamado: chamado || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', taskId);
+      if (error) throw error;
+      setMonthlyTasks(prev => prev.map(task => task.id === taskId ? { ...task, chamado } : task));
+    } catch (err: any) {
+      alert('Erro ao atualizar número de chamado: ' + err.message);
     }
   };
 
@@ -810,6 +912,7 @@ const Preventives: React.FC = () => {
         status: task.status || 'Em atendimento',
         data_limite: task.data_limite || '',
         icone: task.icone || 'precision_manufacturing',
+        chamado: task.chamado || '',
       });
     } else {
       setEditingTask(null);
@@ -822,6 +925,7 @@ const Preventives: React.FC = () => {
         status: 'Em atendimento',
         data_limite: new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0],
         icone: 'settings',
+        chamado: '',
       });
     }
     setIsTaskModalOpen(true);
@@ -841,7 +945,8 @@ const Preventives: React.FC = () => {
         data_limite: taskFormData.data_limite || null,
         icone: taskFormData.icone,
         concluido_em: taskFormData.status === 'Concluído' ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        chamado: taskFormData.chamado || null
       };
 
       if (editingTask) {
@@ -867,6 +972,120 @@ const Preventives: React.FC = () => {
       alert('Erro ao salvar preventiva: ' + err.message);
     }
     setLoading(false);
+  };
+
+  const getTaskDay = (task: MonthlyTask) => {
+    if (task.status === 'Concluído' && task.concluido_em) {
+      return new Date(task.concluido_em).getDate();
+    }
+    if (task.data_limite) {
+      const parts = task.data_limite.split('-');
+      if (parts.length === 3) {
+        return parseInt(parts[2], 10);
+      }
+      return new Date(task.data_limite + 'T00:00:00').getDate();
+    }
+    return null;
+  };
+
+  const getTechColorStyle = (name: string): { bg: string; text: string } => {
+    if (!name) return { bg: 'transparent', text: 'inherit' };
+    const colors: Record<string, { bg: string, text: string }> = {
+      luan: { bg: '#bae6fd', text: '#0f172a' }, // Light Sky Blue
+      luam: { bg: '#bae6fd', text: '#0f172a' },
+      aldemar: { bg: '#fde047', text: '#0f172a' }, // Light Gold/Yellow
+      genilson: { bg: '#fed7aa', text: '#0f172a' }, // Light Orange
+      wendel: { bg: '#d9f99d', text: '#0f172a' }, // Light Lime
+      manoel: { bg: '#fef08a', text: '#0f172a' },
+      maike: { bg: '#a7f3d0', text: '#0f172a' }, // Light Mint/Emerald
+      hugo: { bg: '#bbf7d0', text: '#0f172a' }, // Light Green
+      vinicius: { bg: '#fecdd3', text: '#0f172a' }, // Light Rose/Red
+      daniel: { bg: '#e9d5ff', text: '#0f172a' }, // Light Purple/Lavender
+      samir: { bg: '#e2e8f0', text: '#0f172a' }, // Light Slate/Gray
+      malcol: { bg: '#fbcfe8', text: '#0f172a' }, // Light Pink
+    };
+    
+    const lowerName = name.toLowerCase();
+    for (const key in colors) {
+      if (lowerName.includes(key)) {
+        return colors[key];
+      }
+    }
+    
+    // Hash fallback generating a light pastel color with high-contrast dark text
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return {
+      bg: `hsl(${hue}, 85%, 85%)`, // High lightness for pastel backgrounds
+      text: '#0f172a' // Dark text for perfect readability/contrast
+    };
+  };
+
+  const handleExportExcel = async () => {
+    setLoading(true);
+    try {
+      const XLSX = await loadSheetJS();
+      const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+      
+      const headers = ['STATUS', 'CHAMADO', 'ATIVIDADE', 'PATRIMÔNIO', 'PERIODICIDADE', 'LOCALIDADE'];
+      for (let d = 1; d <= daysInMonth; d++) {
+        headers.push(String(d));
+      }
+
+      const rows = filteredMonthlyTasks.map(task => {
+        let displayStatus = 'PENDENTE';
+        if (task.status === 'Concluído') {
+          displayStatus = 'REALIZADA';
+        } else if (task.tecnico_responsavel || task.tecnico_responsavel_2) {
+          displayStatus = 'EM ATENDIMENTO';
+        }
+
+        const taskDay = getTaskDay(task);
+
+        const rowData: Record<string, any> = {
+          'STATUS': displayStatus,
+          'CHAMADO': task.chamado || '',
+          'ATIVIDADE': task.ativos?.nome || task.titulo || 'Geral',
+          'PATRIMÔNIO': task.ativos?.tag_id || '',
+          'PERIODICIDADE': (task.preventivas_planejamento?.periodicidade || 'Mensal').toUpperCase(),
+          'LOCALIDADE': task.ativos?.setor || ''
+        };
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          if (taskDay === d) {
+            const names: string[] = [];
+            if (task.tecnico_responsavel_profile?.full_name) {
+              names.push(task.tecnico_responsavel_profile.full_name.split(' ')[0]);
+            }
+            if (task.tecnico_responsavel_2_profile?.full_name) {
+              names.push(task.tecnico_responsavel_2_profile.full_name.split(' ')[0]);
+            }
+            rowData[String(d)] = names.join(' / ');
+          } else {
+            rowData[String(d)] = '';
+          }
+        }
+
+        return rowData;
+      });
+
+      const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+      const wb = XLSX.utils.book_new();
+      const monthObj = monthsList.find(m => m.value === selectedMonth);
+      const monthName = monthObj ? monthObj.name : `Mes_${selectedMonth}`;
+      XLSX.utils.book_append_sheet(wb, ws, 'Preventivas');
+      XLSX.writeFile(wb, `Preventivas_Execucao_Mensal_${monthName}_${selectedYear}.xlsx`);
+    } catch (err: any) {
+      alert('Erro ao exportar para Excel: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   // SheetJS Dynamic Loader
@@ -1158,7 +1377,7 @@ const Preventives: React.FC = () => {
           if (!tag) continue;
           
           if (!title) {
-            title = `Preventiva Recorrente - ${tag}`;
+            title = `MANEQUIP | PREVENTIVA - ${name || tag}`;
           }
           
           const months = extractMonthsFromRow(row);
@@ -1226,7 +1445,7 @@ const Preventives: React.FC = () => {
           if (!tag) continue;
           
           if (!title) {
-            title = `Manutenção Preventiva - ${tag}`;
+            title = `MANEQUIP | PREVENTIVA - ${name || tag}`;
           }
           
           const assetId = await resolveOrCreateAsset(tag, name);
@@ -1451,7 +1670,8 @@ const Preventives: React.FC = () => {
   }, [monthlyTasks]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto bg-slate-950 p-6 md:p-8 text-slate-100 font-sans">
+    <>
+      <div className="flex-1 min-h-0 overflow-y-auto bg-slate-950 p-6 md:p-8 text-slate-100 font-sans print:hidden">
       {/* Page Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
@@ -1574,25 +1794,7 @@ const Preventives: React.FC = () => {
               </div>
 
               {isAuthorized && (
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={handleGenerateYearlyTasks}
-                    className="flex items-center gap-2 bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 text-xs font-semibold px-4 py-2 rounded-lg transition cursor-pointer"
-                    title="Gera preventivas de acordo com o planejamento de todos os meses do ano"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">sync_alt</span>
-                    Gerar Preventivas do Ano
-                  </button>
-
-                  <button
-                    onClick={handleSmartDistribution}
-                    className="flex items-center gap-2 bg-violet-600/20 text-violet-400 border border-violet-500/30 hover:bg-violet-600/30 text-xs font-semibold px-4 py-2 rounded-lg transition cursor-pointer"
-                    title="Distribui tarefas equilibradamente entre os técnicos disponíveis"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">share</span>
-                    Distribuição Inteligente
-                  </button>
-
+                <div className="flex flex-wrap gap-2.5 items-center">
                   <button
                     onClick={() => {
                       setImportMode('distribution');
@@ -1603,6 +1805,24 @@ const Preventives: React.FC = () => {
                   >
                     <span className="material-symbols-outlined text-[16px]">publish</span>
                     Importar Distribuição
+                  </button>
+
+                  <button
+                    onClick={() => setIsExportModalOpen(true)}
+                    className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 text-xs font-semibold px-4 py-2 rounded-lg transition cursor-pointer"
+                    title="Exportar preventivas do mês para PDF/Excel ou imprimir"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">download</span>
+                    Exportar / Imprimir
+                  </button>
+
+                  <button
+                    onClick={handleOpenDistributionModal}
+                    className="flex items-center gap-2 bg-violet-600/20 text-violet-400 border border-violet-500/30 hover:bg-violet-600/30 text-xs font-semibold px-4 py-2 rounded-lg transition cursor-pointer"
+                    title="Distribui tarefas equilibradamente entre os técnicos disponíveis"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">share</span>
+                    Distribuição Inteligente
                   </button>
 
                   <button
@@ -1696,6 +1916,9 @@ const Preventives: React.FC = () => {
                             {monthlySortKey === 'tecnico' ? (monthlySortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
                           </span>
                         </div>
+                      </th>
+                      <th className="py-3.5 px-4 border-b-2 border-primary/40 min-w-[120px]">
+                        Chamado
                       </th>
                       <th
                         onClick={() => handleMonthlySort('status')}
@@ -1791,6 +2014,29 @@ const Preventives: React.FC = () => {
                           </div>
                         </td>
 
+                        {/* Chamado inline editor */}
+                        <td className="py-4 px-6">
+                          <input
+                            type="text"
+                            value={task.chamado || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setMonthlyTasks(prev => prev.map(t => t.id === task.id ? { ...t, chamado: val } : t));
+                            }}
+                            placeholder="Nº Chamado"
+                            disabled={!isAuthorized}
+                            onBlur={(e) => {
+                              handleUpdateChamado(task.id, e.target.value);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.currentTarget.blur();
+                              }
+                            }}
+                            className="bg-slate-950 border border-slate-800/80 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full disabled:cursor-not-allowed disabled:opacity-70 placeholder-slate-600 transition-colors"
+                          />
+                        </td>
+
                         {/* Status badge selector */}
                         <td className="py-4 px-6">
                           <div className="relative inline-block w-40">
@@ -1847,8 +2093,8 @@ const Preventives: React.FC = () => {
                                 }} 
                                 className={`p-1.5 rounded transition cursor-pointer flex items-center justify-center ${
                                   task.ativos?.url && task.ativos.url.trim() 
-                                    ? 'text-primary hover:bg-slate-800 hover:text-sky-400' 
-                                    : 'text-slate-600 hover:bg-transparent cursor-not-allowed'
+                                    ? 'text-white hover:bg-slate-800 hover:text-sky-400' 
+                                    : 'text-slate-600/40 hover:bg-transparent cursor-not-allowed'
                                 }`}
                                 title={task.ativos?.url && task.ativos.url.trim() ? "Acessar Link do Ativo" : "Sem link cadastrado"}
                               >
@@ -2475,6 +2721,21 @@ const Preventives: React.FC = () => {
                 />
               </div>
 
+              {/* Chamado */}
+              <div className="col-span-2 space-y-1.5">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                  <span className="material-symbols-outlined text-[14px] text-indigo-400">label</span>
+                  Nº do Chamado
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: 12345 (opcional)"
+                  value={taskFormData.chamado}
+                  onChange={(e) => setTaskFormData(prev => ({ ...prev, chamado: e.target.value }))}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white outline-none focus:border-primary placeholder-slate-655 text-sm"
+                />
+              </div>
+
               {/* Description */}
               <div className="col-span-2 space-y-1.5">
                 <label className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
@@ -2717,7 +2978,483 @@ const Preventives: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+
+      {/* ================= MODAL: EXPORTAR/IMPRIMIR PLANILHA DE PREVENTIVAS ================= */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in print:hidden">
+          <div className="relative w-full max-w-5xl bg-[var(--surface-color)] border border-[var(--border-color)] rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
+            <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+            
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-400">download</span>
+                Exportar / Imprimir Preventivas Mensais
+              </h3>
+              <button
+                onClick={() => setIsExportModalOpen(false)}
+                className="text-slate-400 hover:text-white rounded-lg p-1 transition cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="mb-4 flex flex-wrap gap-2 justify-between items-center bg-slate-900/50 p-3 border border-slate-800 rounded-xl">
+              <div className="text-xs text-slate-400">
+                Preventivas filtradas para o mês: <strong className="text-white">{monthsList.find(m => m.value === selectedMonth)?.name} / {selectedYear}</strong> ({filteredMonthlyTasks.length} itens)
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExportExcel}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow-md cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">file_download</span>
+                  Exportar para Excel (.xlsx)
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow-md cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">print</span>
+                  Imprimir / Salvar PDF
+                </button>
+              </div>
+            </div>
+
+            {/* Preview Sheet Area */}
+            <div className="flex-1 overflow-auto border border-slate-800 rounded-xl bg-slate-950 p-2 scrollbar-thin max-h-[50vh]">
+              <table className="w-full text-left border-collapse text-[10px] min-w-[1200px]">
+                <thead>
+                  <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 uppercase font-bold sticky top-0 z-10">
+                    <th className="py-2 px-3 border border-slate-800 text-center w-24">Status</th>
+                    <th className="py-2 px-3 border border-slate-800 text-center w-20">Chamado</th>
+                    <th className="py-2 px-3 border border-slate-800 min-w-[180px]">Atividade</th>
+                    <th className="py-2 px-3 border border-slate-800 text-center w-20">Patrimônio</th>
+                    <th className="py-2 px-3 border border-slate-800 text-center w-24">Periodicidade</th>
+                    <th className="py-2 px-3 border border-slate-800 min-w-[120px]">Localidade</th>
+                    {Array.from({ length: new Date(selectedYear, selectedMonth, 0).getDate() }, (_, i) => i + 1).map(d => {
+                      const isWeekend = new Date(selectedYear, selectedMonth - 1, d).getDay() === 0 || 
+                                        new Date(selectedYear, selectedMonth - 1, d).getDay() === 6;
+                      return (
+                        <th
+                          key={d}
+                          className={`py-2 px-1 border border-slate-800 text-center w-8 font-mono ${
+                            isWeekend ? 'bg-slate-800 text-slate-200 font-bold' : ''
+                          }`}
+                        >
+                          {d}
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/50">
+                  {filteredMonthlyTasks.map(task => {
+                    const taskDay = getTaskDay(task);
+                    let displayStatus = 'PENDENTE';
+                    let statusClass = 'text-rose-400 border border-rose-500/30 bg-rose-500/5';
+                    
+                    if (task.status === 'Concluído') {
+                      displayStatus = 'REALIZADA';
+                      statusClass = 'text-emerald-400 border border-emerald-500/30 bg-emerald-500/5';
+                    } else if (task.tecnico_responsavel || task.tecnico_responsavel_2) {
+                      displayStatus = 'EM ATENDIMENTO';
+                      statusClass = 'text-amber-400 border border-amber-500/30 bg-amber-500/5';
+                    }
+
+                    const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+
+                    return (
+                      <tr key={task.id} className="hover:bg-slate-900/30 transition-colors">
+                        <td className="py-1.5 px-2 border border-slate-800 text-center">
+                          <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider block ${statusClass}`}>
+                            {displayStatus}
+                          </span>
+                        </td>
+                        <td className="py-1.5 px-2 border border-slate-800 text-center font-semibold text-slate-300">
+                          {task.chamado || '---'}
+                        </td>
+                        <td className="py-1.5 px-3 border border-slate-800 font-semibold text-slate-200 truncate max-w-[200px]" title={task.ativos?.nome || task.titulo}>
+                          {task.ativos?.nome || task.titulo}
+                        </td>
+                        <td className="py-1.5 px-2 border border-slate-800 text-center text-slate-400 font-mono">
+                          {task.ativos?.tag_id || '---'}
+                        </td>
+                        <td className="py-1.5 px-2 border border-slate-800 text-center text-slate-400 text-[9px] uppercase font-medium">
+                          {task.preventivas_planejamento?.periodicidade || 'Mensal'}
+                        </td>
+                        <td className="py-1.5 px-3 border border-slate-800 text-slate-400 truncate max-w-[120px]" title={task.ativos?.setor || 'Sem local'}>
+                          {task.ativos?.setor || '---'}
+                        </td>
+                        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
+                          const isMatch = taskDay === d;
+                          const techName = isMatch
+                            ? [
+                                task.tecnico_responsavel_profile?.full_name?.split(' ')[0],
+                                task.tecnico_responsavel_2_profile?.full_name?.split(' ')[0]
+                              ].filter(Boolean).join(' / ')
+                            : '';
+                          
+                          const style = isMatch ? getTechColorStyle(techName) : { bg: 'transparent', text: 'inherit' };
+                          const isWeekend = new Date(selectedYear, selectedMonth - 1, d).getDay() === 0 || 
+                                            new Date(selectedYear, selectedMonth - 1, d).getDay() === 6;
+
+                          return (
+                            <td
+                              key={d}
+                              className={`py-1 px-0.5 border border-slate-800 text-center text-[8px] font-bold truncate max-w-[32px] ${
+                                !isMatch && isWeekend ? 'bg-slate-900/50' : ''
+                              }`}
+                              style={isMatch ? { backgroundColor: style.bg, color: style.text } : {}}
+                              title={techName || undefined}
+                            >
+                              {techName}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-slate-800 pt-4 mt-4">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="px-5 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg transition cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: DISTRIBUIÇÃO INTELIGENTE DE TÉCNICOS ================= */}
+      {isDistributeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in print:hidden">
+          <div className="relative w-full max-w-4xl bg-[var(--surface-color)] border border-[var(--border-color)] rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col max-h-[85vh] animate-scale-up">
+            <div className="absolute top-0 left-0 w-full h-1 bg-violet-600"></div>
+
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-violet-400">share</span>
+                Distribuição Inteligente de Técnicos
+              </h3>
+              <button
+                onClick={() => setIsDistributeModalOpen(false)}
+                className="text-slate-400 hover:text-white rounded-lg p-1 transition cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <p className="text-slate-400 text-xs mb-4">
+              Selecione quais técnicos estão habilitados/aptos a realizar cada uma das preventivas pendentes. O sistema fará a distribuição equilibrando a carga de trabalho.
+            </p>
+
+            {/* List of unassigned preventives */}
+            <div className="flex-1 overflow-auto border border-slate-800 rounded-xl bg-slate-950 p-2 scrollbar-thin">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-900 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                    <th className="py-2.5 px-3">Equipamento</th>
+                    <th className="py-2.5 px-3">Descrição da Atividade</th>
+                    <th className="py-2.5 px-3">Técnicos Habilitados (Clique para alternar)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/50">
+                  {monthlyTasks.filter(t => t.status !== 'Concluído').map(task => {
+                    const eligibleIds = distributeEligibleTechs[task.id] || [];
+
+                    return (
+                      <tr key={task.id} className="hover:bg-slate-900/30 transition-colors">
+                        <td className="py-3 px-3">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-slate-200">{task.ativos?.nome || 'Geral'}</span>
+                            <span className="text-[10px] text-slate-500 font-mono mt-0.5">{task.ativos?.tag_id || 'SEM TAG'}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 text-slate-300 max-w-[200px] truncate" title={task.titulo}>
+                          {task.titulo}
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {technicians.map(tech => {
+                              const isSelected = eligibleIds.includes(tech.id);
+                              const colors = getTechColorStyle(tech.full_name);
+                              
+                              return (
+                                <button
+                                  key={tech.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setDistributeEligibleTechs(prev => {
+                                      const current = prev[task.id] || [];
+                                      const updated = current.includes(tech.id)
+                                        ? current.filter(id => id !== tech.id)
+                                        : [...current, tech.id];
+                                      return { ...prev, [task.id]: updated };
+                                    });
+                                  }}
+                                  style={isSelected ? { backgroundColor: colors.bg, color: colors.text } : {}}
+                                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
+                                    isSelected
+                                      ? 'border-transparent shadow-sm'
+                                      : 'border-slate-800 bg-slate-900/30 text-slate-500 hover:text-slate-300 hover:border-slate-700'
+                                  }`}
+                                >
+                                  {tech.full_name.split(' ')[0]}
+                                </button>
+                              );
+                            })}
+                            
+                            <div className="ml-2 flex gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDistributeEligibleTechs(prev => ({
+                                    ...prev,
+                                    [task.id]: technicians.map(tech => tech.id)
+                                  }));
+                                }}
+                                className="text-[9px] text-primary hover:underline font-bold cursor-pointer"
+                              >
+                                Todos
+                              </button>
+                              <span className="text-slate-700 text-[9px]">•</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDistributeEligibleTechs(prev => ({
+                                    ...prev,
+                                    [task.id]: []
+                                  }));
+                                }}
+                                className="text-[9px] text-rose-500 hover:underline font-bold cursor-pointer"
+                              >
+                                Nenhum
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-3 border-t border-slate-800 pt-4 mt-4">
+              <button
+                type="button"
+                onClick={() => setIsDistributeModalOpen(false)}
+                className="px-4 py-2 text-sm text-slate-400 font-bold hover:text-white transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSmartDistribution}
+                disabled={loading}
+                className="px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-lg shadow-lg shadow-violet-600/10 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {loading && <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>}
+                Executar Distribuição
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      </div>
+
+      {/* ================= ELEMENTO IMPRESSÃO COMPATÍVEL (CSS PRINT AREA) ================= */}
+      <div id="m-print-section" className="hidden print:block bg-white text-black p-4 w-full">
+        {/* Style block for print styling */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            body {
+              background: white !important;
+              color: black !important;
+            }
+            #m-print-section {
+              display: block !important;
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+            }
+            /* Style colors for print output */
+            .p-badge-pendente {
+              border: 1px solid #ef4444 !important;
+              color: #ef4444 !important;
+              background-color: #ffffff !important;
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+            .p-badge-atendimento {
+              border: 1px solid #f97316 !important;
+              color: #f97316 !important;
+              background-color: #fef9c3 !important;
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+            .p-badge-realizada {
+              border: 1px solid #10b981 !important;
+              color: #10b981 !important;
+              background-color: #d1fae5 !important;
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+            .day-header {
+              font-size: 7.5px !important;
+              font-weight: 850 !important;
+              font-family: monospace !important;
+              background-color: #f1f5f9 !important;
+              color: #000000 !important;
+              text-align: center !important;
+              padding: 2.5px 0.5px !important;
+              min-width: 14px !important;
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+            .day-header-weekend {
+              background-color: #cbd5e1 !important;
+              color: #000000 !important;
+              font-weight: 900 !important;
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+            .tech-cell {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+              font-size: 6.5px !important;
+              font-weight: 800 !important;
+              padding: 2px 0.5px !important;
+              line-height: 1 !important;
+              white-space: nowrap !important;
+              overflow: hidden !important;
+              text-transform: uppercase !important;
+              text-align: center !important;
+            }
+            .tech-cell-weekend {
+              background-color: #f1f5f9 !important;
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+          }
+        `}} />
+
+        <div className="flex justify-between items-center border-b-2 border-black pb-3 mb-4">
+          <div>
+            <h1 className="text-xl font-bold uppercase tracking-wide">Manequip 360 - Industrial OS</h1>
+            <p className="text-sm text-gray-600 uppercase font-semibold">Controle de Execução de Manutenção Preventiva</p>
+          </div>
+          <div className="text-right">
+            <h2 className="text-lg font-bold text-gray-800 uppercase">
+              {monthsList.find(m => m.value === selectedMonth)?.name} / {selectedYear}
+            </h2>
+            <p className="text-xs text-gray-500">Gerado em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}</p>
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-4 gap-4 mb-4 border border-gray-300 rounded p-3 text-center text-xs">
+          <div>
+            <span className="text-gray-500 font-medium block">Total Programado</span>
+            <strong className="text-lg text-black">{monthStats.total}</strong>
+          </div>
+          <div>
+            <span className="text-gray-500 font-medium block">Em Atendimento</span>
+            <strong className="text-lg text-gray-800">{monthStats.progress}</strong>
+          </div>
+          <div>
+            <span className="text-gray-500 font-medium block">Concluídas</span>
+            <strong className="text-lg text-green-700">{monthStats.completed}</strong>
+          </div>
+          <div>
+            <span className="text-gray-500 font-medium block">Taxa de Conclusão</span>
+            <strong className="text-lg text-green-700">{monthStats.completionRate}%</strong>
+          </div>
+        </div>
+
+        {/* The Print Table */}
+        <table className="w-full text-[9px] border-collapse border border-black">
+          <thead>
+            <tr className="bg-gray-100 text-black uppercase font-bold text-center">
+              <th className="border border-black py-1 px-1 w-12">Chamado</th>
+              <th className="border border-black py-1 px-2 text-left min-w-[150px]">Atividade</th>
+              <th className="border border-black py-1 px-1 w-12">Patr.</th>
+              <th className="border border-black py-1 px-1.5 w-16">Period.</th>
+              <th className="border border-black py-1 px-2 text-left min-w-[100px]">Localidade</th>
+              {Array.from({ length: new Date(selectedYear, selectedMonth, 0).getDate() }, (_, i) => i + 1).map(d => {
+                const isWeekend = new Date(selectedYear, selectedMonth - 1, d).getDay() === 0 || 
+                                  new Date(selectedYear, selectedMonth - 1, d).getDay() === 6;
+                return (
+                  <th
+                    key={d}
+                    className={`border border-black day-header ${isWeekend ? 'day-header-weekend' : ''}`}
+                  >
+                    {d}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {filteredMonthlyTasks.map(task => {
+              const taskDay = getTaskDay(task);
+              const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+
+              return (
+                <tr key={task.id} className="text-center font-sans">
+                  <td className="border border-black py-1 px-1 font-bold text-[9px]">
+                    {task.chamado || ''}
+                  </td>
+                  <td className="border border-black py-1 px-2 text-left font-semibold truncate max-w-[180px]">
+                    {task.ativos?.nome || task.titulo}
+                  </td>
+                  <td className="border border-black py-1 px-1 font-mono text-[8px]">
+                    {task.ativos?.tag_id || ''}
+                  </td>
+                  <td className="border border-black py-1 px-1 text-[8px] uppercase">
+                    {task.preventivas_planejamento?.periodicidade || 'Mensal'}
+                  </td>
+                  <td className="border border-black py-1 px-2 text-left truncate max-w-[100px]">
+                    {task.ativos?.setor || ''}
+                  </td>
+                  {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
+                    const isMatch = taskDay === d;
+                    const techName = isMatch
+                      ? [
+                          task.tecnico_responsavel_profile?.full_name?.split(' ')[0],
+                          task.tecnico_responsavel_2_profile?.full_name?.split(' ')[0]
+                        ].filter(Boolean).join('/')
+                      : '';
+                    
+                    const colorStyle = isMatch ? getTechColorStyle(techName) : null;
+                    const isWeekend = new Date(selectedYear, selectedMonth - 1, d).getDay() === 0 || 
+                                      new Date(selectedYear, selectedMonth - 1, d).getDay() === 6;
+
+                    return (
+                      <td
+                        key={d}
+                        className={`border border-gray-400 tech-cell ${!isMatch && isWeekend ? 'tech-cell-weekend' : ''}`}
+                        style={colorStyle ? { backgroundColor: colorStyle.bg, color: colorStyle.text } : {}}
+                      >
+                        {techName}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 };
 

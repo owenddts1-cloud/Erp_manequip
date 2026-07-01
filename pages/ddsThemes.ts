@@ -665,10 +665,11 @@ export const defaultThemes: DDSTheme[] = [
   },
   {
     "id": "theme-73",
-    "title": "Norma Regulamentadora NR-35: Trabalho em Altura",
-    "category": "Riscos Críticos",
-    "content": "Qualquer atividade executada acima de 2,00 metros do nível inferior, onde haja risco de queda de pessoas, é classificada como trabalho em altura pela NR-35, exigindo exames de saúde específicos (ASO).\n\nAntes de subir, garanta que a Análise Preliminar de Risco (APR) e a Permissão de Trabalho (PT) estejam assinadas. Nunca inicie a tarefa sem os cintos de segurança tipo paraquedista com duplo talabarte.",
-    "reflection": "A gravidade nunca perdoa o erro. Siga a NR-35 e salve sua vida nas alturas.",
+    "title": "O Perigo de Agir pela Emoção na Manutenção",
+    "category": "Comportamento Seguro",
+    "content": "Na rotina da manutenção industrial, a pressão por resultados, o estresse com máquinas paradas ou o excesso de confiança são gatilhos que frequentemente levam profissionais a agirem pela emoção. Quando o impulso ou a pressa atropelam os procedimentos de segurança, o ambiente fabril se torna extremamente perigoso. No setor industrial, um único segundo de distração ou a decisão de \"cortar caminho\" devido à ansiedade pode resultar em acidentes graves e fatais.\n\nA análise técnica e o controle emocional devem ser as principais ferramentas de trabalho de qualquer colaborador. Equipamentos de alta tensão, cargas pesadas e sistemas pressurizados não toleram reações impulsivas ou ferramentas improvisadas pela pressa. O domínio das próprias emoções diante de um problema no ambiente de trabalho é o que diferencia um profissional exemplar de uma estatística de acidente de trabalho.\n\nPortanto, o debate sobre o comportamento seguro serve como um alerta vital para toda a equipe. Nenhum índice de produtividade ou prazo de entrega justifica colocar a vida em risco.",
+    "reflection": "Frase do Dia: A calma é o EPI mais importante que você pode vestir. Antes de agir, respire, pense e siga o procedimento — sua vida vale mais que qualquer prazo.",
+    "videoUrl": "https://www.youtube.com/watch?v=ogltNOF91oo",
     "suggestedMonth": 7,
     "suggestedWeek": 1
   },

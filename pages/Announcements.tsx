@@ -323,7 +323,11 @@ const Announcements: React.FC = () => {
       const currentMonthCorrectives = allCorrectives.filter(n => {
         if (!n.created_at) return false;
         const d = new Date(n.created_at);
-        return d.getMonth() + 1 === currentMonthNum && d.getFullYear() === currentYearNum;
+        const createdInCurrentMonth = d.getMonth() + 1 === currentMonthNum && d.getFullYear() === currentYearNum;
+        // Also include overdue correctives: created before the current month and still open
+        const isOpen = !['Concluída', 'Concluído'].includes(n.status);
+        const createdBeforeCurrentMonth = (d.getFullYear() < currentYearNum) || (d.getFullYear() === currentYearNum && d.getMonth() + 1 < currentMonthNum);
+        return createdInCurrentMonth || (isOpen && createdBeforeCurrentMonth);
       });
       const corrTotal = currentMonthCorrectives.length;
       const corrCompleted = currentMonthCorrectives.filter(n => ['Concluída', 'Concluído'].includes(n.status)).length;

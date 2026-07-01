@@ -39,6 +39,10 @@ export interface MonthlyTask {
   };
   planejamento_id?: string;
   concluido_em?: string;
+  chamado?: string;
+  preventivas_planejamento?: {
+    periodicidade: string;
+  };
   created_at?: string;
   updated_at?: string;
 }

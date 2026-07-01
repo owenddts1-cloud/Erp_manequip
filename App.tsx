@@ -24,6 +24,7 @@ const Preventives = React.lazy(() => import('./pages/Preventives'));
 const GLPIIntegration = React.lazy(() => import('./pages/GLPIIntegration'));
 const Projects = React.lazy(() => import('./pages/Projects'));
 const Map = React.lazy(() => import('./pages/Map'));
+const RedeTA = React.lazy(() => import('./pages/RedeTA'));
 
 const PageLoader: React.FC = () => {
   return (
@@ -57,6 +58,7 @@ const App: React.FC = () => {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="chat" element={<Chat />} />
               <Route path="projects" element={<Projects />} />
+              <Route path="rede-ta" element={<RedeTA />} />
               <Route path="assets" element={<Assets />} />
               <Route path="inventory" element={<Inventory />} />
               <Route path="work-orders" element={<WorkOrders />} />

@@ -18,6 +18,13 @@ const isFuturePreventive = (t: any): boolean => {
   return t.ano > currentYear || (t.ano === currentYear && t.mes > currentMonth);
 };
 
+const isOpenCorrective = (t: any): boolean => {
+  if (t.tipo !== 'Corretiva') return false;
+  const status = (t.status || '').toLowerCase();
+  const isCompleted = ['concluído', 'concluída', 'finalizado'].some(term => status.includes(term));
+  return !isCompleted;
+};
+
 const WorkOrders: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -36,8 +43,8 @@ const WorkOrders: React.FC = () => {
       // 1. Exclude future preventives from stats calculation
       if (isFuturePreventive(t)) return;
 
-      // 2. Apply Period Filter to stats so they represent the selected period
-      if (periodFilter !== 'todos') {
+      // 2. Apply Period Filter to stats so they represent the selected period (skip for open correctives)
+      if (periodFilter !== 'todos' && !isOpenCorrective(t)) {
         const ticketDate = t.isPreventiveTable ? new Date(t.ano, t.mes - 1, 15) : new Date(t.created_at);
         const ticketYear = ticketDate.getFullYear();
         const ticketMonth = ticketDate.getMonth(); // 0-indexed
@@ -139,8 +146,8 @@ const WorkOrders: React.FC = () => {
         }
       }
 
-      // Period Filter (ignored for Futuros tab as they are all future)
-      if (filter !== 'Futuros' && periodFilter !== 'todos') {
+      // Period Filter (ignored for Futuros tab as they are all future, and skipped for open correctives)
+      if (filter !== 'Futuros' && periodFilter !== 'todos' && !isOpenCorrective(t)) {
         const ticketDate = t.isPreventiveTable ? new Date(t.ano, t.mes - 1, 15) : new Date(t.created_at);
         const ticketYear = ticketDate.getFullYear();
         const ticketMonth = ticketDate.getMonth(); // 0-indexed
@@ -714,10 +721,25 @@ const WorkOrders: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-slate-100 font-bold text-sm tracking-wide group-hover:text-primary transition-colors">{ticket.ativos?.nome || 'Ativo Desconhecido'}</span>
-                      <span className="text-xs text-slate-300 font-semibold mt-1 max-w-lg leading-snug">
-                        {ticket.isPreventiveTable ? ticket.titulo : ticket.title}
-                      </span>
+                      {ticket.isPreventiveTable ? (
+                        <>
+                          <span className="text-slate-100 font-bold text-sm tracking-wide group-hover:text-primary transition-colors">
+                            {ticket.ativos?.nome || 'Ativo Desconhecido'}
+                          </span>
+                          <span className="text-xs text-slate-300 font-semibold mt-1 max-w-lg leading-snug">
+                            {ticket.titulo}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-slate-100 font-bold text-sm tracking-wide group-hover:text-primary transition-colors">
+                            {ticket.title}
+                          </span>
+                          <span className="text-xs text-slate-300 font-semibold mt-1 max-w-lg leading-snug">
+                            {ticket.ativos?.nome || 'Ativo Desconhecido'}
+                          </span>
+                        </>
+                      )}
                       {ticket.ativos?.tag_id && (
                         <span className="text-[10px] text-slate-400 font-mono mt-1">
                           TAG: <span className="text-slate-300 font-bold">{ticket.ativos.tag_id}</span> {ticket.ativos.setor ? `• ${ticket.ativos.setor}` : ''}

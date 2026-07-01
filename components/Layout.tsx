@@ -141,6 +141,10 @@ const Layout: React.FC = () => {
                       <span className="font-medium font-display text-sm">{t('nav_projects')}</span>
                     </Link>
                   )}
+                  <Link to="/app/rede-ta" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${isActive('rede-ta')}`}>
+                    <span className="material-symbols-outlined group-hover:scale-110 transition-transform">lan</span>
+                    <span className="font-medium font-display text-sm">Rede T.A.</span>
+                  </Link>
                 </nav>
               </div>
 

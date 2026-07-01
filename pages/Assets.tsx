@@ -742,6 +742,17 @@ const Assets: React.FC = () => {
                       onEdit={() => handleOpenModal(asset)}
                       onDelete={() => handleDeleteAsset(asset.id)}
                       isAuthorized={isAuthorized}
+                      onUpdateUrl={async (newUrl) => {
+                        const { error } = await supabase
+                          .from('ativos')
+                          .update({ url: newUrl })
+                          .eq('id', asset.id);
+                        if (error) {
+                          alert('Erro ao atualizar URL: ' + error.message);
+                        } else {
+                          fetchAssets();
+                        }
+                      }}
                     />
                   ))
                 )}
@@ -955,7 +966,7 @@ const FilterSelect: React.FC<{ label: string, current: string, options: string[]
   </div>
 );
 
-const TableRow: React.FC<{ id: string, tag: string, name: string, sector: string, model: string, criticality: string, status: string, statusColor: string, url?: string, onEdit: () => void, onDelete: () => void, isAuthorized: boolean }> = ({ id, tag, name, sector, model, criticality, status, statusColor, url, onEdit, onDelete, isAuthorized }) => (
+const TableRow: React.FC<{ id: string, tag: string, name: string, sector: string, model: string, criticality: string, status: string, statusColor: string, url?: string, onEdit: () => void, onDelete: () => void, isAuthorized: boolean, onUpdateUrl: (newUrl: string) => Promise<void> }> = ({ id, tag, name, sector, model, criticality, status, statusColor, url, onEdit, onDelete, isAuthorized, onUpdateUrl }) => (
   <tr className="group hover:bg-[var(--bg-color)]/40 transition-colors">
     <td className="whitespace-nowrap py-2.5 px-4 align-middle font-mono text-[var(--text-secondary)] group-hover:text-[var(--text-main)]">{tag}</td>
     <td className="py-2.5 px-4 align-middle font-medium text-[var(--text-main)]">
@@ -988,19 +999,30 @@ const TableRow: React.FC<{ id: string, tag: string, name: string, sector: string
     </td>
     <td className="whitespace-nowrap py-2.5 px-4 align-middle text-right">
       <button 
-        onClick={() => {
+        onClick={async () => {
           if (url && url.trim()) {
-            window.open(url.startsWith('http') ? url : `https://${url}`, '_blank', 'noopener,noreferrer');
+            const choice = window.confirm(`Deseja abrir o link cadastrado?\n\nClique em [OK] para abrir:\n${url}\n\nClique em [Cancelar] para EDITAR / ALTERAR o link.`);
+            if (choice) {
+              window.open(url.startsWith('http') ? url : `https://${url}`, '_blank', 'noopener,noreferrer');
+            } else {
+              const newUrl = window.prompt("Editar Link URL do Ativo:", url);
+              if (newUrl !== null) {
+                await onUpdateUrl(newUrl.trim());
+              }
+            }
           } else {
-            alert('Nenhum link cadastrado para este ativo. Edite o ativo para definir um link.');
+            const newUrl = window.prompt("Adicionar Link URL para este Ativo:");
+            if (newUrl !== null) {
+              await onUpdateUrl(newUrl.trim());
+            }
           }
         }} 
         className={`rounded p-1 transition-colors mr-1 inline-flex items-center justify-center cursor-pointer ${
           url && url.trim() 
-            ? 'text-primary hover:bg-[var(--bg-color)] hover:text-sky-400' 
-            : 'text-slate-650 hover:bg-transparent cursor-not-allowed'
+            ? 'text-white hover:bg-[var(--bg-color)] hover:text-sky-400' 
+            : 'text-slate-600/50 hover:bg-transparent'
         }`}
-        title={url && url.trim() ? "Acessar Link do Ativo" : "Sem link cadastrado"}
+        title={url && url.trim() ? "Acessar ou Editar Link do Ativo" : "Cadastrar Link do Ativo"}
       >
         <span className="material-symbols-outlined text-[20px]">link</span>
       </button>
