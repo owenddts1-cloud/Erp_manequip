@@ -89,7 +89,7 @@ const RedeTA: React.FC = () => {
   const canvasRef = useRef<SVGSVGElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const [cadTheme, setCadTheme] = useState<'light' | 'dark'>('light');
+  const [cadTheme, setCadTheme] = useState<'light' | 'dark'>('dark');
 
   // Fetch initial data
   useEffect(() => {
@@ -176,6 +176,37 @@ const RedeTA: React.FC = () => {
 
   // Helper: Snap to Grid (20px)
   const snapToGrid = (val: number) => Math.round(val / 20) * 20;
+
+  // Helper: split text into lines
+  const wrapText = (text: string, maxChars: number = 18): string[] => {
+    if (!text) return [];
+    if (text.length <= maxChars) return [text];
+
+    // Try splitting on " - " first as it separates prefix and name
+    if (text.includes(' - ')) {
+      const parts = text.split(' - ');
+      const first = parts[0];
+      const second = parts.slice(1).join(' - ');
+      if (first.length <= maxChars && second.length <= maxChars) {
+        return [first, second];
+      }
+    }
+
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      if ((currentLine + ' ' + word).trim().length <= maxChars) {
+        currentLine = (currentLine + ' ' + word).trim();
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  };
 
   // Browser-side IP Communication Test (Intranet Fetch/Ping trick)
   const testIP = async (ip: string) => {
@@ -647,10 +678,29 @@ const RedeTA: React.FC = () => {
               >
                 {/* SVG Definitions */}
                 <defs>
-                  {/* Grid pattern */}
-                  <pattern id="cadGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke={cadTheme === 'light' ? '#e2e8f0' : '#1e293b'} strokeWidth="0.5" />
+                  {/* AutoCAD Grid pattern with minor and major lines */}
+                  <pattern id="cadGrid" width="100" height="100" patternUnits="userSpaceOnUse">
+                    {/* Minor grid lines (every 20px) */}
+                    <path 
+                      d="M 20 0 L 20 100 M 40 0 L 40 100 M 60 0 L 60 100 M 80 0 L 80 100 M 0 20 L 100 20 M 0 40 L 100 40 M 0 60 L 100 60 M 0 80 L 100 80" 
+                      fill="none" 
+                      stroke={cadTheme === 'light' ? '#f1f5f9' : '#162235'} 
+                      strokeWidth="0.5" 
+                    />
+                    {/* Major grid lines (every 100px) */}
+                    <path 
+                      d="M 100 0 L 0 0 0 100" 
+                      fill="none" 
+                      stroke={cadTheme === 'light' ? '#cbd5e1' : '#2e3e56'} 
+                      strokeWidth="1.0" 
+                    />
                   </pattern>
+
+                  {/* Glow filter for connections in dark mode */}
+                  <filter id="lineGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="2" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
                 </defs>
 
                 {/* Grid */}
@@ -659,23 +709,31 @@ const RedeTA: React.FC = () => {
                 {/* Diagram viewport group (applying pan and zoom) */}
                 <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
                   
-                  {/* Grid Axis labels */}
-                  <text x="10" y="20" fill="#334155" fontSize="10" className="select-none font-mono">0,0</text>
-                  
                   {/* 1. Connection Lines */}
                   {links.map(l => {
                     const s = nodes.find(n => n.id === l.source_id);
                     const t = nodes.find(n => n.id === l.target_id);
                     if (!s || !t) return null;
 
-                    // Calculate center points
-                    const sx = s.x + s.width / 2;
-                    const sy = s.y + s.height / 2;
-                    const tx = t.x + t.width / 2;
-                    const ty = t.y + t.height / 2;
+                    // Support dynamic node size adjusting inside lines rendering
+                    const sLines = wrapText(s.label, 18);
+                    const tLines = wrapText(t.label, 18);
+                    const sWidth = s.label.length > 20 ? Math.max(s.width, 160) : s.width;
+                    const sHeight = sLines.length > 1 ? Math.max(s.height, 65) : s.height;
+                    const tWidth = t.label.length > 20 ? Math.max(t.width, 160) : t.width;
+                    const tHeight = tLines.length > 1 ? Math.max(t.height, 65) : t.height;
 
-                    const lineColor = l.type === 'Fibra' ? '#ec4899' : '#00d2ff';
+                    // Calculate center points
+                    const sx = s.x + sWidth / 2;
+                    const sy = s.y + sHeight / 2;
+                    const tx = t.x + tWidth / 2;
+                    const ty = t.y + tHeight / 2;
+
+                    const lineColor = l.type === 'Fibra' 
+                      ? (isLight ? '#c026d3' : '#ec4899') 
+                      : (isLight ? '#0284c7' : '#00d2ff');
                     const linkLabel = l.type === 'Fibra' ? 'FIBRA' : 'REDE';
+                    const lineFilter = isLight ? undefined : 'url(#lineGlow)';
 
                     return (
                       <g key={l.id} className="group">
@@ -686,6 +744,7 @@ const RedeTA: React.FC = () => {
                           y2={ty} 
                           stroke={lineColor} 
                           strokeWidth={l.type === 'Fibra' ? 3.5 : 2.5} 
+                          filter={lineFilter}
                           className="transition-all duration-200"
                         />
                         {/* Hover helper wide line */}
@@ -713,6 +772,11 @@ const RedeTA: React.FC = () => {
                     const isSelected = selectedNodeId === n.id;
                     const ipLabel = n.rede_ips?.ip_address || 'Sem IP';
 
+                    // Dynamic text wrapping and sizing
+                    const labelLines = wrapText(n.label, 18);
+                    const nodeWidth = n.label.length > 20 ? Math.max(n.width, 160) : n.width;
+                    const nodeHeight = labelLines.length > 1 ? Math.max(n.height, 65) : n.height;
+
                     return (
                       <g 
                         key={n.id} 
@@ -725,8 +789,8 @@ const RedeTA: React.FC = () => {
                           <rect 
                             x="-4" 
                             y="-4" 
-                            width={n.width + 8} 
-                            height={n.height + 8} 
+                            width={nodeWidth + 8} 
+                            height={nodeHeight + 8} 
                             rx="8" 
                             fill="none" 
                             stroke="#0ea5e9" 
@@ -736,8 +800,8 @@ const RedeTA: React.FC = () => {
 
                         {/* Node box */}
                         <rect 
-                          width={n.width} 
-                          height={n.height} 
+                          width={nodeWidth} 
+                          height={nodeHeight} 
                           rx="6" 
                           fill={nodeBoxFill} 
                           stroke={typeConfig.strokeColor} 
@@ -749,7 +813,7 @@ const RedeTA: React.FC = () => {
 
                         {/* Top Indicator bar */}
                         <rect 
-                          width={n.width} 
+                          width={nodeWidth} 
                           height="4" 
                           rx="2"
                           fill={typeConfig.strokeColor}
@@ -757,21 +821,25 @@ const RedeTA: React.FC = () => {
 
                         {/* Title text */}
                         <text 
-                          x={n.width / 2} 
-                          y="22" 
+                          x={nodeWidth / 2} 
+                          y={labelLines.length > 1 ? 16 : 22} 
                           fill={nodeTextFill} 
-                          fontSize="10" 
+                          fontSize="9.5" 
                           fontWeight="bold" 
                           textAnchor="middle" 
                           className="select-none font-sans"
                         >
-                          {n.label}
+                          {labelLines.map((line, idx) => (
+                            <tspan key={idx} x={nodeWidth / 2} dy={idx > 0 ? 11 : 0}>
+                              {line}
+                            </tspan>
+                          ))}
                         </text>
 
                         {/* Subtext: IP Address */}
                         <text 
-                          x={n.width / 2} 
-                          y="42" 
+                          x={nodeWidth / 2} 
+                          y={labelLines.length > 1 ? 46 : 38} 
                           fill={n.rede_ips ? (isLight ? '#1e293b' : typeConfig.strokeColor) : (isLight ? '#64748b' : '#475569')} 
                           fontSize="9" 
                           fontWeight="bold" 
@@ -785,7 +853,7 @@ const RedeTA: React.FC = () => {
                         {/* Node Type Tiny Tag */}
                         <rect 
                           x="5" 
-                          y={n.height - 13} 
+                          y={nodeHeight - 13} 
                           width="35" 
                           height="8" 
                           rx="2" 
@@ -793,7 +861,7 @@ const RedeTA: React.FC = () => {
                         />
                         <text 
                           x="7" 
-                          y={n.height - 7} 
+                          y={nodeHeight - 7} 
                           fill={isLight ? '#475569' : typeConfig.strokeColor} 
                           fontSize="6" 
                           fontWeight="bold" 
